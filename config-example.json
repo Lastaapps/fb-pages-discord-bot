@@ -1,0 +1,20 @@
+{
+    "refresh_mins": 15,
+    "user_agent": "",
+    "cookie": {
+        "c_user": "",
+        "xs": "",
+        "m_page_voice": ""
+    },
+    "targets": [
+        {
+            "name": "Group name",
+            "channel_id": 1234,
+            "page_liks": [
+                "PAGE_ID",
+                ...
+            ]
+        },
+        ...
+    ]
+}
