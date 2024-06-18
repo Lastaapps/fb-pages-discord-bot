@@ -1,4 +1,4 @@
-package cz.lastaapps
+package cz.lastaapps.parser
 
 import it.skrape.selects.CssSelectable
 import it.skrape.selects.DocElement
@@ -79,3 +79,5 @@ internal fun <E> Collection<E>.forEachApply(action: E.() -> Unit) {
 internal fun String.replaceSpaces(with: String = ""): String =
     replace("\\p{Zs}+".toRegex(), with)
         .replace("&nbsp; ", with).trim()
+
+fun String.trimLines() = lines().joinToString("\n") { it.trim() }

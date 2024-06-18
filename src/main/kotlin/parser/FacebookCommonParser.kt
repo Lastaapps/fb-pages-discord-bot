@@ -1,5 +1,7 @@
-package cz.lastaapps
+package cz.lastaapps.parser
 
+import cz.lastaapps.model.ReferencedPost
+import cz.lastaapps.parsePostPublishedAt
 import io.ktor.http.decodeURLQueryComponent
 import it.skrape.selects.DocElement
 import kotlinx.datetime.Instant
@@ -9,7 +11,7 @@ object FacebookCommonParser {
         findLast("footer") {
             findFirst("abbr").text
                 .replaceSpaces(" ")
-                .parseFacebookTime()
+                .parsePostPublishedAt()
         }
 
     fun DocElement.parsePostID(): String =
@@ -33,7 +35,38 @@ object FacebookCommonParser {
         )
     }
 
-    fun decodeFacebookUrl(url: String): String =
+    fun DocElement.parseEventId(): String? =
+        eachHref
+            .firstOrNull { it.startsWith("/events/") }
+            ?.removePrefix("/events/")
+            ?.takeWhile { it.isDigit() }
+
+    fun DocElement.parseImages(): List<String> {
+        val images = mutableListOf<String>()
+        tryFindAllAndCycle("img") {
+            if (hasAttribute("src")) {
+                images += attribute("src")
+            }
+        }
+        return images
+    }
+
+    fun DocElement.parseLinks() : List<String>{
+        val links = mutableListOf<String>()
+        allElements.forEachApply {
+            if (hasAttribute("href")
+                && attribute("href").let { href ->
+                    href.startsWith("https://l.facebook.com")
+                        || href.startsWith("https://lm.facebook.com")
+                }
+            ) {
+                links += decodeFacebookUrl( attribute("href"))
+            }
+        }
+        return links
+    }
+
+    private fun decodeFacebookUrl(url: String): String =
         url
             .splitToSequence('&', '?')
             .first { it.startsWith("u=") }

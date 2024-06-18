@@ -28,3 +28,8 @@ suspend fun downloadPost(client: HttpClient, pageId: String, postId: String): St
     return client.get(url).body<String>()
 }
 
+suspend fun downloadEvent(client: HttpClient, eventId: String): String {
+    val url = "https://mbasic.facebook.com/events/$eventId"
+    return client.get(url).body<String>()
+}
+

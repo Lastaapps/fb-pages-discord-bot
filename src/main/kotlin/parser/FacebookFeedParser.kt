@@ -1,10 +1,14 @@
-package cz.lastaapps
+package cz.lastaapps.parser
 
 import arrow.core.Either
-import cz.lastaapps.FacebookCommonParser.decodeFacebookUrl
-import cz.lastaapps.FacebookCommonParser.parsePostID
-import cz.lastaapps.FacebookCommonParser.parsePublishedAt
-import cz.lastaapps.FacebookCommonParser.parseReferencedPost
+import cz.lastaapps.model.Post
+import cz.lastaapps.model.ReferencedPost
+import cz.lastaapps.parser.FacebookCommonParser.parseEventId
+import cz.lastaapps.parser.FacebookCommonParser.parseImages
+import cz.lastaapps.parser.FacebookCommonParser.parseLinks
+import cz.lastaapps.parser.FacebookCommonParser.parsePostID
+import cz.lastaapps.parser.FacebookCommonParser.parsePublishedAt
+import cz.lastaapps.parser.FacebookCommonParser.parseReferencedPost
 import it.skrape.core.htmlDocument
 import it.skrape.selects.DocElement
 
@@ -38,9 +42,11 @@ object FacebookFeedParser {
     }
 
     private fun DocElement.parseFeedPost(pageId: String): Post {
+        val postTextSection = findFirst(".story_body_container")
+
         // who posted the post, can be *name* posted with *name2*
-        val postedBy = findFirst("header").text//.also(::println)
-        val description = findFirst("p").text//.also(::println)
+        val postedBy = findFirst("header").text
+        val description = findFirst("p").wholeText.trimLines()
 
         // if the article references another article, we load it here
         var references: ReferencedPost? = null
@@ -51,24 +57,9 @@ object FacebookFeedParser {
         val id = parsePostID()
         val publishedAt = parsePublishedAt()
 
-        val images = mutableListOf<String>()
-        tryFindAllAndCycle(".story_body_container img") {
-            if (hasAttribute("src")) {
-                images += attribute("src")
-            }
-        }
-
-        val links = mutableListOf<String>()
-        allElements.forEachApply {
-            if (hasAttribute("href")
-                && attribute("href").let { href ->
-                    href.startsWith("https://l.facebook.com")
-                            || href.startsWith("https://lm.facebook.com")
-                }
-            ) {
-                links += decodeFacebookUrl( attribute("href"))
-            }
-        }
+        val images = postTextSection.parseImages()
+        val eventId = postTextSection.parseEventId()
+        val links = parseLinks()
 
         return Post(
             id = id,
@@ -78,6 +69,7 @@ object FacebookFeedParser {
             description = description,
             images = images,
             links = links,
+            eventId = eventId,
             references = references,
         )
     }

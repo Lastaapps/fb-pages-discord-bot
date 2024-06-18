@@ -7,7 +7,7 @@ import kotlinx.datetime.format.Padding
 
 private val CET = TimeZone.of("Europe/Prague")
 
-private val publishedAtFormat = DateTimeComponents.Format {
+private val postPublishedAtFormat = DateTimeComponents.Format {
     // May 27 at 6:13 PM
     monthName(MonthNames.ENGLISH_FULL)
     chars(" ")
@@ -24,10 +24,10 @@ private val publishedAtFormat = DateTimeComponents.Format {
     amPmMarker("AM", "PM")
 }
 
-fun String.parseFacebookTime(
+fun String.parsePostPublishedAt(
     timeZone: TimeZone = CET,
     yearNow: Int = Clock.System.now().toLocalDateTime(timeZone).year,
-): Instant = publishedAtFormat.parse(this)
+): Instant = postPublishedAtFormat.parse(this)
     .also { it.year = it.year ?: yearNow }
     .toLocalDateTime()
     .toInstant(timeZone)
