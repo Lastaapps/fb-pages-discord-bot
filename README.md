@@ -1,8 +1,9 @@
 
 Bojový plán
 - [x] získat všechna ID najednou
+- [ ] scrapovat stránku postu
 - [ ] najít chybějící ID z DC
-- [ ] scrapovat stránku postu a zveřejnit v správném pořadí
+- [ ] zveřejnit v správném pořadí
 - [ ] opakovat
 
 

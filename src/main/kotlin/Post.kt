@@ -4,8 +4,8 @@ import kotlinx.datetime.Instant
 
 data class Post(
     val id: String,
-    val publishedAt: Instant,
     val pageId: String,
+    val publishedAt: Instant,
     val author: String,
     val description: String,
     val images: List<String>,

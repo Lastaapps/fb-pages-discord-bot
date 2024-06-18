@@ -1,9 +1,12 @@
 package cz.lastaapps
 
 import arrow.core.Either
+import cz.lastaapps.FacebookCommonParser.decodeFacebookUrl
+import cz.lastaapps.FacebookCommonParser.parsePostID
+import cz.lastaapps.FacebookCommonParser.parsePublishedAt
+import cz.lastaapps.FacebookCommonParser.parseReferencedPost
 import it.skrape.core.htmlDocument
 import it.skrape.selects.DocElement
-import kotlinx.datetime.Instant
 
 object FacebookFeedParser {
 
@@ -37,7 +40,7 @@ object FacebookFeedParser {
     private fun DocElement.parseFeedPost(pageId: String): Post {
         // who posted the post, can be *name* posted with *name2*
         val postedBy = findFirst("header").text//.also(::println)
-        val mainText = findFirst("p").text//.also(::println)
+        val description = findFirst("p").text//.also(::println)
 
         // if the article references another article, we load it here
         var references: ReferencedPost? = null
@@ -45,7 +48,8 @@ object FacebookFeedParser {
             references = parseReferencedPost()
         }
 
-        val (id, publishedAt) = parsePostIDAndPublishTime()
+        val id = parsePostID()
+        val publishedAt = parsePublishedAt()
 
         val images = mutableListOf<String>()
         tryFindAllAndCycle(".story_body_container img") {
@@ -62,49 +66,19 @@ object FacebookFeedParser {
                             || href.startsWith("https://lm.facebook.com")
                 }
             ) {
-                links += attribute("href")
+                links += decodeFacebookUrl( attribute("href"))
             }
         }
 
         return Post(
             id = id,
-            publishedAt = publishedAt,
             pageId = pageId,
+            publishedAt = publishedAt,
             author = postedBy,
-            description = mainText,
+            description = description,
             images = images,
             links = links,
             references = references,
-        )
-    }
-
-    private fun DocElement.parsePostIDAndPublishTime(): Pair<String, Instant> =
-        findLast("footer") {
-            val id = eachHref
-                .first { href -> href.startsWith("/reactions/picker/") }
-                .splitToSequence('?', '&')
-                .drop(1)
-                .first { it.startsWith("ft_id") }
-                .removePrefix("ft_id=")
-
-            val publishedAt = findFirst("abbr").text
-                .replaceSpaces(" ")
-                .parseFacebookTime()
-
-            Pair(
-                id,
-                publishedAt,
-            )
-        }
-
-    private fun DocElement.parseReferencedPost(): ReferencedPost {
-        // who posted the post, can be *name* posted with *name2*
-        val postedBy = findFirst("header").text//.also(::println)
-        val mainText = findFirst("p").text//.also(::println)
-
-        return ReferencedPost(
-            author = postedBy,
-            description = mainText,
         )
     }
 }

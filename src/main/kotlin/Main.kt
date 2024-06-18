@@ -15,7 +15,6 @@ fun main(): Unit = runBlocking {
 fun createClient(): HttpClient = HttpClient {
     BrowserUserAgent()
     install(DefaultRequest) {
-        //TODO cookies
     }
 }
 
