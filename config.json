@@ -1,9 +1,9 @@
 {
     "refresh_mins": 15,
-    "user_agent": "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0",
     "cookie": {
         "c_user": "61559932332131",
-        "xs": "30%3AtX8AjSSpcQRKbw%3A2%3A1716842558%3A-1%3A-1",
+        "xs_mno": "30%3AtX8AjSSpcQRKbw%3A2%3A1716842558%3A-1%3A-1",
+        "xs": "30:tX8AjSSpcQRKbw:2:1716842558:-1:-1",
         "m_page_voice": "61559932332131"
     },
     "targets": [
@@ -22,7 +22,8 @@
                 "siliconhillstrongestman",
                 "3DtiskSH",
                 "AkademieSiliconHill",
-                "hudebnysh"
+                "hudebnysh",
+                "blokovehrySH"
             ]
         },
         {
