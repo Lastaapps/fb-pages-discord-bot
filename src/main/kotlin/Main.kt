@@ -1,35 +1,30 @@
 package cz.lastaapps
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.BrowserUserAgent
-import io.ktor.client.plugins.DefaultRequest
-import io.ktor.client.request.get
+import cz.lastaapps.model.AppConfig
+import cz.lastaapps.model.AppCookies
 import kotlinx.coroutines.runBlocking
 
 
 fun main(): Unit = runBlocking {
-    val client = createClient()
+    dropPrivileges()
+
+    val config = loadConfig()
+    val client = createClient(config.cookies)
+
+    println(config)
 }
 
-fun createClient(): HttpClient = HttpClient {
-    BrowserUserAgent()
-    install(DefaultRequest) {
-    }
+private fun dropPrivileges(){
+    // TODO
 }
 
-suspend fun downloadFeed(client: HttpClient, pageNameOrId: String): String {
-    val url = "https://mbasic.facebook.com/$pageNameOrId?v=timeline"
-    return client.get(url).body<String>()
-}
-
-suspend fun downloadPost(client: HttpClient, pageId: String, postId: String): String {
-    val url = "https://mbasic.facebook.com/story.php?story_fbid=$postId&id=$pageId"
-    return client.get(url).body<String>()
-}
-
-suspend fun downloadEvent(client: HttpClient, eventId: String): String {
-    val url = "https://mbasic.facebook.com/events/$eventId"
-    return client.get(url).body<String>()
-}
-
+fun loadConfig(): AppConfig = AppConfig(
+    AppCookies(
+        cUser = System.getenv("FACEBOOK_COOKIE_c_user"),
+        xs = System.getenv("FACEBOOK_COOKIE_x_s"),
+        mPageVoice = System.getenv("FACEBOOK_COOKIE_m__page_voice"),
+    ),
+    dcToken = System.getenv("FACEBOOK_DC_TOKEN"),
+    dcChannelID = System.getenv("FACEBOOK_DC_CHANNEL"),
+    pageIds = System.getenv("FACEBOOK_PAGES").split(","),
+)

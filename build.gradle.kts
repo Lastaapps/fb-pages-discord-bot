@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm") version "2.0.0"
-    kotlin("plugin.serialization") version "2.0.0"
 }
 
 group = "cz.lastaapps"
@@ -14,8 +13,6 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")
 
     implementation("it.skrape:skrapeit:1.3.0-alpha.2")
     // fix security vulnerabilities in skrapeit libs
