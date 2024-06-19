@@ -10,7 +10,7 @@ object FacebookEventParser {
         eventId: String,
     ) = htmlDocument(body) {
         findFirst("#objects_container table tr td") {
-            val img = parseImages().firstOrNull()
+            val img = parseImages().getOrNull(1) // first image is a calendar emoticon
             val title = findFirst("header").text
 
             val dateTime = findFirst("#event_summary table").findFirst("td dt div").text

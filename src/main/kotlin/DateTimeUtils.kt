@@ -1,8 +1,5 @@
 package cz.lastaapps
 
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -13,6 +10,9 @@ import kotlinx.datetime.format.Padding
 import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private val CET = TimeZone.of("Europe/Prague")
 
@@ -72,18 +72,18 @@ fun String.parsePostPublishedAt(
 
         // just now
         now.takeIf { this == "Just now" }
-        // minutes
+            // minutes
             ?: (
                 minsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
                     ?.let { now - it.minutes }
-                )
+            )
             // hours
             ?: (
                 hrsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
                     ?.let { now - it.hours }
                     // make sure seconds are zeroed
                     ?.let { it - (it.epochSeconds % 3600).seconds }
-                )
+            )
                 ?.also {
                     println("---------- !!! WARNING !!! ----------")
                     println("Using instant without a complete date information (minutes are missing)")

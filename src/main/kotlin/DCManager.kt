@@ -7,8 +7,7 @@ import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.rest.builder.message.embed
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
 
 class DCManager private constructor(
@@ -19,51 +18,81 @@ class DCManager private constructor(
         kord.rest.channel.getMessages(Snowflake(config.dcChannelID), limit = 20)
             .firstOrNull {
                 it.author.bot.asNullable == true
-            }?.timestamp ?: Instant.DISTANT_PAST
+            }?.embeds
+            ?.firstOrNull()
+            ?.timestamp
+            ?.value
+            ?: Instant.DISTANT_PAST
+
+    private val colors =
+        listOf(
+            Color(0, 0, 0),
+            Color(255, 255, 255),
+            Color(255, 0, 0),
+            Color(0, 255, 0),
+            Color(0, 0, 255),
+            Color(255, 255, 0),
+            Color(255, 165, 0),
+            Color(128, 0, 128),
+            Color(255, 192, 203),
+            Color(0, 128, 128),
+            Color(128, 128, 128),
+            Color(139, 69, 19),
+            Color(255, 140, 0),
+            Color(0, 255, 127),
+            Color(0, 102, 204),
+            Color(238, 130, 238),
+            Color(255, 204, 0),
+            Color(153, 0, 153),
+            Color(204, 0, 0),
+            Color(255, 99, 71),
+            Color(255, 182, 193),
+            Color(34, 139, 34),
+            Color(102, 0, 0),
+            Color(184, 115, 51),
+            Color(0, 128, 128),
+            Color(255, 0, 255),
+            Color(128, 128, 0),
+        )
 
     suspend fun sendPost(
         post: Post,
         event: Event?,
     ) {
-        val original =
-            kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
-                embed {
-                    timestamp = post.publishedAt
-                    author {
-                        name = "AUTHOR NAME"
-                    }
-                    title = post.author
-                    val reference = post.references?.let { "\n\n**${it.author}**\n${it.description}" } ?: ""
-                    description = (post.description + reference).trimToDescription()
-                    url = post.postLink()
-                    image = post.images.firstOrNull()
-                    color = Color(244, 186, 212)
-                    field {
-                        this.name = "FILED_NAME"
-                        this.value = "FILED_VALUE"
-                        this.inline = false
-                    }
-                    field {
-                        this.name = "FILED_NAME_INLINE"
-                        this.value = "FILED_VALUE_INLINE"
-                        this.inline = true
-                    }
-                }
+        val postColor = colors[(post.author.hashCode() % colors.size).absoluteValue]
+
+        kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
+            embed {
+                timestamp = post.publishedAt
+                title = post.author
+                val reference = post.references?.let { "\n\n**${it.author}**\n${it.description}" } ?: ""
+                description = (post.description + reference).trimToDescription()
+                url = post.postLink()
+                image = post.images.firstOrNull()
+                color = postColor
             }
+        }
 
         if (event == null) {
             return
         }
 
         kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
-            messageReference = original.id
             embed {
                 timestamp = post.publishedAt
                 title = event.title
                 description = event.description.trimToDescription()
                 url = event.eventLink()
                 image = event.img
-                color = Color(244, 186, 212)
+                color = postColor
+                field {
+                    name = "Kdy?"
+                    value = event.dateTime
+                }
+                field {
+                    name = "Kde?"
+                    value = event.where
+                }
             }
         }
     }
@@ -77,11 +106,13 @@ class DCManager private constructor(
             this
         }
 
+    suspend fun login() {
+        kord.login()
+    }
+
     companion object {
         suspend fun create(config: AppConfig): DCManager {
             val kord = Kord(config.dcToken)
-            coroutineScope { launch { kord.login() } }
-            println("HERE!!!!!!!!!!")
             return DCManager(config, kord)
         }
     }

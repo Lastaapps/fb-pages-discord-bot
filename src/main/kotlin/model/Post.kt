@@ -13,5 +13,5 @@ data class Post(
     val eventId: String?,
     val references: ReferencedPost?,
 ) {
-    fun postLink(): String = "https://www.facebook.com/$pageId/$id"
+    fun postLink(): String = "https://www.facebook.com/$pageId/posts/$id"
 }

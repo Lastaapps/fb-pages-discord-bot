@@ -6,35 +6,44 @@ import cz.lastaapps.model.AppCookies
 import cz.lastaapps.parser.FacebookEventParser
 import cz.lastaapps.parser.FacebookFeedParser
 import cz.lastaapps.parser.FacebookPostParser
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 fun main(): Unit =
     runBlocking {
         val config = loadConfig()
         val client = createClient(config.cookies)
-//    val dcApi= DCManager.create(config)
+        val dcApi = DCManager.create(config)
         val clock = Clock.System
 
+        launch { dcApi.login() }
+
         suspend fun randomDelay() {
-            delay(Random.nextInt(100..2000).milliseconds)
+            if (config.debugMode) {
+                delay(Random.nextInt(100..2000).milliseconds)
+            } else {
+                delay(Random.nextInt(1000..5000).milliseconds)
+            }
         }
 
         // in case the app starts crashing and restarting,
         // I don't want the bot to make to many requests to not get banned
-        // TODO enable
-        // delay(config.delay)
+        if (!config.debugMode) {
+            delay(config.delay)
+        }
 
         while (true) {
+            println("Here we go again!")
+
             val start = clock.now()
-//        val lastPosted = dcApi.lastPostedAt()
-            val lastPosted = Instant.DISTANT_PAST
+            val lastPosted = dcApi.lastPostedAt()
+            println("Last posted message: $lastPosted")
 
             config.pageIds.map { pageId ->
                 randomDelay()
@@ -44,7 +53,7 @@ fun main(): Unit =
                 FacebookFeedParser.parsePostsFromFeed(body)
                     .also { println("Got ${it.size} posts") }
             }.flatten()
-                .sortedByDescending { it.publishedAt }
+                .sortedBy { it.publishedAt }
                 .filter { lastPosted < it.publishedAt }
                 .also { println("Found ${it.size} new posts") }
                 .also { println("Fetching posts") }
@@ -81,9 +90,18 @@ fun main(): Unit =
                 }
                 .also { println("Posting to Discord") }
                 .forEach { (post, event) ->
+                    println("Sending post:")
+                    println("--------------------------------")
                     println(post)
-                    event?.let { println(it) }
-//                dcApi.sendPost(post, event)
+                    println("--------------------------------")
+
+                    event?.let {
+                        println("Sending event:")
+                        println("--------------------------------")
+                        println(it)
+                        println("--------------------------------")
+                    }
+                    dcApi.sendPost(post, event)
                 }
 
             val wait = config.delay - (clock.now() - start)
@@ -94,6 +112,7 @@ fun main(): Unit =
 
 fun loadConfig(): AppConfig =
     AppConfig(
+        debugMode = System.getenv("FACEBOOK_DEBUG").toBoolean(),
         AppCookies(
             cUser = System.getenv("FACEBOOK_COOKIE_c_user"),
             xs = System.getenv("FACEBOOK_COOKIE_x_s"),

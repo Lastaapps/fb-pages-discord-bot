@@ -3,6 +3,7 @@ package cz.lastaapps.model
 import kotlin.time.Duration
 
 data class AppConfig(
+    val debugMode: Boolean,
     val cookies: AppCookies,
     val dcToken: String,
     val dcChannelID: String,

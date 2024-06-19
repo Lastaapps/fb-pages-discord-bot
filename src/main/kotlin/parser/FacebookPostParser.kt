@@ -20,7 +20,7 @@ object FacebookPostParser {
                 val postTextSection = findLast("footer").parent.children.first()
 
                 val header = findFirst("header")
-                val postedBy = header.text
+                val postedBy = header.findFirst("h3").text
                 val description =
                     header.parent.children[1]
                         .wholeText.trimLines()
