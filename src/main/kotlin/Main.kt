@@ -26,6 +26,11 @@ fun main(): Unit = runBlocking {
         delay(Random.nextInt(100..2000).milliseconds)
     }
 
+    // in case the app starts crashing and restarting,
+    // I don't want the bot to make to many requests to not get banned
+    // TODO enable
+    // delay(config.delay)
+
     while (true) {
         val start = clock.now()
 //        val lastPosted = dcApi.lastPostedAt()
@@ -46,10 +51,11 @@ fun main(): Unit = runBlocking {
             .onEach(::println)
             .mapNotNull { post ->
                 randomDelay()
-                println("Fetching the post from '${post.author}' starting '${post.description.take(20)}...'")
+                println("Fetching the post from '${post.author}' starting '${post.description.take(32)}...'")
 
-                // in case there is a post with only an event, the does not exist a post page - nothing to parse
-                if (post.eventId!=null && !post.id.startsWith("pfbid")) {
+                // in case there is a post with only an event, profile/cover photo update, ...
+                // generally post without post detail, there is nothing more to parse nothing to parse
+                if (!post.id.startsWith("pfbid")) {
                     return@mapNotNull post
                 }
                 Either.catch {
@@ -61,7 +67,10 @@ fun main(): Unit = runBlocking {
             .map { post ->
                 post to post.eventId?.let { eventId ->
                     randomDelay()
-                    println("Fetching event '$eventId' for the post from '${post.author}' starting '${post.description.take(20)}...'")
+                    println(
+                        "Fetching event '$eventId' for " +
+                            "the post from '${post.author}' starting '${post.description.take(32)}...'",
+                    )
 
                     Either.catch {
                         val body = downloadEvent(client, eventId = eventId)
@@ -70,7 +79,7 @@ fun main(): Unit = runBlocking {
                 }
             }
             .also { println("Posting to Discord") }
-            .forEach {  (post, event) ->
+            .forEach { (post, event) ->
                 println(post)
                 event?.let { println(it) }
 //                dcApi.sendPost(post, event)

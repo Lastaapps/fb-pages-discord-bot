@@ -4,18 +4,17 @@ import kotlinx.datetime.*
 import kotlinx.datetime.format.DateTimeComponents
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.Padding
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private val CET = TimeZone.of("Europe/Prague")
 
-private val postPublishedAtFormat = DateTimeComponents.Format {
+private val postPublishedAtFormatThisYear = DateTimeComponents.Format {
     // May 27 at 6:13 PM
     monthName(MonthNames.ENGLISH_FULL)
     chars(" ")
     dayOfMonth(padding = Padding.NONE)
-//    optional(", 2025") {
-//        chars(", ")
-//        year()
-//    }
     chars(" at ")
     amPmHour(padding = Padding.NONE)
     chars(":")
@@ -24,10 +23,76 @@ private val postPublishedAtFormat = DateTimeComponents.Format {
     amPmMarker("AM", "PM")
 }
 
+private val postPublishedAtFormatPast = DateTimeComponents.Format {
+    // May 27 at 6:13 PM
+    monthName(MonthNames.ENGLISH_FULL)
+    chars(" ")
+    dayOfMonth(padding = Padding.NONE)
+    chars(", ")
+    year()
+    chars(" at ")
+    amPmHour(padding = Padding.NONE)
+    chars(":")
+    minute(padding = Padding.ZERO)
+    chars(" ")
+    amPmMarker("AM", "PM")
+}
+private val postPublishedAtFormatYesterday = DateTimeComponents.Format {
+    chars("Yesterday at ")
+    amPmHour(padding = Padding.NONE)
+    chars(":")
+    minute(padding = Padding.ZERO)
+    chars(" ")
+    amPmMarker("AM", "PM")
+}
+private val minsRegex = """(\d+) mins?""".toRegex()
+private val hrsRegex = """(\d+) hrs?""".toRegex()
+
 fun String.parsePostPublishedAt(
     timeZone: TimeZone = CET,
-    yearNow: Int = Clock.System.now().toLocalDateTime(timeZone).year,
-): Instant = postPublishedAtFormat.parse(this)
-    .also { it.year = it.year ?: yearNow }
-    .toLocalDateTime()
-    .toInstant(timeZone)
+    clock: Clock = Clock.System,
+): Instant = run {
+    val yearNow = clock.now().toLocalDateTime(timeZone).year
+    val now = clock.now()
+        // strip seconds
+        .let { it - (it.epochSeconds % 60).seconds }
+        // strip milliseconds
+        .let { Instant.fromEpochSeconds(it.epochSeconds) }
+
+    // just now
+    now.takeIf { this == "Just now" }
+        // minutes
+        ?: (minsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
+            ?.let { now - it.minutes })
+            // hours
+        ?: (hrsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
+            ?.let { now - it.hours }
+            // make sure seconds are zeroed
+            ?.let { it - (it.epochSeconds % 3600).seconds })
+            ?.also {
+                println("---------- !!! WARNING !!! ----------")
+                println("Using instant without a complete date information (minutes are missing)")
+                println("This may lead to race conditions and some recent posts not being posted")
+                println("---------- !!! WARNING !!! ----------")
+            }
+        // yesterday
+        ?: postPublishedAtFormatYesterday.parseOrNull(this)
+            ?.also { components ->
+                val dateTime = now.toLocalDateTime(timeZone).date.minus(1, DateTimeUnit.DAY)
+                components.year = dateTime.year
+                components.month = dateTime.month
+                components.dayOfMonth = dateTime.dayOfMonth
+            }
+            ?.toLocalDateTime()
+            ?.toInstant(timeZone)
+        // this year
+        ?: postPublishedAtFormatThisYear.parseOrNull(this)
+            ?.also { it.year = yearNow }
+            ?.toLocalDateTime()
+            ?.toInstant(timeZone)
+        // past years
+        ?: postPublishedAtFormatPast.parseOrNull(this)
+            ?.toLocalDateTime()
+            ?.toInstant(timeZone)
+        ?: throw IllegalArgumentException("Date & time '$this' cannot be parsed")
+}

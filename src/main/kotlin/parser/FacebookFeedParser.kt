@@ -22,12 +22,12 @@ object FacebookFeedParser {
         val posts = mutableListOf<Post>()
         htmlDocument(body).apply {
             // parses page id from the page profile image
-            val pageId = findFirst("#profile_cover_photo_container a") {
-                attribute("href")
-                    .split("?", "&")
-                    .first { it: String -> it.startsWith("id=") }
-                    .removePrefix("id=")
-            }
+            val pageId = findAll("#m-timeline-cover-section a")
+                .first { it.hasAttribute("href") && it.attribute("href").startsWith("/photo.php") }
+                .attribute("href")
+                .split("?", "&")
+                .first { it: String -> it.startsWith("id=") }
+                .removePrefix("id=")
 
             findFirst("div#tlFeed") {
                 findFirst("section").children.forEachApply {

@@ -1,3 +1,4 @@
+
 import cz.lastaapps.createClient
 import cz.lastaapps.downloadEvent
 import cz.lastaapps.downloadFeed
@@ -8,8 +9,10 @@ import cz.lastaapps.model.ReferencedPost
 import cz.lastaapps.parser.FacebookEventParser
 import cz.lastaapps.parser.FacebookFeedParser
 import cz.lastaapps.parser.FacebookPostParser
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import it.skrape.selects.ElementNotFoundException
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone.Companion.UTC
 import kotlinx.datetime.toInstant
@@ -93,10 +96,11 @@ class FacebookTests : StringSpec(
                 references = null,
             )
         }
-//        "post_with_event_and_no_text" {
-//            val postId = "1163760511605627"
-//            val body = downloadPost(client, pageIdSU, postId)
-//        }
+        "post_with_event_and_no_text" {
+            val postId = "1163760511605627"
+            val body = downloadPost(client, pageIdSU, postId)
+            shouldThrow<ElementNotFoundException> { FacebookPostParser.parsePost(body, pageIdSH, postId) }
+        }
 
         "event" {
             val eventId = "955412316203133"
