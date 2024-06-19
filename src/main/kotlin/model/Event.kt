@@ -7,4 +7,6 @@ data class Event(
     val description: String,
     val dateTime: String,
     val where: String,
-)
+) {
+    fun eventLink() = "https://www.facebook.com/events/$id/"
+}

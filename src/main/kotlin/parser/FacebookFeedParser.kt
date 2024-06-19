@@ -20,7 +20,7 @@ object FacebookFeedParser {
      */
     fun parsePostsFromFeed(body: String): List<Post> {
         val posts = mutableListOf<Post>()
-        htmlDocument(body).apply{
+        htmlDocument(body).apply {
             // parses page id from the page profile image
             val pageId = findFirst("#profile_cover_photo_container a") {
                 attribute("href")
@@ -46,7 +46,7 @@ object FacebookFeedParser {
 
         // who posted the post, can be *name* posted with *name2*
         val postedBy = findFirst("header").text
-        val description = findFirst("p").wholeText.trimLines()
+        val description = tryFindFirst("p") { wholeText.trimLines() } ?: ""
 
         // if the article references another article, we load it here
         var references: ReferencedPost? = null

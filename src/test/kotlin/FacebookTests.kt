@@ -18,7 +18,8 @@ import kotlinx.datetime.toInstant
 class FacebookTests : StringSpec(
     {
         val pageName = "siliconhill"
-        val pageId = "100064590618084"
+        val pageIdSH = "100064590618084"
+        val pageIdSU = "100064544208257"
 
         val client = createClient()
         "feed" {
@@ -27,10 +28,10 @@ class FacebookTests : StringSpec(
         }
         "post_with_reference_and_image" {
             val postId = "pfbid0FEtvWKB8pH5eB1mWGBT8MGQssGu7xdLsLvRkmzQ5D6Wdy4Gs6GbrLzUwcxWwXVz7l"
-            val body = downloadPost(client, pageId, postId)
-            FacebookPostParser.parsePost(body, pageId, postId).also(::println) shouldBe Post(
+            val body = downloadPost(client, pageIdSH, postId)
+            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe Post(
                 id = postId,
-                pageId = pageId,
+                pageId = pageIdSH,
                 publishedAt = LocalDateTime(2024, 6, 12, 19, 17).toInstant(UTC),
                 author = "Silicon Hill",
                 description = "‼️Dopravni omezení v okolí kolejí‼\nBěhem následujícího víkendu bude výrazně omezená 🚗🚍 doprava v okolí kolejí. Více info dále v příspěvku.",
@@ -45,10 +46,10 @@ class FacebookTests : StringSpec(
         }
         "post_with_reference_and_link" {
             val postId = "pfbid0hqVHBmAeCZHhJzu1YJBHqJwf83nfJjsjdju5CYNzamNFfMsViW3Tp6i688UQRGMsl"
-            val body = downloadPost(client, pageId, postId)
-            FacebookPostParser.parsePost(body, pageId, postId).also(::println) shouldBe Post(
+            val body = downloadPost(client, pageIdSH, postId)
+            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe Post(
                 id = postId,
-                pageId = pageId,
+                pageId = pageIdSH,
                 publishedAt = LocalDateTime(2024, 5, 27, 14, 13).toInstant(UTC),
                 author = "Silicon Hill",
                 description = "Důležité! Pro Hudebny SH dochází k 1.7.2024 ke změně výše členského příspěvku!",
@@ -66,9 +67,9 @@ class FacebookTests : StringSpec(
         }
         "post_with_instagram_link" {
             val postId = "pfbid02oVfUUntLMg1HrnKGjhgu27TQrLLKjR72GJQqBmxUpYtQuzf3NSte6w51DYBP5jQal"
-            val body = downloadPost(client, pageId, postId)
-            FacebookPostParser.parsePost(body, pageId, postId).also(::println) shouldBe Post(
-                id = postId, pageId = pageId, publishedAt = LocalDateTime(2024, 5, 5, 10, 43).toInstant(UTC),
+            val body = downloadPost(client, pageIdSH, postId)
+            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe Post(
+                id = postId, pageId = pageIdSH, publishedAt = LocalDateTime(2024, 5, 5, 10, 43).toInstant(UTC),
                 author = "Silicon Hill is with Blokové hry SH.",
                 description = "Tento čtvrtek se v rámci bonusové hry letošních Blokových her konala ranní jóga. 🤸 Více fotek a videí najdeš na našem Instagramu. 😉",
                 images = listOf("https://scontent-prg1-1.cdninstagram.com/v/t51.29350-15/441730885_335831969166368_4043422195989950892_n.webp?stp=dst-jpg&_nc_cat=104&ccb=1-7&_nc_sid=18de74&_nc_ohc=jv_Wgs4RUUcQ7kNvgGGUE-s&_nc_ht=scontent-prg1-1.cdninstagram.com&oh=00_AYCPoNTT76siOHc1hSsEVzjmSVdiYQf3tDpVdtd51k4TrA&oe=6677DDD9"),
@@ -79,10 +80,10 @@ class FacebookTests : StringSpec(
         }
         "post_with_event" {
             val postId = "pfbid02NEq2vQdG8uVqGr1jR5AbYynHQEHmAfkP7P317cadaJis98GHerB5frS56Jsdv8VRl"
-            val body = downloadPost(client, pageId, postId)
-            FacebookPostParser.parsePost(body, pageId, postId).also(::println) shouldBe Post(
+            val body = downloadPost(client, pageIdSH, postId)
+            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe Post(
                 id = postId,
-                pageId = pageId,
+                pageId = pageIdSH,
                 publishedAt = LocalDateTime(2024, 4, 29, 8, 58).toInstant(UTC),
                 author = "Silicon Hill",
                 description = "Už dnes se budou konat další blokové hry. Přijďte se k nám připojit v 20:00 před Blokem 8 na naši další vzrušující hru blokových her Vesmírné Podnikání💸! Přijít může každý, ať už jsi na hrách nikdy nebyl nebo jsi ostřílený veterán. Rádi vás tam všechny uvidíme 😁 Navíc byla vyhlášená další Bonusová hra, které se můžete zúčastnit již tento čtvrtek 2.5. od 5:30 mezi bloky 4 a 8. Více info: https://wiki.sh.cvut.cz/klub/blokove_hry/ls_2024",
@@ -92,6 +93,10 @@ class FacebookTests : StringSpec(
                 references = null,
             )
         }
+//        "post_with_event_and_no_text" {
+//            val postId = "1163760511605627"
+//            val body = downloadPost(client, pageIdSU, postId)
+//        }
 
         "event" {
             val eventId = "955412316203133"

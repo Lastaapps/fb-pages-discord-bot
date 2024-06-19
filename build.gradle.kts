@@ -14,6 +14,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
 
+    val kordVersion = "0.14.0"
+    implementation("dev.kord:kord-core:${kordVersion}")
+    implementation("dev.kord:kord-common:${kordVersion}")
+    implementation("dev.kord:kord-rest:${kordVersion}")
+
     implementation("it.skrape:skrapeit:1.3.0-alpha.2")
     // fix security vulnerabilities in skrapeit libs
     implementation("ch.qos.logback:logback-core:1.4.12")

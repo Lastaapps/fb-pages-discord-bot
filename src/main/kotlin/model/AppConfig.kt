@@ -1,10 +1,13 @@
 package cz.lastaapps.model
 
+import kotlin.time.Duration
+
 data class AppConfig(
     val cookies: AppCookies,
     val dcToken: String,
     val dcChannelID: String,
     val pageIds: List<String>,
+    val delay: Duration,
 ) {
     init {
         // Yes, this is a bad practice, but I'm lazy to do otherwise
