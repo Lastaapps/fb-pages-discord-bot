@@ -26,8 +26,8 @@ object FacebookCommonParser {
 
     fun DocElement.parseReferencedPost(): ReferencedPost {
         // who posted the post, can be *name* posted with *name2*
-        val postedBy = findFirst("header").text//.also(::println)
-        val mainText = findFirst("p").text//.also(::println)
+        val postedBy = findFirst("header").text // .also(::println)
+        val mainText = findFirst("p").text // .also(::println)
 
         return ReferencedPost(
             author = postedBy,
@@ -51,16 +51,16 @@ object FacebookCommonParser {
         return images
     }
 
-    fun DocElement.parseLinks() : List<String>{
+    fun DocElement.parseLinks(): List<String> {
         val links = mutableListOf<String>()
         allElements.forEachApply {
-            if (hasAttribute("href")
-                && attribute("href").let { href ->
-                    href.startsWith("https://l.facebook.com")
-                        || href.startsWith("https://lm.facebook.com")
+            if (hasAttribute("href") &&
+                attribute("href").let { href ->
+                    href.startsWith("https://l.facebook.com") ||
+                        href.startsWith("https://lm.facebook.com")
                 }
             ) {
-                links += decodeFacebookUrl( attribute("href"))
+                links += decodeFacebookUrl(attribute("href"))
             }
         }
         return links

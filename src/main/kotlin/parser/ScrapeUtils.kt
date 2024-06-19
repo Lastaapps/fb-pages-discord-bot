@@ -15,7 +15,7 @@ internal fun <T> CssSelectable.tryFindByIndex(
     } catch (e: ElementNotFoundException) {
         return null
     }
-    // is placed outside of the try-catch, so Errors in the init block aren't caught
+    // is placed outside the try-catch, so Errors in the init block aren't caught
     return findByIndex(index, cssSelector, init)
 }
 

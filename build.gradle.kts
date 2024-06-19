@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.0"
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
 }
 
 group = "cz.lastaapps"
@@ -15,9 +16,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
 
     val kordVersion = "0.14.0"
-    implementation("dev.kord:kord-core:${kordVersion}")
-    implementation("dev.kord:kord-common:${kordVersion}")
-    implementation("dev.kord:kord-rest:${kordVersion}")
+    implementation("dev.kord:kord-core:$kordVersion")
+    implementation("dev.kord:kord-common:$kordVersion")
+    implementation("dev.kord:kord-rest:$kordVersion")
 
     implementation("it.skrape:skrapeit:1.3.0-alpha.2")
     // fix security vulnerabilities in skrapeit libs

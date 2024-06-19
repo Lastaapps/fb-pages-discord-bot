@@ -3,7 +3,8 @@ root = true
 [*]
 
 [*.{kt,kts}]
-ktlint_code_style = official
+ktlint_code_style = ktlint_official
+insert_final_newline = true
 
 # Indentation
 indent_size = 4

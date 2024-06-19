@@ -10,15 +10,20 @@ import cz.lastaapps.parser.FacebookCommonParser.parseReferencedPost
 import it.skrape.core.htmlDocument
 
 object FacebookPostParser {
-    fun parsePost(body: String, pageId: String, postId: String): Post =
+    fun parsePost(
+        body: String,
+        pageId: String,
+        postId: String,
+    ): Post =
         htmlDocument(body) {
             findFirst("#root") {
                 val postTextSection = findLast("footer").parent.children.first()
 
                 val header = findFirst("header")
                 val postedBy = header.text
-                val description = header.parent.children[1]
-                    .wholeText.trimLines()
+                val description =
+                    header.parent.children[1]
+                        .wholeText.trimLines()
 
                 var references: ReferencedPost? = null
                 tryFindFirst("article") {

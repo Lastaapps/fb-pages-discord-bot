@@ -15,40 +15,45 @@ class DCManager private constructor(
     private val config: AppConfig,
     private val kord: Kord,
 ) {
-
     suspend fun lastPostedAt(): Instant =
         kord.rest.channel.getMessages(Snowflake(config.dcChannelID), limit = 20)
             .firstOrNull {
                 it.author.bot.asNullable == true
             }?.timestamp ?: Instant.DISTANT_PAST
 
-    suspend fun sendPost(post: Post, event: Event?) {
-        val original = kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
-            embed {
-                timestamp = post.publishedAt
-                author {
-                    name = "AUTHOR NAME"
-                }
-                title = post.author
-                val reference = post.references?.let { "\n\n**${it.author}**\n${it.description}" } ?: ""
-                description = (post.description + reference).trimToDescription()
-                url = post.postLink()
-                image = post.images.firstOrNull()
-                color = Color(244, 186, 212)
-                field {
-                    this.name = "FILED_NAME"
-                    this.value = "FILED_VALUE"
-                    this.inline = false
-                }
-                field {
-                    this.name = "FILED_NAME_INLINE"
-                    this.value = "FILED_VALUE_INLINE"
-                    this.inline = true
+    suspend fun sendPost(
+        post: Post,
+        event: Event?,
+    ) {
+        val original =
+            kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
+                embed {
+                    timestamp = post.publishedAt
+                    author {
+                        name = "AUTHOR NAME"
+                    }
+                    title = post.author
+                    val reference = post.references?.let { "\n\n**${it.author}**\n${it.description}" } ?: ""
+                    description = (post.description + reference).trimToDescription()
+                    url = post.postLink()
+                    image = post.images.firstOrNull()
+                    color = Color(244, 186, 212)
+                    field {
+                        this.name = "FILED_NAME"
+                        this.value = "FILED_VALUE"
+                        this.inline = false
+                    }
+                    field {
+                        this.name = "FILED_NAME_INLINE"
+                        this.value = "FILED_VALUE_INLINE"
+                        this.inline = true
+                    }
                 }
             }
-        }
 
-        if (event == null) { return }
+        if (event == null) {
+            return
+        }
 
         kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
             messageReference = original.id
