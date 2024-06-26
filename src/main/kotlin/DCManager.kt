@@ -6,13 +6,20 @@ import cz.lastaapps.model.Post
 import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
+import dev.kord.rest.NamedFile
+import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.embed
+import io.ktor.client.HttpClient
+import io.ktor.client.request.forms.ChannelProvider
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsChannel
 import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
 
 class DCManager private constructor(
     private val config: AppConfig,
     private val kord: Kord,
+    private val client: HttpClient,
 ) {
     suspend fun lastPostedAt(): Instant =
         kord.rest.channel.getMessages(Snowflake(config.dcChannelID), limit = 20)
@@ -55,6 +62,29 @@ class DCManager private constructor(
             Color(128, 128, 0),
         )
 
+    private val extensions =
+        listOf(
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif",
+        )
+
+    suspend fun UserMessageCreateBuilder.addFile(
+        nameWithoutExtension: String,
+        url: String,
+        client: HttpClient,
+    ): NamedFile? {
+        val extension =
+            extensions.firstOrNull { url.contains(it) } ?: run {
+                println("Url does not contain any of the known extensions!")
+                return null
+            }
+        val response = client.get(url).bodyAsChannel()
+        return addFile(nameWithoutExtension + extension, ChannelProvider(null) { response })
+    }
+
     suspend fun sendPost(
         post: Post,
         event: Event?,
@@ -62,28 +92,34 @@ class DCManager private constructor(
         val postColor = colors[(post.author.hashCode() % colors.size).absoluteValue]
 
         kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
+            val postImageUrl =
+                post.images.firstOrNull()?.let { url ->
+                    addFile("post_img", url, client)
+                }?.url
+
             embed {
                 timestamp = post.publishedAt
                 title = post.author
                 val reference = post.references?.let { "\n\n**${it.author}**\n${it.description}" } ?: ""
                 description = (post.description + reference).trimToDescription()
                 url = post.postLink()
-                image = post.images.firstOrNull()
+                image = postImageUrl
                 color = postColor
             }
-        }
 
-        if (event == null) {
-            return
-        }
+            event ?: return@createMessage
 
-        kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
+            val eventImageUrl =
+                event.img?.let { url ->
+                    addFile("event_img", url, client)
+                }?.url
+
             embed {
                 timestamp = post.publishedAt
                 title = event.title
                 description = event.description.trimToDescription()
                 url = event.eventLink()
-                image = event.img
+                image = eventImageUrl
                 color = postColor
                 field {
                     name = "Kdy?"
@@ -111,9 +147,12 @@ class DCManager private constructor(
     }
 
     companion object {
-        suspend fun create(config: AppConfig): DCManager {
+        suspend fun create(
+            config: AppConfig,
+            client: HttpClient,
+        ): DCManager {
             val kord = Kord(config.dcToken)
-            return DCManager(config, kord)
+            return DCManager(config, kord, client)
         }
     }
 }

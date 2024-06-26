@@ -6,20 +6,20 @@ import cz.lastaapps.model.AppCookies
 import cz.lastaapps.parser.FacebookEventParser
 import cz.lastaapps.parser.FacebookFeedParser
 import cz.lastaapps.parser.FacebookPostParser
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
 
 fun main(): Unit =
     runBlocking {
         val config = loadConfig()
         val client = createClient(config.cookies)
-        val dcApi = DCManager.create(config)
+        val dcApi = DCManager.create(config, client)
         val clock = Clock.System
 
         launch { dcApi.login() }
