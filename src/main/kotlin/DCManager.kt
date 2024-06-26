@@ -13,8 +13,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
-import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
+import kotlin.math.absoluteValue
 
 class DCManager private constructor(
     private val config: AppConfig,
@@ -71,7 +71,7 @@ class DCManager private constructor(
             ".gif",
         )
 
-    suspend fun UserMessageCreateBuilder.addFile(
+    private suspend fun UserMessageCreateBuilder.addFile(
         nameWithoutExtension: String,
         url: String,
         client: HttpClient,

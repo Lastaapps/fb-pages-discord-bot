@@ -6,6 +6,7 @@ import cz.lastaapps.model.AppCookies
 import cz.lastaapps.parser.FacebookEventParser
 import cz.lastaapps.parser.FacebookFeedParser
 import cz.lastaapps.parser.FacebookPostParser
+import kotlin.math.min
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.milliseconds
@@ -17,12 +18,23 @@ import kotlinx.datetime.Clock
 
 fun main(): Unit =
     runBlocking {
+        println("Starting...")
+        println("Loading config...")
         val config = loadConfig()
         val client = createClient(config.cookies)
         val dcApi = DCManager.create(config, client)
         val clock = Clock.System
 
+        println("Connecting to DC...")
         launch { dcApi.login() }
+
+        println("----------------------------------------------------------------")
+        println("Started")
+        println("Debug mode: ${config.debugMode}")
+        println("Delay: ${config.delay}")
+        println("ChannelID: ${config.dcChannelID}")
+        println("Facebook pages: ${config.pageIds.joinToString(", ")}")
+        println("----------------------------------------------------------------")
 
         suspend fun randomDelay() {
             if (config.debugMode) {
@@ -35,7 +47,12 @@ fun main(): Unit =
         // in case the app starts crashing and restarting,
         // I don't want the bot to make to many requests to not get banned
         if (!config.debugMode) {
-            delay(config.delay)
+            val toWait =
+                config.delay.inWholeMinutes.toInt().let {
+                    Random.nextInt(min(5, it)..it)
+                }.minutes
+            println("Initial starting delay $toWait...")
+            delay(toWait)
         }
 
         while (true) {
