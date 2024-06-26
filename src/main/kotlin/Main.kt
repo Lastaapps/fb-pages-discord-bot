@@ -9,6 +9,7 @@ import cz.lastaapps.parser.FacebookPostParser
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.delay
@@ -86,7 +87,7 @@ fun main(): Unit =
                     }
                     Either.catch {
                         val body = downloadPost(client, pageId = post.pageId, postId = post.id)
-                        FacebookPostParser.parsePost(body, pageId = post.pageId, postId = post.id)
+                        FacebookPostParser.parsePost(body, pageId = post.pageId, postId = post.id, config.postDetailHoursOffset)
                     }.onLeft { it.printStackTrace() }.getOrNull()
                 }
                 .also { println("Fetching events") }
@@ -139,4 +140,5 @@ fun loadConfig(): AppConfig =
         dcChannelID = System.getenv("FACEBOOK_DC_CHANNEL"),
         pageIds = System.getenv("FACEBOOK_PAGES").split(","),
         delay = System.getenv("FACEBOOK_DELAY_MINS").toInt().minutes,
+        postDetailHoursOffset = System.getenv("FACEBOOK_POST_DETAIL_HOURS_OFFSET_HRS").toInt().hours,
     )

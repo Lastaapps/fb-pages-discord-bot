@@ -9,6 +9,8 @@ data class AppConfig(
     val dcChannelID: String,
     val pageIds: List<String>,
     val delay: Duration,
+    // idk, somehow I managed that FB is showing different time in different places
+    val postDetailHoursOffset: Duration,
 ) {
     init {
         // Yes, this is a bad practice, but I'm lazy to do otherwise

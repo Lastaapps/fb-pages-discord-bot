@@ -8,12 +8,15 @@ import cz.lastaapps.parser.FacebookCommonParser.parseLinks
 import cz.lastaapps.parser.FacebookCommonParser.parsePublishedAt
 import cz.lastaapps.parser.FacebookCommonParser.parseReferencedPost
 import it.skrape.core.htmlDocument
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 
 object FacebookPostParser {
     fun parsePost(
         body: String,
         pageId: String,
         postId: String,
+        offset: Duration = 0.hours,
     ): Post =
         htmlDocument(body) {
             findFirst("#root") {
@@ -39,7 +42,7 @@ object FacebookPostParser {
                 Post(
                     id = postId,
                     pageId = pageId,
-                    publishedAt = publishedAt,
+                    publishedAt = publishedAt + offset,
                     author = postedBy,
                     description = description,
                     images = images,
