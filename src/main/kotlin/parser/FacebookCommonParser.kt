@@ -5,13 +5,14 @@ import cz.lastaapps.parsePostPublishedAt
 import io.ktor.http.decodeURLQueryComponent
 import it.skrape.selects.DocElement
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
 
 object FacebookCommonParser {
-    fun DocElement.parsePublishedAt(): Instant =
+    fun DocElement.parsePublishedAt(timeZone: TimeZone): Instant =
         findLast("footer") {
             findFirst("abbr").text
                 .replaceSpaces(" ")
-                .parsePostPublishedAt()
+                .parsePostPublishedAt(timeZone)
         }
 
     fun DocElement.parsePostID(): String =

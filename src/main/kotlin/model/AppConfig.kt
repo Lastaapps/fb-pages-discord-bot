@@ -1,5 +1,6 @@
 package cz.lastaapps.model
 
+import kotlinx.datetime.TimeZone
 import kotlin.time.Duration
 
 data class AppConfig(
@@ -9,8 +10,9 @@ data class AppConfig(
     val dcChannelID: String,
     val pageIds: List<String>,
     val delay: Duration,
-    // idk, somehow I managed that FB is showing different time in different places
-    val postDetailHoursOffset: Duration,
+    // idk, somehow I managed that FB is using different timezone in different places
+    val timeZoneFeed: TimeZone,
+    val timeZonePost: TimeZone,
 ) {
     init {
         // Yes, this is a bad practice, but I'm lazy to do otherwise

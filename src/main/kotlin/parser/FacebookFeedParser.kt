@@ -11,13 +11,18 @@ import cz.lastaapps.parser.FacebookCommonParser.parsePublishedAt
 import cz.lastaapps.parser.FacebookCommonParser.parseReferencedPost
 import it.skrape.core.htmlDocument
 import it.skrape.selects.DocElement
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.TimeZone.Companion.UTC
 
 object FacebookFeedParser {
     /**
      * Parses page content for the overview screen
      * The post descriptions may be partial only
      */
-    fun parsePostsFromFeed(body: String): List<Post> {
+    fun parsePostsFromFeed(
+        body: String,
+        timeZone: TimeZone = UTC,
+    ): List<Post> {
         val posts = mutableListOf<Post>()
         htmlDocument(body).apply {
             // parses page id from the page profile image
@@ -32,7 +37,7 @@ object FacebookFeedParser {
             findFirst("div#tlFeed") {
                 findFirst("section").children.forEachApply {
                     Either.catch {
-                        posts += parseFeedPost(pageId)
+                        posts += parseFeedPost(pageId, timeZone)
                     }.onLeft { it.printStackTrace() }
                 }
             }
@@ -41,7 +46,10 @@ object FacebookFeedParser {
         return posts
     }
 
-    private fun DocElement.parseFeedPost(pageId: String): Post {
+    private fun DocElement.parseFeedPost(
+        pageId: String,
+        timeZone: TimeZone,
+    ): Post {
         val postTextSection = findFirst(".story_body_container")
 
         // who posted the post, can be *name* posted with *name2*
@@ -55,7 +63,7 @@ object FacebookFeedParser {
         }
 
         val id = parsePostID()
-        val publishedAt = parsePublishedAt()
+        val publishedAt = parsePublishedAt(timeZone)
 
         val images = postTextSection.parseImages()
         val eventId = postTextSection.parseEventId()

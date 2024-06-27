@@ -6,16 +6,16 @@ import cz.lastaapps.model.AppCookies
 import cz.lastaapps.parser.FacebookEventParser
 import cz.lastaapps.parser.FacebookFeedParser
 import cz.lastaapps.parser.FacebookPostParser
-import kotlin.math.min
-import kotlin.random.Random
-import kotlin.random.nextInt
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlin.math.min
+import kotlin.random.Random
+import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 
 fun main(): Unit =
     runBlocking {
@@ -68,7 +68,7 @@ fun main(): Unit =
                 println("Fetching page $pageId")
 
                 val body = downloadFeed(client, pageId)
-                FacebookFeedParser.parsePostsFromFeed(body)
+                FacebookFeedParser.parsePostsFromFeed(body, config.timeZonePost)
                     .also { println("Got ${it.size} posts") }
             }.flatten()
                 .sortedBy { it.publishedAt }
@@ -87,7 +87,18 @@ fun main(): Unit =
                     }
                     Either.catch {
                         val body = downloadPost(client, pageId = post.pageId, postId = post.id)
-                        FacebookPostParser.parsePost(body, pageId = post.pageId, postId = post.id, config.postDetailHoursOffset)
+                        FacebookPostParser.parsePost(
+                            body,
+                            pageId = post.pageId,
+                            postId = post.id,
+                            config.timeZonePost,
+                        ).also {
+                            if (post.publishedAt == it.publishedAt) {
+                                println("---------- !!! WARNING !!! ----------")
+                                println("The time in both scrapes differ: feed: ${post.publishedAt} x ${it.publishedAt}")
+                                println("-------------------------------------")
+                            }
+                        }
                     }.onLeft { it.printStackTrace() }.getOrNull()
                 }
                 .also { println("Fetching events") }
@@ -140,5 +151,6 @@ fun loadConfig(): AppConfig =
         dcChannelID = System.getenv("FACEBOOK_DC_CHANNEL"),
         pageIds = System.getenv("FACEBOOK_PAGES").split(","),
         delay = System.getenv("FACEBOOK_DELAY_MINS").toInt().minutes,
-        postDetailHoursOffset = System.getenv("FACEBOOK_POST_DETAIL_HOURS_OFFSET_HRS").toInt().hours,
+        timeZoneFeed = System.getenv("FACEBOOK_TIMEZONE_FEED").let { TimeZone.of(it) },
+        timeZonePost = System.getenv("FACEBOOK_TIMEZONE_POST").let { TimeZone.of(it) },
     )

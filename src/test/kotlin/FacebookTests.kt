@@ -1,5 +1,6 @@
 @file:Suppress("ktlint:standard:max-line-length")
 
+import cz.lastaapps.CET
 import cz.lastaapps.createClient
 import cz.lastaapps.downloadEvent
 import cz.lastaapps.downloadFeed
@@ -32,7 +33,7 @@ class FacebookTests : StringSpec(
         "post_with_reference_and_image" {
             val postId = "pfbid0FEtvWKB8pH5eB1mWGBT8MGQssGu7xdLsLvRkmzQ5D6Wdy4Gs6GbrLzUwcxWwXVz7l"
             val body = downloadPost(client, pageIdSH, postId)
-            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe
+            FacebookPostParser.parsePost(body, pageIdSH, postId, CET).also(::println) shouldBe
                 Post(
                     id = postId,
                     pageId = pageIdSH,
@@ -52,7 +53,7 @@ class FacebookTests : StringSpec(
         "post_with_reference_and_link" {
             val postId = "pfbid0hqVHBmAeCZHhJzu1YJBHqJwf83nfJjsjdju5CYNzamNFfMsViW3Tp6i688UQRGMsl"
             val body = downloadPost(client, pageIdSH, postId)
-            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe
+            FacebookPostParser.parsePost(body, pageIdSH, postId, CET).also(::println) shouldBe
                 Post(
                     id = postId,
                     pageId = pageIdSH,
@@ -76,7 +77,7 @@ class FacebookTests : StringSpec(
         "post_with_instagram_link" {
             val postId = "pfbid02oVfUUntLMg1HrnKGjhgu27TQrLLKjR72GJQqBmxUpYtQuzf3NSte6w51DYBP5jQal"
             val body = downloadPost(client, pageIdSH, postId)
-            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe
+            FacebookPostParser.parsePost(body, pageIdSH, postId, CET).also(::println) shouldBe
                 Post(
                     id = postId, pageId = pageIdSH, publishedAt = LocalDateTime(2024, 5, 5, 10, 43).toInstant(UTC),
                     author = "Silicon Hill is with Blokové hry SH.",
@@ -90,7 +91,7 @@ class FacebookTests : StringSpec(
         "post_with_event" {
             val postId = "pfbid02NEq2vQdG8uVqGr1jR5AbYynHQEHmAfkP7P317cadaJis98GHerB5frS56Jsdv8VRl"
             val body = downloadPost(client, pageIdSH, postId)
-            FacebookPostParser.parsePost(body, pageIdSH, postId).also(::println) shouldBe
+            FacebookPostParser.parsePost(body, pageIdSH, postId, CET).also(::println) shouldBe
                 Post(
                     id = postId,
                     pageId = pageIdSH,
@@ -106,7 +107,7 @@ class FacebookTests : StringSpec(
         "post_with_event_and_no_text" {
             val postId = "1163760511605627"
             val body = downloadPost(client, pageIdSU, postId)
-            shouldThrow<ElementNotFoundException> { FacebookPostParser.parsePost(body, pageIdSH, postId) }
+            shouldThrow<ElementNotFoundException> { FacebookPostParser.parsePost(body, pageIdSH, postId, UTC) }
         }
 
         "event" {

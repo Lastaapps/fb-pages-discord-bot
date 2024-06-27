@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-private val CET = TimeZone.of("Europe/Prague")
+val CET = TimeZone.of("Europe/Prague")
 
 private val postPublishedAtFormatThisYear =
     DateTimeComponents.Format {
@@ -58,11 +58,10 @@ private val minsRegex = """(\d+) mins?""".toRegex()
 private val hrsRegex = """(\d+) hrs?""".toRegex()
 
 fun String.parsePostPublishedAt(
-    timeZone: TimeZone = CET,
+    timeZone: TimeZone,
     clock: Clock = Clock.System,
 ): Instant =
     run {
-        val yearNow = clock.now().toLocalDateTime(timeZone).year
         val now =
             clock.now()
                 // strip seconds
@@ -75,12 +74,12 @@ fun String.parsePostPublishedAt(
             // minutes
             ?: (
                 minsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
-                    ?.let { now - it.minutes }
+                    ?.let { now - it.minutes - 1.minutes }
             )
             // hours
             ?: (
                 hrsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
-                    ?.let { now - it.hours }
+                    ?.let { now - it.hours - 1.hours }
                     // make sure seconds are zeroed
                     ?.let { it - (it.epochSeconds % 3600).seconds }
             )
@@ -88,7 +87,7 @@ fun String.parsePostPublishedAt(
                     println("---------- !!! WARNING !!! ----------")
                     println("Using instant without a complete date information (minutes are missing)")
                     println("This may lead to race conditions and some recent posts not being posted")
-                    println("---------- !!! WARNING !!! ----------")
+                    println("-------------------------------------")
                 }
             // yesterday
             ?: postPublishedAtFormatYesterday.parseOrNull(this)
@@ -102,7 +101,7 @@ fun String.parsePostPublishedAt(
                 ?.toInstant(timeZone)
             // this year
             ?: postPublishedAtFormatThisYear.parseOrNull(this)
-                ?.also { it.year = yearNow }
+                ?.also { it.year = now.toLocalDateTime(timeZone).year }
                 ?.toLocalDateTime()
                 ?.toInstant(timeZone)
             // past years
