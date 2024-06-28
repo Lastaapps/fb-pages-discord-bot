@@ -6,16 +6,16 @@ import cz.lastaapps.model.AppCookies
 import cz.lastaapps.parser.FacebookEventParser
 import cz.lastaapps.parser.FacebookFeedParser
 import cz.lastaapps.parser.FacebookPostParser
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
 
 fun main(): Unit =
     runBlocking {
@@ -92,11 +92,18 @@ fun main(): Unit =
                             pageId = post.pageId,
                             postId = post.id,
                             config.timeZonePost,
-                        ).also {
-                            if (post.publishedAt == it.publishedAt) {
+                        ).let {
+                            if (post.publishedAt != it.publishedAt) {
+                                // When can this happen?
+                                // Just now -> minutes
+                                // minutes -> hours
+                                // hours -> Yesterday
                                 println("---------- !!! WARNING !!! ----------")
                                 println("The time in both scrapes differ: feed: ${post.publishedAt} x ${it.publishedAt}")
                                 println("-------------------------------------")
+                                it.copy(publishedAt = post.publishedAt)
+                            } else {
+                                it
                             }
                         }
                     }.onLeft { it.printStackTrace() }.getOrNull()

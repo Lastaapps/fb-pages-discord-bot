@@ -57,29 +57,33 @@ private val postPublishedAtFormatYesterday =
 private val minsRegex = """(\d+) mins?""".toRegex()
 private val hrsRegex = """(\d+) hrs?""".toRegex()
 
+/**
+ * Parses time from facebook feed item/post detail in all the provided formats.
+ * Supported languages are: en
+ *
+ * Returns the time we can be sure has already passed.
+ * Just Now means the post was sent [0, 59] seconds ago
+ * Seconds and milliseconds are stripped
+ */
 fun String.parsePostPublishedAt(
     timeZone: TimeZone,
     clock: Clock = Clock.System,
 ): Instant =
     run {
-        val now =
-            clock.now()
-                // strip seconds
-                .let { it - (it.epochSeconds % 60).seconds }
-                // strip milliseconds
-                .let { Instant.fromEpochSeconds(it.epochSeconds) }
+        val now = clock.now()
 
         // just now
         now.takeIf { this == "Just now" }
+            ?.minus(59.seconds)
             // minutes
             ?: (
                 minsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
-                    ?.let { now - it.minutes - 1.minutes }
+                    ?.let { now - it.minutes - 59.seconds }
             )
             // hours
             ?: (
                 hrsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
-                    ?.let { now - it.hours - 1.hours }
+                    ?.let { now - it.hours - 59.minutes }
                     // make sure seconds are zeroed
                     ?.let { it - (it.epochSeconds % 3600).seconds }
             )
@@ -109,4 +113,6 @@ fun String.parsePostPublishedAt(
                 ?.toLocalDateTime()
                 ?.toInstant(timeZone)
             ?: throw IllegalArgumentException("Date & time '$this' cannot be parsed")
-    }
+    }.stripSeconds()
+
+private fun Instant.stripSeconds() = Instant.fromEpochSeconds((epochSeconds / 60) * 60)
