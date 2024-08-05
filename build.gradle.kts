@@ -12,6 +12,10 @@ application {
     mainClass.set("cz.lastaapps.MainKt")
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 repositories {
     mavenCentral()
 }
@@ -28,8 +32,8 @@ dependencies {
 
     implementation("it.skrape:skrapeit:1.3.0-alpha.2")
     // fix security vulnerabilities in skrapeit libs
-    implementation("ch.qos.logback:logback-core:1.4.12")
-    implementation("ch.qos.logback:logback-classic:1.4.12")
+    implementation("ch.qos.logback:logback-core:1.4.14")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
     implementation("commons-net:commons-net:3.9.0")
     implementation("org.apache.commons:commons-text:1.10.0")
     implementation("org.jsoup:jsoup:1.15.3")
@@ -52,6 +56,4 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
-kotlin {
-    jvmToolchain(17)
-}
+

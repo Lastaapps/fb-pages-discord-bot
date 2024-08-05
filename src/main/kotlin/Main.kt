@@ -9,6 +9,7 @@ import cz.lastaapps.parser.FacebookPostParser
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.delay
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 fun main(): Unit =
     runBlocking {
@@ -140,7 +142,12 @@ fun main(): Unit =
                     dcApi.sendPost(post, event)
                 }
 
-            val wait = config.delay - (clock.now() - start)
+            while (clock.now().toLocalDateTime(config.activeHoursTimezone).hour !in config.activeHoursRange) {
+                println("Waiting for active hours...")
+                delay(1.hours)
+            }
+
+            val wait = config.delay - (clock.now() - start) + Random.nextInt(-5..5).minutes
             println("Done, waiting for ${wait.inWholeMinutes} minutes")
             delay(wait)
         }
@@ -160,4 +167,6 @@ fun loadConfig(): AppConfig =
         delay = System.getenv("FACEBOOK_DELAY_MINS").toInt().minutes,
         timeZoneFeed = System.getenv("FACEBOOK_TIMEZONE_FEED").let { TimeZone.of(it) },
         timeZonePost = System.getenv("FACEBOOK_TIMEZONE_POST").let { TimeZone.of(it) },
+        activeHoursRange = System.getenv("FACEBOOK_ACTIVE_HOURS_START").toInt()..<System.getenv("FACEBOOK_ACTIVE_HOURS_END").toInt(),
+        activeHoursTimezone = System.getenv("FACEBOOK_TIMEZONE_ACTIVE_HOURS").let { TimeZone.of(it) },
     )

@@ -45,3 +45,4 @@ bin/
 ./config.json
 
 /.env
+/kls_database.db

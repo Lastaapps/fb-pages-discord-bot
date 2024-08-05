@@ -13,6 +13,8 @@ data class AppConfig(
     // idk, somehow I managed that FB is using different timezone in different places
     val timeZoneFeed: TimeZone,
     val timeZonePost: TimeZone,
+    val activeHoursRange: IntRange,
+    val activeHoursTimezone: TimeZone,
 ) {
     init {
         // Yes, this is a bad practice, but I'm lazy to do otherwise
