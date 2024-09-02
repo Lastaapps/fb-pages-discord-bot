@@ -1,11 +1,11 @@
-package cz.lastaapps
+package cz.lastaapps.scraping
 
 import arrow.core.Either
-import cz.lastaapps.model.AppConfig
-import cz.lastaapps.model.AppCookies
-import cz.lastaapps.parser.FacebookEventParser
-import cz.lastaapps.parser.FacebookFeedParser
-import cz.lastaapps.parser.FacebookPostParser
+import cz.lastaapps.scraping.model.AppConfig
+import cz.lastaapps.scraping.model.AppCookies
+import cz.lastaapps.scraping.parser.FacebookEventParser
+import cz.lastaapps.scraping.parser.FacebookFeedParser
+import cz.lastaapps.scraping.parser.FacebookPostParser
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.random.nextInt

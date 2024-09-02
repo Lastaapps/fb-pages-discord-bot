@@ -1,16 +1,16 @@
 @file:Suppress("ktlint:standard:max-line-length")
 
-import cz.lastaapps.CET
-import cz.lastaapps.createClient
-import cz.lastaapps.downloadEvent
-import cz.lastaapps.downloadFeed
-import cz.lastaapps.downloadPost
-import cz.lastaapps.model.Event
-import cz.lastaapps.model.Post
-import cz.lastaapps.model.ReferencedPost
-import cz.lastaapps.parser.FacebookEventParser
-import cz.lastaapps.parser.FacebookFeedParser
-import cz.lastaapps.parser.FacebookPostParser
+import cz.lastaapps.scraping.CET
+import cz.lastaapps.scraping.createClient
+import cz.lastaapps.scraping.downloadEvent
+import cz.lastaapps.scraping.downloadFeed
+import cz.lastaapps.scraping.downloadPost
+import cz.lastaapps.scraping.model.Event
+import cz.lastaapps.scraping.model.Post
+import cz.lastaapps.scraping.model.ReferencedPost
+import cz.lastaapps.scraping.parser.FacebookEventParser
+import cz.lastaapps.scraping.parser.FacebookFeedParser
+import cz.lastaapps.scraping.parser.FacebookPostParser
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe

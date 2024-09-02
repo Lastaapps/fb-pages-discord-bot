@@ -1,8 +1,8 @@
-package cz.lastaapps
+package cz.lastaapps.scraping
 
-import cz.lastaapps.model.AppConfig
-import cz.lastaapps.model.Event
-import cz.lastaapps.model.Post
+import cz.lastaapps.scraping.model.AppConfig
+import cz.lastaapps.scraping.model.Event
+import cz.lastaapps.scraping.model.Post
 import dev.kord.common.Color
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
@@ -13,8 +13,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
-import kotlinx.datetime.Instant
 import kotlin.math.absoluteValue
+import kotlinx.datetime.Instant
 
 class DCManager private constructor(
     private val config: AppConfig,

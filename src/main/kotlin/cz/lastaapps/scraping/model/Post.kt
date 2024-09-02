@@ -1,4 +1,4 @@
-package cz.lastaapps.model
+package cz.lastaapps.scraping.model
 
 import kotlinx.datetime.Instant
 

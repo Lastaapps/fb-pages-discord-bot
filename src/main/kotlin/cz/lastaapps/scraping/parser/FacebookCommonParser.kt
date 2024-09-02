@@ -1,7 +1,7 @@
-package cz.lastaapps.parser
+package cz.lastaapps.scraping.parser
 
-import cz.lastaapps.model.ReferencedPost
-import cz.lastaapps.parsePostPublishedAt
+import cz.lastaapps.scraping.model.ReferencedPost
+import cz.lastaapps.scraping.parsePostPublishedAt
 import io.ktor.http.decodeURLQueryComponent
 import it.skrape.selects.DocElement
 import kotlinx.datetime.Instant

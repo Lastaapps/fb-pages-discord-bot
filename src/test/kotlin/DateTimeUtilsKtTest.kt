@@ -1,5 +1,4 @@
-
-import cz.lastaapps.parsePostPublishedAt
+import cz.lastaapps.scraping.parsePostPublishedAt
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.data.blocking.forAll
 import io.kotest.data.row

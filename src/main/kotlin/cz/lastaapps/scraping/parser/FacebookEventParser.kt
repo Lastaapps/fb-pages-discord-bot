@@ -1,7 +1,7 @@
-package cz.lastaapps.parser
+package cz.lastaapps.scraping.parser
 
-import cz.lastaapps.model.Event
-import cz.lastaapps.parser.FacebookCommonParser.parseImages
+import cz.lastaapps.scraping.model.Event
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parseImages
 import it.skrape.core.htmlDocument
 
 object FacebookEventParser {

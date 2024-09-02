@@ -1,14 +1,14 @@
-package cz.lastaapps.parser
+package cz.lastaapps.scraping.parser
 
 import arrow.core.Either
-import cz.lastaapps.model.Post
-import cz.lastaapps.model.ReferencedPost
-import cz.lastaapps.parser.FacebookCommonParser.parseEventId
-import cz.lastaapps.parser.FacebookCommonParser.parseImages
-import cz.lastaapps.parser.FacebookCommonParser.parseLinks
-import cz.lastaapps.parser.FacebookCommonParser.parsePostID
-import cz.lastaapps.parser.FacebookCommonParser.parsePublishedAt
-import cz.lastaapps.parser.FacebookCommonParser.parseReferencedPost
+import cz.lastaapps.scraping.model.Post
+import cz.lastaapps.scraping.model.ReferencedPost
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parseEventId
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parseImages
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parseLinks
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parsePostID
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parsePublishedAt
+import cz.lastaapps.scraping.parser.FacebookCommonParser.parseReferencedPost
 import it.skrape.core.htmlDocument
 import it.skrape.selects.DocElement
 import kotlinx.datetime.TimeZone

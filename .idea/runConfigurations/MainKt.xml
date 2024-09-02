@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="MainKt" type="JetRunConfigurationType" nameIsGenerated="true">
-    <option name="MAIN_CLASS_NAME" value="cz.lastaapps.MainKt" />
+    <option name="MAIN_CLASS_NAME" value="cz.lastaapps.scraping.MainKt" />
     <module name="fb-pages-discord-bot.main" />
     <shortenClasspath name="NONE" />
     <extension name="net.ashald.envfile">

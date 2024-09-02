@@ -1,4 +1,4 @@
-package cz.lastaapps.parser
+package cz.lastaapps.scraping.parser
 
 import it.skrape.selects.CssSelectable
 import it.skrape.selects.DocElement

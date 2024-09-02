@@ -9,7 +9,8 @@ group = "cz.lastaapps"
 version = "1.0-SNAPSHOT"
 
 application {
-    mainClass.set("cz.lastaapps.MainKt")
+    // mainClass.set("cz.lastaapps.api.MainKt")
+    mainClass.set("cz.lastaapps.scraping.MainKt")
 }
 
 kotlin {
