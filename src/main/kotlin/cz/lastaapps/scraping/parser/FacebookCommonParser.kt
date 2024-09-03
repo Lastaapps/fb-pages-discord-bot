@@ -1,8 +1,8 @@
 package cz.lastaapps.scraping.parser
 
+import cz.lastaapps.common.decodeFacebookUrl
 import cz.lastaapps.scraping.model.ReferencedPost
 import cz.lastaapps.scraping.parsePostPublishedAt
-import io.ktor.http.decodeURLQueryComponent
 import it.skrape.selects.DocElement
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -67,15 +67,4 @@ object FacebookCommonParser {
         return links
     }
 
-    private fun decodeFacebookUrl(url: String): String =
-        url
-            .splitToSequence('&', '?')
-            .first { it.startsWith("u=") }
-            .removePrefix("u=")
-            .decodeURLQueryComponent()
-            .splitToSequence('&', '?')
-            .filterNot { it.startsWith("fbclid=") }
-            .let { parts ->
-                parts.first() + (parts.drop(1).joinToString("&").takeUnless { it.isEmpty() }?.let { "?$it" } ?: "")
-            }
 }
