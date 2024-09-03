@@ -66,5 +66,4 @@ object FacebookCommonParser {
         }
         return links
     }
-
 }

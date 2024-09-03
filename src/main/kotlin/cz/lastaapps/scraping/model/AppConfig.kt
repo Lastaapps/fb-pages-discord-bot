@@ -1,7 +1,7 @@
 package cz.lastaapps.scraping.model
 
-import kotlin.time.Duration
 import kotlinx.datetime.TimeZone
+import kotlin.time.Duration
 
 data class AppConfig(
     val debugMode: Boolean,

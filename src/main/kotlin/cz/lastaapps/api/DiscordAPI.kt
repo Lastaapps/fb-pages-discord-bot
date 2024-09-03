@@ -9,7 +9,6 @@ class DiscordAPI(
     fun start(scope: CoroutineScope) {
         // TODO stop when parent scope stops
         scope.launch {
-
         }
     }
 
@@ -17,6 +16,5 @@ class DiscordAPI(
         channelID: String,
         posts: Pair<PagePost, List<Event>>,
     ) {
-
     }
 }

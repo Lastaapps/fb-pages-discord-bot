@@ -8,11 +8,11 @@ import io.ktor.client.request.parameter
 import io.ktor.http.Parameters
 import io.ktor.http.encodeURLParameter
 import io.ktor.util.encodeBase64
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import java.security.SecureRandom
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 class AuthAPI(
     private val client: HttpClient,
@@ -36,63 +36,74 @@ class AuthAPI(
     /**
      * https://developers.facebook.com/tools/explorer
      */
-    suspend fun exchangeOAuth(
-        parameters: Parameters,
-    ): String {
+    suspend fun exchangeOAuth(parameters: Parameters): String {
         val code = parameters["code"]!!
         val state = parameters["state"]!!
 
         stateManager.validateState(state)
 
-        val response = client.get(
-            "/${API_VERSION}/oauth/access_token?" +
-                "client_id=${config.facebook.appID}" +
-                "&redirect_uri=${config.facebook.redirectURL.encodeURLParameter()}" +
-                "&client_secret=${config.facebook.appSecret.encodeURLParameter()}" +
-                "&code=${code.encodeURLParameter()}",
-        )
+        val response =
+            client.get(
+                "/${API_VERSION}/oauth/access_token?" +
+                    "client_id=${config.facebook.appID}" +
+                    "&redirect_uri=${config.facebook.redirectURL.encodeURLParameter()}" +
+                    "&client_secret=${config.facebook.appSecret.encodeURLParameter()}" +
+                    "&code=${code.encodeURLParameter()}",
+            )
         "Status code: ${response.status}"
         val data = response.body<OAuthExchangeResponse>()
         return data.accessToken
     }
 
     suspend fun grantAccess(userAccessToken: String): List<AuthorizedPageFromUser> {
-        val (userId, userName) = client.get("/${API_VERSION}/me") {
-            parameter("fields", "id,name")
-            parameter("access_token", userAccessToken)
-        }.let { response ->
-            println("Status code: ${response.status}")
-            val data = response.body<MeResponse>()
-            println(data)
-            data
-        }
-        return client.get(
-            "/${API_VERSION}/${userId}/accounts",
-        ) {
-            parameter("access_token", userAccessToken)
-        }.let { response ->
-            println("Status code: ${response.status}")
-            val data = response.body<ManagedPages>()
-            println(data)
-            data.data
-        }.parMap {
-            val info = loadPageInfo(client, it.id, it.pageAccessToken)
-            AuthorizedPageFromUser(
-                userId, userName, userAccessToken,
-                info.id, info.name, it.pageAccessToken,
-            )
-        }
+        val (userId, userName) =
+            client
+                .get("/${API_VERSION}/me") {
+                    parameter("fields", "id,name")
+                    parameter("access_token", userAccessToken)
+                }.let { response ->
+                    println("Status code: ${response.status}")
+                    val data = response.body<MeResponse>()
+                    println(data)
+                    data
+                }
+        return client
+            .get(
+                "/${API_VERSION}/$userId/accounts",
+            ) {
+                parameter("access_token", userAccessToken)
+            }.let { response ->
+                println("Status code: ${response.status}")
+                val data = response.body<ManagedPages>()
+                println(data)
+                data.data
+            }.parMap {
+                val info = loadPageInfo(client, it.id, it.pageAccessToken)
+                AuthorizedPageFromUser(
+                    userId,
+                    userName,
+                    userAccessToken,
+                    info.id,
+                    info.name,
+                    it.pageAccessToken,
+                )
+            }
     }
 
-    private suspend fun loadPageInfo(client: HttpClient, pageID: String, pageAccessToken: String): PageInfo =
-        client.get("/${API_VERSION}/$pageID") {
-            parameter("access_token", pageAccessToken)
-        }.let { response ->
-            println("Status code: ${response.status}")
-            val data = response.body<PageInfo>()
-            println(data)
-            data
-        }
+    private suspend fun loadPageInfo(
+        client: HttpClient,
+        pageID: String,
+        pageAccessToken: String,
+    ): PageInfo =
+        client
+            .get("/${API_VERSION}/$pageID") {
+                parameter("access_token", pageAccessToken)
+            }.let { response ->
+                println("Status code: ${response.status}")
+                val data = response.body<PageInfo>()
+                println(data)
+                data
+            }
 
     private class OAuthStateManager(
         private val clock: Clock,

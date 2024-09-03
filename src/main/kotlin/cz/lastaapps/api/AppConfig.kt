@@ -25,28 +25,35 @@ data class AppConfig(
     )
 
     companion object {
-        fun fromEnv() = AppConfig(
-            facebook = Facebook(
-                appID = str("FACEBOOK_APP_ID"),
-                configID = str("FACEBOOK_CONFIG_ID"),
-                appSecret = str("FACEBOOK_APP_SECRET"),
-                redirectURL = str("FACEBOOK_REDIRECT_URL"),
-            ),
-            discord = Discord(
-                token = str("DISCORD_BOT_TOKEN"),
-            ),
-            server = Server(
-                host = str("SERVER_HOST"),
-                port = int("SERVER_PORT"),
-                endpointPublic = str("SERVER_ENDPOINT_PUBLIC").withSlash(),
-                endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
-            ),
-            intervalSec = int("INTERVAL_SEC"),
-        )
+        fun fromEnv() =
+            AppConfig(
+                facebook =
+                    Facebook(
+                        appID = str("FACEBOOK_APP_ID"),
+                        configID = str("FACEBOOK_CONFIG_ID"),
+                        appSecret = str("FACEBOOK_APP_SECRET"),
+                        redirectURL = str("FACEBOOK_REDIRECT_URL"),
+                    ),
+                discord =
+                    Discord(
+                        token = str("DISCORD_BOT_TOKEN"),
+                    ),
+                server =
+                    Server(
+                        host = str("SERVER_HOST"),
+                        port = int("SERVER_PORT"),
+                        endpointPublic = str("SERVER_ENDPOINT_PUBLIC").withSlash(),
+                        endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
+                    ),
+                intervalSec = int("INTERVAL_SEC"),
+            )
 
         private fun key(key: String) = "FB_TO_DC_$key"
+
         private fun str(key: String) = System.getenv(key(key))
+
         private fun int(key: String) = str(key).toInt()
+
         private fun String.withSlash() = if (this.startsWith("/")) this else "/$this"
     }
 }

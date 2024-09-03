@@ -13,8 +13,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
-import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
+import kotlin.math.absoluteValue
 
 class DCManager private constructor(
     private val config: AppConfig,
@@ -22,7 +22,8 @@ class DCManager private constructor(
     private val client: HttpClient,
 ) {
     suspend fun lastPostedAt(): Instant =
-        kord.rest.channel.getMessages(Snowflake(config.dcChannelID), limit = 20)
+        kord.rest.channel
+            .getMessages(Snowflake(config.dcChannelID), limit = 20)
             .firstOrNull {
                 it.author.bot.asNullable == true
             }?.embeds
@@ -93,9 +94,11 @@ class DCManager private constructor(
 
         kord.rest.channel.createMessage(Snowflake(config.dcChannelID)) {
             val postImageUrl =
-                post.images.firstOrNull()?.let { url ->
-                    addFile("post_img", url, client)
-                }?.url
+                post.images
+                    .firstOrNull()
+                    ?.let { url ->
+                        addFile("post_img", url, client)
+                    }?.url
 
             embed {
                 timestamp = post.publishedAt
@@ -110,9 +113,10 @@ class DCManager private constructor(
             event ?: return@createMessage
 
             val eventImageUrl =
-                event.img?.let { url ->
-                    addFile("event_img", url, client)
-                }?.url
+                event.img
+                    ?.let { url ->
+                        addFile("event_img", url, client)
+                    }?.url
 
             embed {
                 timestamp = post.publishedAt

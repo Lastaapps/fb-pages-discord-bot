@@ -73,43 +73,55 @@ fun String.parsePostPublishedAt(
         val now = clock.now()
 
         // just now
-        now.takeIf { this == "Just now" }
+        now
+            .takeIf { this == "Just now" }
             ?.minus(59.seconds)
             // minutes
             ?: (
-                minsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
+                minsRegex
+                    .find(this)
+                    ?.groups
+                    ?.get(1)
+                    ?.value
+                    ?.toIntOrNull()
                     ?.let { now - it.minutes - 59.seconds }
             )
             // hours
             ?: (
-                hrsRegex.find(this)?.groups?.get(1)?.value?.toIntOrNull()
+                hrsRegex
+                    .find(this)
+                    ?.groups
+                    ?.get(1)
+                    ?.value
+                    ?.toIntOrNull()
                     ?.let { now - it.hours - 59.minutes }
                     // make sure seconds are zeroed
                     ?.let { it - (it.epochSeconds % 3600).seconds }
-            )
-                ?.also {
-                    println("---------- !!! WARNING !!! ----------")
-                    println("Using instant without a complete date information (minutes are missing)")
-                    println("This may lead to race conditions and some recent posts not being posted")
-                    println("-------------------------------------")
-                }
+            )?.also {
+                println("---------- !!! WARNING !!! ----------")
+                println("Using instant without a complete date information (minutes are missing)")
+                println("This may lead to race conditions and some recent posts not being posted")
+                println("-------------------------------------")
+            }
             // yesterday
-            ?: postPublishedAtFormatYesterday.parseOrNull(this)
+            ?: postPublishedAtFormatYesterday
+                .parseOrNull(this)
                 ?.also { components ->
                     val dateTime = now.toLocalDateTime(timeZone).date.minus(1, DateTimeUnit.DAY)
                     components.year = dateTime.year
                     components.month = dateTime.month
                     components.dayOfMonth = dateTime.dayOfMonth
-                }
-                ?.toLocalDateTime()
+                }?.toLocalDateTime()
                 ?.toInstant(timeZone)
             // this year
-            ?: postPublishedAtFormatThisYear.parseOrNull(this)
+            ?: postPublishedAtFormatThisYear
+                .parseOrNull(this)
                 ?.also { it.year = now.toLocalDateTime(timeZone).year }
                 ?.toLocalDateTime()
                 ?.toInstant(timeZone)
             // past years
-            ?: postPublishedAtFormatPast.parseOrNull(this)
+            ?: postPublishedAtFormatPast
+                .parseOrNull(this)
                 ?.toLocalDateTime()
                 ?.toInstant(timeZone)
             ?: throw IllegalArgumentException("Date & time '$this' cannot be parsed")

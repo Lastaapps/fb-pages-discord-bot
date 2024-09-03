@@ -110,6 +110,7 @@ data class PagePost(
     fun images(limit: Int = 5): List<String> {
         val imagesSet = mutableSetOf<String>()
         val imagesOrdered = mutableListOf<String>()
+
         fun addImage(src: String) {
             if ("fbcdn" in src && src !in imagesSet) {
                 imagesSet += src
@@ -122,7 +123,11 @@ data class PagePost(
 
         fun processAttachment(attachment: Attachment) {
             when (attachment.mediaType) {
-                "photo", "link" -> attachment.media?.image?.src?.let(::addImage)
+                "photo", "link" ->
+                    attachment.media
+                        ?.image
+                        ?.src
+                        ?.let(::addImage)
                 "album" -> attachment.subAttachments?.data?.forEach(::processAttachment)
             }
         }
@@ -143,7 +148,10 @@ data class PagePost(
     /** Returns a list of links associated with the post */
     fun links(): List<String> =
         attachments?.data?.mapNotNull { it ->
-            it.target?.url?.takeIf(::isFBLink)?.let(::decodeFacebookUrl)
+            it.target
+                ?.url
+                ?.takeIf(::isFBLink)
+                ?.let(::decodeFacebookUrl)
         } ?: emptyList()
 
     /** Returns a list of event IDs associated with the post */
@@ -151,7 +159,9 @@ data class PagePost(
         attachments?.data?.mapNotNull {
             if (it.type == "event") {
                 it.target?.id
-            } else null
+            } else {
+                null
+            }
         } ?: emptyList()
 
     fun canBePublished() = !isHidden && isPublished && !isExpired
@@ -176,7 +186,6 @@ data class Place(
         val longitude: Double,
     )
 }
-
 
 /**
  * https://developers.facebook.com/docs/graph-api/reference/story-attachment
@@ -223,13 +232,28 @@ data class Attachment(
     )
 
     enum class MediaType {
-        PHOTO, ALBUM, EVENT, VIDEO,
+        PHOTO,
+        ALBUM,
+        EVENT,
+        VIDEO,
     }
 
     enum class Type {
-        ALBUM, ANIMATED_IMAGE_AUTOPLAY, CHECKIN, COVER_PHOTO,
-        EVENT, LINK, MULTIPLE, MUSIC, NOTE, OFFER,
-        PHOTO, PROFILE_MEDIA, STATUS, VIDEO, VIDEO_AUTOPLAY,
+        ALBUM,
+        ANIMATED_IMAGE_AUTOPLAY,
+        CHECKIN,
+        COVER_PHOTO,
+        EVENT,
+        LINK,
+        MULTIPLE,
+        MUSIC,
+        NOTE,
+        OFFER,
+        PHOTO,
+        PROFILE_MEDIA,
+        STATUS,
+        VIDEO,
+        VIDEO_AUTOPLAY,
     }
 }
 
@@ -282,7 +306,7 @@ data class Event(
         FRIENDS,
 
         @SerialName("work_company")
-        WORK_COMPANY;
+        WORK_COMPANY,
     }
 
     fun toURL() = id.idToFacebookURL()
