@@ -33,13 +33,13 @@ data class AppConfig(
                 redirectURL = str("FACEBOOK_REDIRECT_URL"),
             ),
             discord = Discord(
-                token = str("DISCORD_TOKEN"),
+                token = str("DISCORD_BOT_TOKEN"),
             ),
             server = Server(
                 host = str("SERVER_HOST"),
                 port = int("SERVER_PORT"),
-                endpointPublic = str("SERVER_ENDPOINT_PUBLIC"),
-                endpointOAuth = str("SERVER_ENDPOINT_OAUTH"),
+                endpointPublic = str("SERVER_ENDPOINT_PUBLIC").withSlash(),
+                endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
             ),
             intervalSec = int("INTERVAL_SEC"),
         )
@@ -47,5 +47,6 @@ data class AppConfig(
         private fun key(key: String) = "FB_TO_DC_$key"
         private fun str(key: String) = System.getenv(key(key))
         private fun int(key: String) = str(key).toInt()
+        private fun String.withSlash() = if (this.startsWith("/")) this else "/$this"
     }
 }
