@@ -9,7 +9,7 @@ No one said it's going to be easy.
 ## Facebook Graph API
 
 This is the preferred mode.
-After you set up the server, a link will be printed to the console.
+After you set up the server, an expected login link will be printed to the console.
 You send the link to page admins, they get redirected to a Facebook authorization
 page where they give your app a basic permission.
 Then you create a Discord bot and add it to your server.
@@ -40,6 +40,28 @@ Pass it as a URL param `access_token=YOUR_TOKEN`.
 - `DELETE /admin/:channel_id/:page_id` - Unlink the page to the channel
 - `GET /admin/status` - Lists authorized pages and channels they are linked to.
 
+### Docker Compose
+
+We provide example Docker Compose file bellow:
+
+```docker-compose
+services:
+  bot:
+    build: https://github.com/Lastaapps/fb-pages-discrod-bot.git#main
+    restart: always
+    env_file:
+      - env
+    ports:
+      - 127.0.0.1:8080:8080
+    volumes:
+      - ./storage:/storage:rw
+```
+```env
+FB_DC_API_SERVER_HOST=localhost
+FB_DC_API_SERVER_PORT=8080
+FB_DC_API_DATABASE_FILENAME=/storage/database.db
+...
+```
 
 #### Disclaimer
 

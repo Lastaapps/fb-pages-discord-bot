@@ -25,6 +25,7 @@ data class AppConfig(
         val port: Int,
         val endpointPublic: String,
         val endpointOAuth: String,
+        val hostURL: String,
     )
 
     companion object {
@@ -48,6 +49,7 @@ data class AppConfig(
                         port = int("SERVER_PORT"),
                         endpointPublic = str("SERVER_ENDPOINT_PUBLIC").withSlash(),
                         endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
+                        hostURL = str("SERVER_HOST_URL"),
                     ),
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
