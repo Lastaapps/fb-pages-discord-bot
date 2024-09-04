@@ -61,11 +61,12 @@ class Store(
     }
 
     fun createMessagePostRelation(
+        channelID: String,
         messageID: String,
         postID: String,
     ) {
         log.d { "Creating relation between message $messageID and post $postID" }
-        queries.assignMessageToPost(message_id = messageID, post_id = postID)
+        queries.assignMessageToPost(channel_id = channelID, message_id = messageID, post_id = postID)
     }
 
     fun getMessagePostRelations(): List<Pair<String, String>> =
@@ -74,9 +75,12 @@ class Store(
             .executeAsList()
             .map { it.message_id to it.post_id }
 
-    fun getMessagesRelatedToPost(postID: String): List<String> =
+    fun getMessagesRelatedToPost(
+        channelID: String,
+        postID: String,
+    ): List<String> =
         queries
-            .selectMessagesForPost(postID)
+            .selectMessagesForPost(channelID, postID)
             .executeAsList()
             .map { it.message_id }
 
@@ -94,4 +98,7 @@ class Store(
 }
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun Store.isPostPosted(postID: String): Boolean = getMessagesRelatedToPost(postID).isNotEmpty()
+inline fun Store.isPostPosted(
+    channelID: String,
+    postID: String,
+): Boolean = getMessagesRelatedToPost(channelID, postID).isNotEmpty()

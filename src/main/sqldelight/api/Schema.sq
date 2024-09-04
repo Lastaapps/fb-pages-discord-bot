@@ -11,6 +11,7 @@ CREATE TABLE DiscordPage(
 );
 
 CREATE TABLE MessagePost(
+    channel_id TEXT NOT NULL,
     message_id TEXT NOT NULL,
     post_id TEXT NOT NULL,
     PRIMARY KEY(message_id, post_id)
@@ -28,7 +29,7 @@ removePageToDiscordChannel:
 DELETE FROM DiscordPage WHERE channel_id = ? AND page_id = ?;
 
 assignMessageToPost:
-INSERT INTO MessagePost(message_id, post_id) VALUES (?, ?);
+INSERT INTO MessagePost(channel_id, message_id, post_id) VALUES (?, ?, ?);
 
 selectAllPages:
 SELECT * FROM AuthenticatedPage;
@@ -41,4 +42,4 @@ selectMessagesWithPosts:
 SELECT MessagePost.* FROM MessagePost;
 
 selectMessagesForPost:
-SELECT MessagePost.* FROM MessagePost WHERE post_id = ?;
+SELECT MessagePost.* FROM MessagePost WHERE channel_id = ? AND post_id = ?;

@@ -26,12 +26,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTimedValue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 
 const val API_VERSION = "v20.0"
 private val log = Logger.withTag("Main")
@@ -141,7 +141,7 @@ private suspend fun processBatch(
                         val posts = dataAPI.loadPagePosts(authorizedPage.id, authorizedPage.accessToken)
                         posts
                             .filter { it.canBePublished() }
-                            .filterNot { store.isPostPosted(it.id) }
+                            .filterNot { store.isPostPosted(channelID, it.id) }
                             .parMap(concurrency = concurrency) { post ->
                                 Triple(
                                     authorizedPage,
@@ -159,7 +159,7 @@ private suspend fun processBatch(
             .forEach {
                 log.i { "Posting ${it.second} to $channelID" }
                 val messageID = discordAPI.postPostAndEvents(channelID, it)
-                store.createMessagePostRelation(messageID, it.second.id)
+                store.createMessagePostRelation(channelID, messageID, it.second.id)
             }
     }
 }
