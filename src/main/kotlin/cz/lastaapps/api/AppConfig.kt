@@ -4,6 +4,7 @@ data class AppConfig(
     val facebook: Facebook,
     val discord: Discord,
     val server: Server,
+    val databaseFileName: String,
     val intervalSec: Int,
 ) {
     data class Facebook(
@@ -45,12 +46,13 @@ data class AppConfig(
                         endpointPublic = str("SERVER_ENDPOINT_PUBLIC").withSlash(),
                         endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
                     ),
+                databaseFileName = str("DATABASE_FILENAME"),
                 intervalSec = int("INTERVAL_SEC"),
             )
 
         private fun key(key: String) = "FB_TO_DC_$key"
 
-        private fun str(key: String) = System.getenv(key(key))
+        private fun str(key: String) = System.getenv(key(key)).also { check(it.isNotBlank()) { "The env var $key cannot be blank" } }
 
         private fun int(key: String) = str(key).toInt()
 

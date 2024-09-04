@@ -16,12 +16,12 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.seconds
 
 const val API_VERSION = "v20.0"
 
@@ -29,7 +29,7 @@ fun main() =
     runBlocking {
         println("Starting the bot")
         val config = AppConfig.fromEnv()
-        val store = Store()
+        val store = Store(config)
         val client = createHttpClient()
         val authAPI = AuthAPI(client, config)
         val dataAPI = DataAPI(client)

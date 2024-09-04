@@ -1,0 +1,64 @@
+CREATE TABLE AuthenticatedUser (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    access_token TEXT NOT NULL
+);
+
+CREATE TABLE AuthenticatedPage (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    access_token TEXT NOT NULL,
+    created_by TEXT NOT NULL REFERENCES AuthenticatedUser(id)
+);
+
+CREATE TABLE DiscordChannel(
+    id TEXT PRIMARY KEY NOT NULL
+);
+
+CREATE TABLE DiscordPage(
+    channel_id TEXT NOT NULL REFERENCES DiscordChannel(id),
+    page_id TEXT NOT NULL REFERENCES AuthenticatedPage(id),
+    PRIMARY KEY(channel_id, page_id)
+);
+
+CREATE TABLE MessagePost(
+    message_id TEXT NOT NULL,
+    post_id TEXT NOT NULL,
+    PRIMARY KEY(message_id, post_id)
+);
+CREATE INDEX message_post_post_id_index ON MessagePost(post_id);
+
+insertAuthenticatedUser:
+INSERT INTO AuthenticatedUser(id, name, access_token)
+VALUES (?, ?, ?);
+
+insertAuthenticatedPage:
+INSERT INTO AuthenticatedPage(id, name, access_token, created_by)
+VALUES (?, ?, ?, ?);
+
+insertDiscordChannel:
+INSERT INTO DiscordChannel(id)
+VALUES (?);
+
+assignPageToDiscordChannel:
+INSERT INTO DiscordPage(channel_id, page_id) VALUES (?, ?);
+
+removePageToDiscordChannel:
+DELETE FROM DiscordPage WHERE channel_id = ? AND page_id = ?;
+
+assignMessageToPost:
+INSERT INTO MessagePost(message_id, post_id) VALUES (?, ?);
+
+selectAllAuthenticated:
+SELECT * FROM AuthenticatedUser JOIN AuthenticatedPage ON AuthenticatedUser.id = AuthenticatedPage.created_by;
+
+selectChannelsWithPages:
+SELECT DiscordChannel.id AS channel_id, AuthenticatedPage.name AS page_name, AuthenticatedPage.id AS page_id, AuthenticatedPage.access_token AS page_access_token
+FROM DiscordChannel JOIN DiscordPage ON DiscordChannel.id = DiscordPage.channel_id
+JOIN AuthenticatedPage ON DiscordPage.page_id = AuthenticatedPage.id;
+
+selectMessagesWithPosts:
+SELECT MessagePost.* FROM MessagePost;
+
+selectMessagesForPost:
+SELECT MessagePost.* FROM MessagePost WHERE post_id = ?;

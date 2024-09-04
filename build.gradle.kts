@@ -6,6 +6,7 @@ plugins {
     kotlin("plugin.serialization") version kotlinVersion
     id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("app.cash.sqldelight") version "2.0.2"
 }
 
 group = "cz.lastaapps"
@@ -22,6 +23,14 @@ kotlin {
 
 repositories {
     mavenCentral()
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("cz.lastaapps.api")
+        }
+    }
 }
 
 // I'm to lazy to setup catalogs
@@ -54,6 +63,8 @@ dependencies {
     implementation(platform("io.arrow-kt:arrow-stack:1.2.4"))
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-fx-coroutines")
+
+    implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
     testImplementation(kotlin("test"))
     val kotestVersion = "5.9.1"
