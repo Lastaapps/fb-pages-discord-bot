@@ -2,6 +2,7 @@ package cz.lastaapps.api
 
 import arrow.core.Either
 import arrow.fx.coroutines.parMap
+import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -25,29 +26,30 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTimedValue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 
 const val API_VERSION = "v20.0"
+private val log = Logger.withTag("Main")
 
 fun main() =
     runBlocking {
-        println("Starting the bot")
+        log.i { "Starting the bot" }
         val config = AppConfig.fromEnv()
         val store = Store(config)
         val client = createHttpClient()
         val authAPI = AuthAPI(client, config)
         val dataAPI = DataAPI(client)
 
-        println("Starting Discord")
+        log.i { "Starting Discord" }
         val discordAPI = DiscordAPI.create(config, client)
         discordAPI.start(this)
 
-        println("Starting the server")
+        log.i { "Starting the server" }
         setupServer(
             config,
             routing = {
@@ -106,20 +108,21 @@ fun main() =
             },
         )
 
-        println("Done")
-        println("-".repeat(80))
+        log.i { "Initialization done" }
+        log.i { "-".repeat(80) }
         // TODO https
-        println("FB login address: http://${config.server.host}:${config.server.port}${config.server.endpointPublic}")
+        log.i { "FB login address: http://${config.server.host}:${config.server.port}${config.server.endpointPublic}" }
+        log.i { "-".repeat(80) }
 
         if (config.setupMode) {
+            log.i { "The server is run in setup mode, nothing more to do" }
             return@runBlocking
         }
 
-        delay(3.seconds)
         while (true) {
-            println("Starting collection...")
+            log.i { "Starting collection..." }
             processBatch(store, dataAPI, discordAPI)
-            println("Waiting for ${config.intervalSec.seconds}")
+            log.i { "Waiting for ${config.intervalSec.seconds}" }
             delay(config.intervalSec.seconds)
         }
     }
@@ -155,7 +158,7 @@ private suspend fun processBatch(
             }.flatten()
             .sortedBy { it.second.createdAt }
             .forEach {
-                println("Posting ${it.second} to $channelID")
+                log.i { "Posting ${it.second} to $channelID" }
                 val messageID = discordAPI.postPostAndEvents(channelID, it)
                 store.createMessagePostRelation(messageID, it.second.id)
             }
@@ -189,6 +192,12 @@ private fun createHttpClient() =
     HttpClient {
         install(Logging) {
             level = LogLevel.INFO
+            logger =
+                object : io.ktor.client.plugins.logging.Logger {
+                    override fun log(message: String) {
+                        log.v { message.replace("\n", "\\n") }
+                    }
+                }
         }
         install(DefaultRequest) {
             url(

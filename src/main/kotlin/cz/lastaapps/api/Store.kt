@@ -2,15 +2,21 @@ package cz.lastaapps.api
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import co.touchlab.kermit.Logger
 
 class Store(
     config: AppConfig,
 ) {
+    private val log = Logger.withTag("Store")
+
     private val database: Database = createDatabase(createDriver(config.databaseFileName))
     private val queries get() = database.schemaQueries
 
     fun storeAuthorizedPage(authorizedPage: AuthorizedPageFromUser) {
-        println("Storing $authorizedPage")
+        log.d {
+            "Storing authorized page ${authorizedPage.pageID} ${authorizedPage.pageName} " +
+                "from user ${authorizedPage.userID} ${authorizedPage.userName}"
+        }
         with(authorizedPage) {
             queries.insertAuthenticatedPage(pageID, pageName, pageAccessToken)
         }
@@ -42,6 +48,7 @@ class Store(
         channelID: String,
         pageID: String,
     ) {
+        log.d { "Creating relation between channel $channelID and page $pageID" }
         queries.assignPageToDiscordChannel(channel_id = channelID, page_id = pageID)
     }
 
@@ -49,6 +56,7 @@ class Store(
         channelID: String,
         pageID: String,
     ) {
+        log.d { "Removing relation between channel $channelID and page $pageID" }
         queries.removePageToDiscordChannel(channel_id = channelID, page_id = pageID)
     }
 
@@ -56,6 +64,7 @@ class Store(
         messageID: String,
         postID: String,
     ) {
+        log.d { "Creating relation between message $messageID and post $postID" }
         queries.assignMessageToPost(message_id = messageID, post_id = postID)
     }
 
@@ -70,18 +79,19 @@ class Store(
             .selectMessagesForPost(postID)
             .executeAsList()
             .map { it.message_id }
+
+    private fun createDatabase(driver: SqlDriver): Database = Database(driver)
+
+    private fun createDriver(dbName: String): SqlDriver {
+        log.d { "Creating sql driver from the DB \"$dbName\", schema version ${Database.Schema.version}" }
+        val driver: SqlDriver =
+            JdbcSqliteDriver(
+                "jdbc:sqlite:$dbName",
+                schema = Database.Schema,
+            )
+        return driver
+    }
 }
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Store.isPostPosted(postID: String): Boolean = getMessagesRelatedToPost(postID).isNotEmpty()
-
-private fun createDatabase(driver: SqlDriver): Database = Database(driver)
-
-private fun createDriver(dbName: String): SqlDriver {
-    val driver: SqlDriver =
-        JdbcSqliteDriver(
-            "jdbc:sqlite:$dbName",
-            schema = Database.Schema,
-        )
-    return driver
-}

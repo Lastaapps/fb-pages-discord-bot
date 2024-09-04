@@ -62,6 +62,8 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
 
+    implementation("co.touchlab:kermit:2.0.4")
+
     implementation(platform("io.arrow-kt:arrow-stack:1.2.4"))
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-fx-coroutines")
