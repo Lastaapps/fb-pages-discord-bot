@@ -10,11 +10,11 @@ plugins {
 }
 
 group = "cz.lastaapps"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 application {
-    // mainClass.set("cz.lastaapps.api.MainKt")
-    mainClass.set("cz.lastaapps.scraping.MainKt")
+    mainClass.set("cz.lastaapps.api.MainKt")
+//    mainClass.set("cz.lastaapps.scraping.MainKt")
 }
 
 kotlin {

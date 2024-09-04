@@ -26,12 +26,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.measureTimedValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.measureTimedValue
 
 const val API_VERSION = "v20.0"
 private val log = Logger.withTag("Main")
@@ -110,8 +110,7 @@ fun main() =
 
         log.i { "Initialization done" }
         log.i { "-".repeat(80) }
-        // TODO https
-        log.i { "FB login address: http://${config.server.host}:${config.server.port}${config.server.endpointPublic}" }
+        log.i { "FB login address: https://${config.server.host}:${config.server.port}${config.server.endpointPublic}" }
         log.i { "-".repeat(80) }
 
         if (config.setupMode) {

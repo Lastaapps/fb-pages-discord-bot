@@ -162,18 +162,18 @@ fun main(): Unit =
 
 fun loadConfig(): AppConfig =
     AppConfig(
-        debugMode = System.getenv("FACEBOOK_DEBUG").toBoolean(),
+        debugMode = System.getenv("FB_DC_SCRAPING_DEBUG").toBoolean(),
         AppCookies(
-            cUser = System.getenv("FACEBOOK_COOKIE_c_user"),
-            xs = System.getenv("FACEBOOK_COOKIE_x_s"),
-            mPageVoice = System.getenv("FACEBOOK_COOKIE_m__page_voice"),
+            cUser = System.getenv("FB_DC_SCRAPING_COOKIE_c_user"),
+            xs = System.getenv("FB_DC_SCRAPING_COOKIE_x_s"),
+            mPageVoice = System.getenv("FB_DC_SCRAPING_COOKIE_m__page_voice"),
         ),
-        dcToken = System.getenv("FACEBOOK_DC_TOKEN"),
-        dcChannelID = System.getenv("FACEBOOK_DC_CHANNEL"),
-        pageIds = System.getenv("FACEBOOK_PAGES").split(","),
-        delay = System.getenv("FACEBOOK_DELAY_MINS").toInt().minutes,
-        timeZoneFeed = System.getenv("FACEBOOK_TIMEZONE_FEED").let { TimeZone.of(it) },
-        timeZonePost = System.getenv("FACEBOOK_TIMEZONE_POST").let { TimeZone.of(it) },
-        activeHoursRange = System.getenv("FACEBOOK_ACTIVE_HOURS_START").toInt()..<System.getenv("FACEBOOK_ACTIVE_HOURS_END").toInt(),
-        activeHoursTimezone = System.getenv("FACEBOOK_TIMEZONE_ACTIVE_HOURS").let { TimeZone.of(it) },
+        dcToken = System.getenv("FB_DC_SCRAPING_DC_TOKEN"),
+        dcChannelID = System.getenv("FB_DC_SCRAPING_DC_CHANNEL"),
+        pageIds = System.getenv("FB_DC_SCRAPING_PAGES").split(","),
+        delay = System.getenv("FB_DC_SCRAPING_DELAY_MINS").toInt().minutes,
+        timeZoneFeed = System.getenv("FB_DC_SCRAPING_TIMEZONE_FEED").let { TimeZone.of(it) },
+        timeZonePost = System.getenv("FB_DC_SCRAPING_TIMEZONE_POST").let { TimeZone.of(it) },
+        activeHoursRange = System.getenv("FB_DC_SCRAPING_ACTIVE_HOURS_START").toInt()..<System.getenv("FACEBOOK_ACTIVE_HOURS_END").toInt(),
+        activeHoursTimezone = System.getenv("FB_DC_SCRAPING_TIMEZONE_ACTIVE_HOURS").let { TimeZone.of(it) },
     )

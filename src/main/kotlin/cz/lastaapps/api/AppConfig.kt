@@ -54,7 +54,7 @@ data class AppConfig(
                 intervalSec = int("INTERVAL_SEC"),
             )
 
-        private fun key(key: String) = "FB_TO_DC_$key"
+        private fun key(key: String) = "FB_DC_API_$key"
 
         private fun str(key: String) = System.getenv(key(key)).also { check(it.isNotBlank()) { "The env var $key cannot be blank" } }
 
