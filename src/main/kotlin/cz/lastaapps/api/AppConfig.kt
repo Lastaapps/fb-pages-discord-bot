@@ -1,6 +1,7 @@
 package cz.lastaapps.api
 
 data class AppConfig(
+    val setupMode: Boolean,
     val facebook: Facebook,
     val discord: Discord,
     val server: Server,
@@ -29,6 +30,7 @@ data class AppConfig(
     companion object {
         fun fromEnv() =
             AppConfig(
+                setupMode = bool("SETUP_MODE"),
                 facebook =
                     Facebook(
                         appID = str("FACEBOOK_APP_ID"),
@@ -57,6 +59,8 @@ data class AppConfig(
         private fun str(key: String) = System.getenv(key(key)).also { check(it.isNotBlank()) { "The env var $key cannot be blank" } }
 
         private fun int(key: String) = str(key).toInt()
+
+        private fun bool(key: String) = str(key).toBoolean()
 
         private fun String.withSlash() = if (this.startsWith("/")) this else "/$this"
     }

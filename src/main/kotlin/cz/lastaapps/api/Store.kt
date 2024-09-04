@@ -31,8 +31,10 @@ class Store(
         queries
             .selectChannelsWithPages()
             .executeAsList()
-            .map { (channelID, pageID, pageName, pageAccessToken) ->
-                channelID to AuthorizedPage(id = pageID, name = pageName, accessToken = pageAccessToken)
+            .map {
+                with(it) {
+                    channel_id to AuthorizedPage(id = page_id, name = page_name, accessToken = page_access_token)
+                }
             }.groupBy { it.first }
             .mapValues { (_, value) -> value.map { it.second } }
 

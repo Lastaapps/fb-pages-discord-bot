@@ -1,5 +1,6 @@
 package cz.lastaapps.api
 
+import arrow.core.Either
 import arrow.fx.coroutines.parMap
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
@@ -14,6 +15,7 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.AuthenticationChecked
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
@@ -23,14 +25,13 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlin.time.Duration.Companion.hours
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Instant
+import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTimedValue
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.serialization.json.Json
 
 const val API_VERSION = "v20.0"
 
@@ -44,7 +45,7 @@ fun main() =
         val dataAPI = DataAPI(client)
 
         println("Starting Discord")
-        val discordAPI = DiscordAPI(config)
+        val discordAPI = DiscordAPI.create(config, client)
         discordAPI.start(this)
 
         println("Starting the server")
@@ -111,34 +112,57 @@ fun main() =
         // TODO https
         println("FB login address: http://${config.server.host}:${config.server.port}${config.server.endpointPublic}")
 
-        delay(10.hours)
+        if (config.setupMode) {
+            return@runBlocking
+        }
+
+        delay(3.seconds)
         while (true) {
             println("Starting collection...")
-            val latestPostTimeStamp = Clock.System.now()
-
-            store.loadPageDiscordPairs().forEach { (channelID, authorizedPages) ->
-                authorizedPages
-                    .parMap { authorizedPage ->
-                        val posts = dataAPI.loadPagePosts(authorizedPage.id, authorizedPage.accessToken)
-                        posts
-                            .filter { it.createdAt > latestPostTimeStamp }
-                            .parMap {
-                                it to
-                                    it.eventIDs().parMap { id ->
-                                        dataAPI.loadEventData(id, authorizedPage.accessToken)
-                                    }
-                            }
-                    }.flatten()
-                    .sortedBy { it.first.createdAt }
-                    .forEach {
-                        discordAPI.postPostAndEvents(channelID, it)
-                    }
-            }
-
+            processBatch(store, dataAPI, discordAPI)
             println("Waiting for ${config.intervalSec.seconds}")
             delay(config.intervalSec.seconds)
         }
     }
+
+private suspend fun processBatch(
+    store: Store,
+    dataAPI: DataAPI,
+    discordAPI: DiscordAPI,
+) {
+    val latestPostTimeStamp =
+//                Clock.System.now()
+        Instant.DISTANT_PAST
+    val concurrency = 1
+
+    store.loadPageDiscordPairs().forEach { (channelID, authorizedPages) ->
+        authorizedPages
+            .map { authorizedPage ->
+                Either
+                    .catch {
+                        val posts = dataAPI.loadPagePosts(authorizedPage.id, authorizedPage.accessToken)
+                        posts
+                            .filter { it.createdAt > latestPostTimeStamp }
+                            .parMap(concurrency = concurrency) { post ->
+                                Triple(
+                                    authorizedPage,
+                                    post,
+                                    post.eventIDs().parMap(concurrency = concurrency) { id ->
+                                        dataAPI.loadEventData(id, authorizedPage.accessToken)
+                                    },
+                                )
+                            }
+                    }.onLeft { it.printStackTrace() }
+                    .fold({ emptyList() }, { it })
+                    .filter { it.second.canBePublished() && it.third.all { event -> event.canBePublished() } }
+            }.flatten()
+            .sortedBy { it.second.createdAt }
+            .forEach {
+                println("Posting ${it.second} to $channelID")
+                discordAPI.postPostAndEvents(channelID, it)
+            }
+    }
+}
 
 fun setupServer(
     config: AppConfig,
@@ -149,6 +173,16 @@ fun setupServer(
         host = config.server.host,
         port = config.server.port,
     ) {
+        // Yes, the errors should not be shared, but whatever...
+        install(StatusPages) {
+            exception<Throwable> { call, cause ->
+                cause.printStackTrace()
+                call.respondText(
+                    text = "500: $cause",
+                    status = HttpStatusCode.InternalServerError,
+                )
+            }
+        }
         routing(routing)
     }.start(wait = false)
 }
@@ -157,7 +191,7 @@ private fun createHttpClient() =
     HttpClient {
         install(Logging) {
             level = LogLevel.INFO
-            level = LogLevel.BODY
+//            level = LogLevel.BODY
         }
         install(DefaultRequest) {
             url(

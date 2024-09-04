@@ -2,8 +2,10 @@ package cz.lastaapps.api
 
 import cz.lastaapps.common.decodeFacebookUrl
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlin.math.absoluteValue
 
 @Serializable
 data class OAuthExchangeResponse(
@@ -119,15 +121,28 @@ data class PagePost(
         }
 
         // this is the most important image of the whole post
-        fullPicture?.let(::addImage)
+        // disabled for now as it interferes with events
+//        fullPicture?.let(::addImage)
 
         fun processAttachment(attachment: Attachment) {
+            // to handle albums, where media type is not presented
+            if (attachment.type == "photo") {
+                attachment.media
+                    ?.image
+                    ?.src
+                    ?.let(::addImage)
+                return
+            }
+
             when (attachment.mediaType) {
                 "photo", "link" ->
-                    attachment.media
-                        ?.image
-                        ?.src
-                        ?.let(::addImage)
+                    if (attachment.type in listOf("photo", "link", "status", "share")) {
+                        attachment.media
+                            ?.image
+                            ?.src
+                            ?.let(::addImage)
+                    }
+
                 "album" -> attachment.subAttachments?.data?.forEach(::processAttachment)
             }
         }
@@ -138,11 +153,15 @@ data class PagePost(
     fun titlesAndDescriptions(): List<Pair<String?, String?>> {
         val list = mutableListOf<Pair<String?, String?>>(null to message)
         attachments?.data?.forEach {
-            if (it.type != "event") {
-                list.add(it.title to it.description)
+            if (it.type !in listOf("event", "map")) {
+                if (it.mediaType !in listOf("album")) {
+                    list.add(it.title to it.description)
+                }
             }
         }
-        return list.filter { it.first != null || it.second != null }
+        return list
+            .filter { it.first != null || it.second != null }
+            .distinct()
     }
 
     /** Returns a list of links associated with the post */
@@ -182,9 +201,20 @@ data class Place(
     data class Location(
         val city: String? = null,
         val country: String? = null,
-        val latitude: Double,
-        val longitude: Double,
-    )
+        val latitude: Double? = null,
+        val longitude: Double? = null,
+    ) {
+        val formattedLatitude
+            get() =
+                latitude?.let { coordinate ->
+                    "%.6f%s".format(coordinate.absoluteValue, if (coordinate >= 0) "N" else "S")
+                }
+        val formattedLongitude
+            get() =
+                longitude?.let { coordinate ->
+                    "%.6f%s".format(coordinate.absoluteValue, if (coordinate >= 0) "E" else "W")
+                }
+    }
 }
 
 /**
@@ -196,10 +226,15 @@ data class Attachment(
     val title: String? = null,
     @SerialName("description")
     val description: String? = null,
+    // Official: album, animated_image_autoplay, checkin, cover_photo, event, link,
+    //           multiple, music, note, offer, photo, profile_media, status, video, video_autoplay
+    // Found:    map, share
     @SerialName("type")
     val type: String,
     @SerialName("target")
     val target: Target? = null,
+    // Official: photo, album, event, video
+    // Found:    link
     @SerialName("media_type")
     val mediaType: String? = null,
     @SerialName("media")
@@ -230,31 +265,6 @@ data class Attachment(
         val height: Int,
         val width: Int,
     )
-
-    enum class MediaType {
-        PHOTO,
-        ALBUM,
-        EVENT,
-        VIDEO,
-    }
-
-    enum class Type {
-        ALBUM,
-        ANIMATED_IMAGE_AUTOPLAY,
-        CHECKIN,
-        COVER_PHOTO,
-        EVENT,
-        LINK,
-        MULTIPLE,
-        MUSIC,
-        NOTE,
-        OFFER,
-        PHOTO,
-        PROFILE_MEDIA,
-        STATUS,
-        VIDEO,
-        VIDEO_AUTOPLAY,
-    }
 }
 
 @Serializable
@@ -270,9 +280,11 @@ data class Event(
     @SerialName("place")
     val place: Place? = null,
     @SerialName("start_time")
-    val startTime: String? = null,
+    private val startTime: String? = null,
     @SerialName("end_time")
-    val endTime: String? = null,
+    private val endTime: String? = null,
+    @SerialName("timezone")
+    val timezone: TimeZone,
     @SerialName("type")
     val type: Type,
     @SerialName("is_online")
@@ -288,6 +300,7 @@ data class Event(
         val source: String,
     )
 
+    @Suppress("unused")
     @Serializable
     enum class Type {
         @SerialName("private")
@@ -308,6 +321,9 @@ data class Event(
         @SerialName("work_company")
         WORK_COMPANY,
     }
+
+    val startAt = startTime?.createdTimeToInstant()
+    val endAt = endTime?.createdTimeToInstant()
 
     fun toURL() = id.idToFacebookURL()
 
