@@ -5,6 +5,7 @@ data class AppConfig(
     val discord: Discord,
     val server: Server,
     val databaseFileName: String,
+    val adminToken: String,
     val intervalSec: Int,
 ) {
     data class Facebook(
@@ -47,6 +48,7 @@ data class AppConfig(
                         endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
                     ),
                 databaseFileName = str("DATABASE_FILENAME"),
+                adminToken = str("ADMIN_TOKEN"),
                 intervalSec = int("INTERVAL_SEC"),
             )
 

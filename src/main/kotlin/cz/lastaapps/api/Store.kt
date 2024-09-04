@@ -2,7 +2,6 @@ package cz.lastaapps.api
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import arrow.core.Tuple4
 
 class Store(
     config: AppConfig,
@@ -13,17 +12,17 @@ class Store(
     fun storeAuthorizedPage(authorizedPage: AuthorizedPageFromUser) {
         println("Storing $authorizedPage")
         with(authorizedPage) {
-            queries.transaction {
-                queries.insertAuthenticatedUser(userID, userName, userAccessToken)
-                queries.insertAuthenticatedPage(pageID, pageName, pageAccessToken, userID)
-            }
+            queries.insertAuthenticatedPage(pageID, pageName, pageAccessToken)
         }
     }
 
-    fun createDiscordChannel(channelID: String) {
-        println("Creating channel $channelID")
-        queries.insertDiscordChannel(channelID)
-    }
+    fun loadAuthenticatedPages(): List<AuthorizedPage> =
+        queries
+            .selectAllPages()
+            .executeAsList()
+            .map { (pageID, pageName, pageAccessToken) ->
+                AuthorizedPage(id = pageID, name = pageName, accessToken = pageAccessToken)
+            }
 
     /**
      * Return discord channel ID and page access token of the pages related to the channel
@@ -44,11 +43,12 @@ class Store(
         queries.assignPageToDiscordChannel(channel_id = channelID, page_id = pageID)
     }
 
-    fun getChannelPageRelation() =
-        queries
-            .selectChannelsWithPages()
-            .executeAsList()
-            .map { Tuple4(it.channel_id, it.page_id, it.page_name, it.page_access_token) }
+    fun removeChannelPageRelation(
+        channelID: String,
+        pageID: String,
+    ) {
+        queries.removePageToDiscordChannel(channel_id = channelID, page_id = pageID)
+    }
 
     fun createMessagePostRelation(
         messageID: String,
@@ -76,7 +76,7 @@ private fun createDriver(dbName: String): SqlDriver {
     val driver: SqlDriver =
         JdbcSqliteDriver(
             "jdbc:sqlite:$dbName",
+            schema = Database.Schema,
         )
-    Database.Schema.create(driver)
     return driver
 }

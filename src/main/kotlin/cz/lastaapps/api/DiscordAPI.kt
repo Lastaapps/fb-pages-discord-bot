@@ -12,6 +12,8 @@ class DiscordAPI(
         }
     }
 
+    fun getChannelName(channelID: String): String = "Channel name"
+
     fun postPostAndEvents(
         channelID: String,
         posts: Pair<PagePost, List<Event>>,
