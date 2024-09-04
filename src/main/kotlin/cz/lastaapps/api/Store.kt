@@ -72,6 +72,9 @@ class Store(
             .map { it.message_id }
 }
 
+@Suppress("NOTHING_TO_INLINE")
+inline fun Store.isPostPosted(postID: String): Boolean = getMessagesRelatedToPost(postID).isNotEmpty()
+
 private fun createDatabase(driver: SqlDriver): Database = Database(driver)
 
 private fun createDriver(dbName: String): SqlDriver {

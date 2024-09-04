@@ -11,9 +11,9 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
+import kotlin.math.absoluteValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlin.math.absoluteValue
 
 class DiscordAPI private constructor(
     private val client: HttpClient,
@@ -50,111 +50,113 @@ class DiscordAPI private constructor(
     suspend fun postPostAndEvents(
         channelID: String,
         postWithEvents: Triple<AuthorizedPage, PagePost, List<Event>>,
-    ) {
+    ): String {
         val (page, post, events) = postWithEvents
 
         val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
 
-        kord.rest.channel.createMessage(Snowflake(channelID)) {
-            val postImageUrl =
-                post
-                    .images()
-                    .firstOrNull()
-                    ?.let { url ->
-                        addFile("post_img", url, client)
-                    }?.url
-
-            val postDescription =
-                buildString {
-                    post.titlesAndDescriptions().forEach { (title, body) ->
-                        title?.let { append("**$it**\n") }
-                        body?.let { append("$it\n") }
-                        append('\n')
-                        append('\n')
-                    }
-                }
-
-            if (postDescription.isNotBlank() || postImageUrl != null) {
-                embed {
-                    timestamp = post.createdAt
-                    title = page.name
-                    description = postDescription
-                    url = post.toURL()
-                    image = postImageUrl
-                    color = postColor
-
-                    post.place?.let {
-                        field {
-                            name = it.name ?: it.location?.city ?: "Neznámo kde"
-                            value =
-                                listOfNotNull(
-                                    listOfNotNull(
-                                        it.location?.city,
-                                        it.location?.formattedLatitude,
-                                        it.location?.formattedLongitude,
-                                    ).joinToString(", ").takeIf { it.isNotBlank() },
-                                    it.toURL(),
-                                ).joinToString("\n")
-                        }
-                    }
-
-                    if (post.images().size > 1) {
-                        field {
-                            name = "Album"
-                            value = "Tento příspěvek skrývá více fotek/videí"
-                        }
-                    }
-                    post.links().takeIf { it.isNotEmpty() }?.let {
-                        field {
-                            name = "Odkazy"
-                            value = it.joinToString("\n")
-                        }
-                    }
-                }
-            }
-
-            events.forEach { event ->
-                val eventImageUrl =
-                    event.coverPhoto
-                        ?.source
+        val message =
+            kord.rest.channel.createMessage(Snowflake(channelID)) {
+                val postImageUrl =
+                    post
+                        .images()
+                        .firstOrNull()
                         ?.let { url ->
-                            addFile("event_img", url, client)
+                            addFile("post_img", url, client)
                         }?.url
 
-                embed {
-                    timestamp = post.createdAt
-                    title = event.name
-                    description = event.description?.trimToDescription()
-                    url = event.toURL()
-                    image = eventImageUrl
-                    color = postColor
+                val postDescription =
+                    buildString {
+                        post.titlesAndDescriptions().forEach { (title, body) ->
+                            title?.let { append("**$it**\n") }
+                            body?.let { append("$it\n") }
+                            append('\n')
+                            append('\n')
+                        }
+                    }
 
-                    // event time
-                    listOfNotNull(event.startAt, event.endAt)
-                        .takeUnless { it.isEmpty() }
-                        ?.joinToString(" — ") { it.formatDateTime(event.timezone) }
-                        ?.let {
+                if (postDescription.isNotBlank() || postImageUrl != null) {
+                    embed {
+                        timestamp = post.createdAt
+                        title = page.name
+                        description = postDescription
+                        url = post.toURL()
+                        image = postImageUrl
+                        color = postColor
+
+                        post.place?.let {
                             field {
-                                name = "Kdy?"
-                                value = it
+                                name = it.name ?: it.location?.city ?: "Neznámo kde"
+                                value =
+                                    listOfNotNull(
+                                        listOfNotNull(
+                                            it.location?.city,
+                                            it.location?.formattedLatitude,
+                                            it.location?.formattedLongitude,
+                                        ).joinToString(", ").takeIf { it.isNotBlank() },
+                                        it.toURL(),
+                                    ).joinToString("\n")
                             }
                         }
 
-                    event.place?.name?.let {
-                        field {
-                            name = "Kde?"
-                            value = it
+                        if (post.images().size > 1) {
+                            field {
+                                name = "Album"
+                                value = "Tento příspěvek skrývá více fotek/videí"
+                            }
+                        }
+                        post.links().takeIf { it.isNotEmpty() }?.let {
+                            field {
+                                name = "Odkazy"
+                                value = it.joinToString("\n")
+                            }
                         }
                     }
-                    if (event.isOnline) {
-                        field {
-                            name = "Onlive událost"
-                            value = "Více info v příspěvku"
+                }
+
+                events.forEach { event ->
+                    val eventImageUrl =
+                        event.coverPhoto
+                            ?.source
+                            ?.let { url ->
+                                addFile("event_img", url, client)
+                            }?.url
+
+                    embed {
+                        timestamp = post.createdAt
+                        title = event.name
+                        description = event.description?.trimToDescription()
+                        url = event.toURL()
+                        image = eventImageUrl
+                        color = postColor
+
+                        // event time
+                        listOfNotNull(event.startAt, event.endAt)
+                            .takeUnless { it.isEmpty() }
+                            ?.joinToString(" — ") { it.formatDateTime(event.timezone) }
+                            ?.let {
+                                field {
+                                    name = "Kdy?"
+                                    value = it
+                                }
+                            }
+
+                        event.place?.name?.let {
+                            field {
+                                name = "Kde?"
+                                value = it
+                            }
+                        }
+                        if (event.isOnline) {
+                            field {
+                                name = "Onlive událost"
+                                value = "Více info v příspěvku"
+                            }
                         }
                     }
                 }
             }
-        }
+        return message.id.value.toString()
     }
 
     // description has a limit of 4096 characters

@@ -27,7 +27,6 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -130,10 +129,7 @@ private suspend fun processBatch(
     dataAPI: DataAPI,
     discordAPI: DiscordAPI,
 ) {
-    val latestPostTimeStamp =
-//                Clock.System.now()
-        Instant.DISTANT_PAST
-    val concurrency = 1
+    val concurrency = 3
 
     store.loadPageDiscordPairs().forEach { (channelID, authorizedPages) ->
         authorizedPages
@@ -142,7 +138,8 @@ private suspend fun processBatch(
                     .catch {
                         val posts = dataAPI.loadPagePosts(authorizedPage.id, authorizedPage.accessToken)
                         posts
-                            .filter { it.createdAt > latestPostTimeStamp }
+                            .filter { it.canBePublished() }
+                            .filterNot { store.isPostPosted(it.id) }
                             .parMap(concurrency = concurrency) { post ->
                                 Triple(
                                     authorizedPage,
@@ -154,12 +151,13 @@ private suspend fun processBatch(
                             }
                     }.onLeft { it.printStackTrace() }
                     .fold({ emptyList() }, { it })
-                    .filter { it.second.canBePublished() && it.third.all { event -> event.canBePublished() } }
+                    .filter { it.third.all { event -> event.canBePublished() } }
             }.flatten()
             .sortedBy { it.second.createdAt }
             .forEach {
                 println("Posting ${it.second} to $channelID")
-                discordAPI.postPostAndEvents(channelID, it)
+                val messageID = discordAPI.postPostAndEvents(channelID, it)
+                store.createMessagePostRelation(messageID, it.second.id)
             }
     }
 }
@@ -191,7 +189,6 @@ private fun createHttpClient() =
     HttpClient {
         install(Logging) {
             level = LogLevel.INFO
-//            level = LogLevel.BODY
         }
         install(DefaultRequest) {
             url(
