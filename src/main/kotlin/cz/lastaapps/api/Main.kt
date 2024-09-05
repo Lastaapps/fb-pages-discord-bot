@@ -3,6 +3,7 @@ package cz.lastaapps.api
 import arrow.core.Either
 import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.SystemWriter
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -34,10 +35,12 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTimedValue
 
 const val API_VERSION = "v20.0"
-private val log = Logger.withTag("Main")
+private val log by lazy { Logger.withTag("Main") }
 
 fun main() =
     runBlocking {
+        Logger.setLogWriters(SystemWriter(TimeStampFormatter))
+
         log.i { "Starting the bot" }
         val config = AppConfig.fromEnv()
         val store = Store(config)
@@ -63,7 +66,7 @@ fun main() =
                     pages.forEach(store::storeAuthorizedPage)
                     call.respond(
                         HttpStatusCode.OK,
-                        "Access to your pages was granted. Please, contact the bot administrator that you finished the registration process, so the page can be linked to appropriate Discord channel channel.",
+                        "Access to your pages was successfully granted. Please, contact the bot administrator now, so the page can be linked to the appropriate Discord channel.",
                     )
                 }
                 route("/admin") {
@@ -193,8 +196,14 @@ private fun createHttpClient() =
             level = LogLevel.INFO
             logger =
                 object : io.ktor.client.plugins.logging.Logger {
+                    private val accessTokenRegex = """access_token=[^?&#]*""".toRegex()
+
                     override fun log(message: String) {
-                        log.v { message.replace("\n", "\\n") }
+                        log.v {
+                            message
+                                .replace(accessTokenRegex, "access_token=XXX")
+                                .replace("\n", "\\n\t")
+                        }
                     }
                 }
         }

@@ -1,5 +1,10 @@
 package cz.lastaapps.api
 
+import co.touchlab.kermit.Message
+import co.touchlab.kermit.MessageStringFormatter
+import co.touchlab.kermit.Severity
+import co.touchlab.kermit.Tag
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -52,3 +57,24 @@ fun Instant.formatDateTime(timeZone: TimeZone) =
                 minute(padding = Padding.ZERO)
             },
         )
+
+// inspired by DefaultFormatter
+object TimeStampFormatter : MessageStringFormatter {
+    override fun formatMessage(
+        severity: Severity?,
+        tag: Tag?,
+        message: Message,
+    ): String {
+        val sb = StringBuilder()
+
+        sb.append('[')
+        sb.append(Instant.fromEpochSeconds(Clock.System.now().epochSeconds))
+        sb.append("]: ")
+
+        if (severity != null) sb.append(formatSeverity(severity)).append(" ")
+        if (tag != null && tag.tag.isNotEmpty()) sb.append(formatTag(tag)).append(" ")
+        sb.append(message.message)
+
+        return sb.toString()
+    }
+}
