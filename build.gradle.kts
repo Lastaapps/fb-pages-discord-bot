@@ -1,5 +1,5 @@
 plugins {
-    val kotlinVersion = "2.0.20"
+    val kotlinVersion = "2.1.10"
 
     application
     kotlin("jvm") version kotlinVersion
@@ -36,24 +36,24 @@ sqldelight {
 // I'm to lazy to setup catalogs
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0-RC")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
-    val kordVersion = "0.14.0"
+    val kordVersion = "0.15.0"
     implementation("dev.kord:kord-core:$kordVersion")
     implementation("dev.kord:kord-common:$kordVersion")
     implementation("dev.kord:kord-rest:$kordVersion")
 
     implementation("it.skrape:skrapeit:1.3.0-alpha.2")
     // fix security vulnerabilities in skrapeit libs
-    implementation("ch.qos.logback:logback-core:1.5.7")
-    implementation("ch.qos.logback:logback-classic:1.5.7")
+    implementation("ch.qos.logback:logback-core:1.5.16")
+    implementation("ch.qos.logback:logback-classic:1.5.16")
     implementation("commons-net:commons-net:3.11.1")
-    implementation("org.apache.commons:commons-text:1.12.0")
-    implementation("org.jsoup:jsoup:1.18.1")
+    implementation("org.apache.commons:commons-text:1.13.0")
+    implementation("org.jsoup:jsoup:1.18.3")
     implementation("xalan:xalan:2.7.3")
 
-    val ktorVersion = "2.3.12"
+    val ktorVersion = "3.0.3"
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-logging:$ktorVersion")
@@ -62,9 +62,9 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
 
-    implementation("co.touchlab:kermit:2.0.4")
+    implementation("co.touchlab:kermit:2.0.5")
 
-    implementation(platform("io.arrow-kt:arrow-stack:1.2.4"))
+    implementation(platform("io.arrow-kt:arrow-stack:2.0.1"))
     implementation("io.arrow-kt:arrow-core")
     implementation("io.arrow-kt:arrow-fx-coroutines")
 
