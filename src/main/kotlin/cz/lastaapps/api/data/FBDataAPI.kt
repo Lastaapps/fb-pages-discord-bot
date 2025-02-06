@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import cz.lastaapps.api.API_VERSION
 import cz.lastaapps.api.data.model.Event
 import cz.lastaapps.api.data.model.PagePost
+import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import io.ktor.client.HttpClient
@@ -20,7 +21,7 @@ class FBDataAPI(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
     ): List<PagePost> {
-        log.d { "Loading page posts $pageID" }
+        log.d { "Loading page posts ${pageID.id}" }
         return client
             .get("/$API_VERSION/${pageID.id}/feed") {
                 parameter("access_token", pageAccessToken.token)
@@ -35,12 +36,12 @@ class FBDataAPI(
     }
 
     suspend fun loadEventData(
-        eventID: String,
+        eventID: FBEventID,
         pageAccessToken: PageAccessToken,
     ): Event {
-        log.d { "Loading event $eventID" }
+        log.d { "Loading event ${eventID.id}" }
         return client
-            .get("/$API_VERSION/$eventID") {
+            .get("/$API_VERSION/${eventID.id}") {
                 parameter("access_token", pageAccessToken)
                 parameter(
                     "fields",

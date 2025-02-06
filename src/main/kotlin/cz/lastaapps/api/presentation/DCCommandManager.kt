@@ -14,7 +14,7 @@ import cz.lastaapps.api.domain.usecase.GetPagesForChannelUC
 import cz.lastaapps.api.domain.usecase.ParsePageIDUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.VerifyUserPagesUC
-import dev.kord.core.behavior.interaction.response.DeferredPublicMessageInteractionResponseBehavior
+import dev.kord.core.behavior.interaction.response.DeferredMessageInteractionResponseBehavior
 import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.entity.application.GlobalChatInputCommand
 import dev.kord.core.event.interaction.GuildChatInputCommandInteractionCreateEvent
@@ -44,13 +44,14 @@ class DCCommandManager(
         if (config.facebook.enabledLogin) {
             registerAuthorizeLogin()
         }
-        if (config.facebook.enabledSystemUser) {
-            registerAuthorizeSystemUser()
+        if (config.facebook.enabledUserTokens) {
+            registerAuthorizeUserToken()
         }
     }
 
     private suspend fun registerListVerified() =
         kord.createGlobalChatInputCommand("fb_list_available", "Lists pages that were verified and can be used")
+        { disableCommandInGuilds() }
             .toHandler {
                 when (val res = getAuthorizedPages()) {
                     is Either.Left -> "Internal error: ${res.value.text()}"
@@ -70,6 +71,7 @@ class DCCommandManager(
 
     private suspend fun registerListLocal() =
         kord.createGlobalChatInputCommand("fb_list_local", "Lists pages relayed into the current channel")
+        { disableCommandInGuilds() }
             .toHandler {
                 when (val res = getPagesForChannelUC(interaction.channelId.toChannelID())) {
                     is Either.Left -> "Internal error: ${res.value.text()}"
@@ -83,6 +85,7 @@ class DCCommandManager(
             string("page_id", "Page ID or link") {
                 required = true
             }
+            disableCommandInGuilds()
         }.toHandler {
             val pageID = when (val res = parsePageIDUC(interaction.command.strings["page_id"]!!)) {
                 is Either.Left -> {
@@ -97,7 +100,7 @@ class DCCommandManager(
                     "Failed to add page: ${page.value.text()}."
 
                 is Either.Right ->
-                    "Page *${page.value.name}* added."
+                    "Page *${page.value.name}* added. Posts will be synced in at most ${config.interval}."
             }
         }
 
@@ -106,6 +109,7 @@ class DCCommandManager(
             string("page_id", "Page ID or link") {
                 required = true
             }
+            disableCommandInGuilds()
         }.toHandler {
             val pageID = when (val res = parsePageIDUC(interaction.command.strings["page_id"]!!)) {
                 is Either.Left -> {
@@ -126,17 +130,22 @@ class DCCommandManager(
 
     private suspend fun registerAuthorizeLogin() =
         kord.createGlobalChatInputCommand("fb_authorize_login", "Open login dialog where you can authorize some apps")
+        { disableCommandInGuilds() }
             .toHandler {
                 "Use this [link](${getOAuthLink()}) to authorize your pages."
             }
 
-    private suspend fun registerAuthorizeSystemUser() =
-        kord.createGlobalChatInputCommand("fb_authorize_system_user", "Accepts system user, authorizes all its pages") {
-            string("system_user_token", "Generated system user token") {
+    private suspend fun registerAuthorizeUserToken() =
+        kord.createGlobalChatInputCommand(
+            "fb_authorize_user",
+            "Accepts (system) user token, authorizes all its pages",
+        ) {
+            string("user_token", "Generated (system) user token") {
                 required = true
             }
+            disableCommandInGuilds()
         }.toHandler {
-            when (val pages = verifyUserPages(UserAccessToken(interaction.command.strings["system_user_token"]!!))) {
+            when (val pages = verifyUserPages(UserAccessToken(interaction.command.strings["user_token"]!!))) {
                 is Either.Left -> "Failed to authorize system user: ${pages.value.text()}"
                 is Either.Right ->
                     "Pages successfully authorized pages, you can add them now\n" + pages.value.toTable { "No pages authorized by this user" }
@@ -157,11 +166,16 @@ class DCCommandManager(
         }
 
     private fun GlobalChatInputCommand.toHandler(
-        handle: suspend GuildChatInputCommandInteractionCreateEvent.(DeferredPublicMessageInteractionResponseBehavior) -> String,
+        handle: suspend GuildChatInputCommandInteractionCreateEvent.(DeferredMessageInteractionResponseBehavior) -> String,
     ) {
         kord.on<GuildChatInputCommandInteractionCreateEvent> {
             if (this@toHandler.id == interaction.invokedCommandId) {
-                val response = interaction.deferPublicResponse()
+
+                // Everyone sees the response
+                // val response = interaction.deferPublicResponse()
+                // Only the user sees the response
+                val response = interaction.deferEphemeralResponse()
+
                 handle(response)
                     .let { response.respond { content = it } }
             }

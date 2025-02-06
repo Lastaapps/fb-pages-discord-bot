@@ -4,9 +4,11 @@ import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.model.Event
 import cz.lastaapps.api.data.model.PagePost
 import cz.lastaapps.api.domain.model.AuthorizedPage
+import cz.lastaapps.api.domain.model.id.DCChannelID
+import cz.lastaapps.api.domain.model.id.DCMessageID
+import cz.lastaapps.api.domain.model.id.toSnowflake
 import cz.lastaapps.common.colorsSet
 import cz.lastaapps.common.imageExtensions
-import dev.kord.common.entity.Snowflake
 import dev.kord.rest.NamedFile
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.embed
@@ -25,11 +27,6 @@ class DiscordAPI(
     private val kord get() = discordKord.kord
     private val rest get() = kord.rest
 
-    suspend fun getChannelName(channelID: String): String =
-        rest.channel
-            .getChannel(Snowflake(channelID))
-            .name.value!!
-
     private suspend fun UserMessageCreateBuilder.addFile(
         nameWithoutExtension: String,
         url: String,
@@ -45,16 +42,17 @@ class DiscordAPI(
     }
 
     suspend fun postPostAndEvents(
-        channelID: String,
-        postWithEvents: Triple<AuthorizedPage, PagePost, List<Event>>,
-    ): String {
-        val (page, post, events) = postWithEvents
-        log.d { "Posting post ${post.id} and events ${events.map { it.id }} from page ${page.fbId} to channel $channelID" }
+        channelID: DCChannelID,
+        page: AuthorizedPage,
+        post: PagePost,
+        events: List<Event>,
+    ): DCMessageID {
+        log.d { "Posting post ${post.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
 
         val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
 
         val message =
-            kord.rest.channel.createMessage(Snowflake(channelID)) {
+            kord.rest.channel.createMessage(channelID.toSnowflake()) {
                 val postImageUrl =
                     post
                         .images()
@@ -154,7 +152,7 @@ class DiscordAPI(
                     }
                 }
             }
-        return message.id.value.toString()
+        return DCMessageID(message.id.value)
     }
 
     // description has a limit of 4096 characters

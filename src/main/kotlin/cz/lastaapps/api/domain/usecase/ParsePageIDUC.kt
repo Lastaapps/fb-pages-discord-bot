@@ -6,7 +6,7 @@ import arrow.core.Some
 import arrow.core.raise.either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.FBAuthAPI
-import cz.lastaapps.api.data.Repository
+import cz.lastaapps.api.data.ManagementRepo
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.Outcome
@@ -17,7 +17,7 @@ import io.ktor.http.Url
 
 class ParsePageIDUC(
     private val config: AppConfig,
-    private val repo: Repository,
+    private val repo: ManagementRepo,
     private val authApi: FBAuthAPI,
     private val appTokenProvider: AppTokenProvider,
 ) {
@@ -49,10 +49,16 @@ class ParsePageIDUC(
             if (allowUrl) {
                 Either.catch {
                     val url = Url(pageReference)
-                    val pageID = url
+
+                    // This ID does not work in the Graph API for some reason
+//                    url.parameters["id"]?.let { pageID ->
+//                        return invoke(pageID, allowUrl = false)
+//                    }
+
+                    val pageIDPath = url
                         .segments
                         .first()
-                    return invoke(pageID, allowUrl = false)
+                    return invoke(pageIDPath, allowUrl = false)
                 }
             }
 

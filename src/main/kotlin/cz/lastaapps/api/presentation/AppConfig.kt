@@ -1,19 +1,21 @@
 package cz.lastaapps.api.presentation
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
 data class AppConfig(
-    val setupMode: Boolean,
     val facebook: Facebook,
     val discord: Discord,
     val server: Server,
     val databaseFileName: String,
     val adminToken: String,
-    val intervalSec: Int,
+    val interval: Duration,
 ) {
     data class Facebook(
         val appID: String,
         val appSecret: String,
         val enabledPublicContent: Boolean,
-        val enabledSystemUser: Boolean,
+        val enabledUserTokens: Boolean,
         val enabledLogin: Boolean,
         val loginConfigID: String?,
         val loginRedirectURL: String?,
@@ -42,14 +44,13 @@ data class AppConfig(
     companion object {
         fun fromEnv() =
             AppConfig(
-                setupMode = bool("SETUP_MODE"),
                 facebook =
                     Facebook(
                         appID = str("FACEBOOK_APP_ID"),
                         appSecret = str("FACEBOOK_APP_SECRET"),
-                        enabledPublicContent = str("FACEBOOK_PUBLIC_ENABLED").toBoolean(),
-                        enabledSystemUser = str("FACEBOOK_SYSTEM_USER_ENABLED").toBoolean(),
-                        enabledLogin = str("FACEBOOK_LOGIN_ENABLED").toBoolean(),
+                        enabledPublicContent = bool("FACEBOOK_PUBLIC_ENABLED"),
+                        enabledUserTokens = bool("FACEBOOK_USER_TOKENS_ENABLED"),
+                        enabledLogin = bool("FACEBOOK_LOGIN_ENABLED"),
                         loginConfigID = str("FACEBOOK_LOGIN_CONFIG_ID"),
                         loginRedirectURL = str("FACEBOOK_LOGIN_REDIRECT_URL"),
                     ),
@@ -67,7 +68,7 @@ data class AppConfig(
                     ),
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
-                intervalSec = int("INTERVAL_SEC"),
+                interval = int("INTERVAL_SEC").seconds,
             )
 
         private fun key(key: String) = "FB_DC_API_$key"

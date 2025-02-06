@@ -1,7 +1,7 @@
 package cz.lastaapps.api.domain.model.id
 
 @JvmInline
-value class DBChannelID(val id: ULong) {
+value class FBPostID(val id: String) {
     override fun toString(): String {
         error("Forbidden")
     }

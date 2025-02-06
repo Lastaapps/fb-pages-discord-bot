@@ -9,10 +9,13 @@ Translations from Czech are missing in both variants, feel free to create a PR.
 
 ## TODO
 
+- add try catches everywhere
 - add pictures into README
 - add config section into README
-- add support for bot commands
+- add doc for bot commands
 - update example env
+- simple pages search
+- explicit post refresh request
 
 ## DC bot interface
 

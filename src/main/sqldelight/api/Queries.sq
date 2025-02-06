@@ -1,9 +1,5 @@
 
-getAllPagesForChannel:
-SELECT FB_Page.* FROM FB_Page
-INNER JOIN DC_Channel_FB_Page ON FB_Page.id = DC_Channel_FB_Page.fb_page_id
-INNER JOIN DC_Channel ON DC_Channel_FB_Page.channel_id = DC_Channel.id
-WHERE channel_id = ?;
+-- TODO implement limits everywhere in case page is authorized by multiple tokens
 
 getAuthorizedPages:
 SELECT FB_Page.*, FB_Page_Token.token FROM FB_Page
@@ -17,10 +13,34 @@ INNER JOIN FB_Page_FB_Page_Token ON FB_Page.id = FB_Page_FB_Page_Token.fb_page_i
 INNER JOIN FB_Page_Token ON FB_Page_FB_Page_Token.fb_page_token_id = FB_Page_Token.id
 WHERE fb_id = ?;
 
+getPagesAndChannels:
+SELECT DC_Channel.id, DC_Channel.name AS ch_name, DC_Channel.dc_id, FB_Page.id, FB_Page.fb_id, FB_Page.name FROM FB_Page
+INNER JOIN DC_Channel_FB_Page ON FB_Page.id = DC_Channel_FB_Page.fb_page_id
+INNER JOIN DC_Channel ON DC_Channel_FB_Page.channel_id = DC_Channel.id
+ORDER BY DC_Channel.id, FB_Page.id
+;
+
+getPagesForChannel:
+SELECT FB_Page.* FROM FB_Page
+INNER JOIN DC_Channel_FB_Page ON FB_Page.id = DC_Channel_FB_Page.fb_page_id
+INNER JOIN DC_Channel ON DC_Channel_FB_Page.channel_id = DC_Channel.id
+WHERE channel_id = ?
+;
+
+getAuthorizedPagesAndChannels:
+SELECT DC_Channel.id, DC_Channel.name AS ch_name, DC_Channel.dc_id, FB_Page.id, FB_Page.fb_id, FB_Page.name, FB_Page_Token.token FROM FB_Page
+INNER JOIN FB_Page_FB_Page_Token ON FB_Page.id = FB_Page_FB_Page_Token.fb_page_id
+INNER JOIN FB_Page_Token ON FB_Page_FB_Page_Token.fb_page_token_id = FB_Page_Token.id
+INNER JOIN DC_Channel_FB_Page ON FB_Page.id = DC_Channel_FB_Page.fb_page_id
+INNER JOIN DC_Channel ON DC_Channel_FB_Page.channel_id = DC_Channel.id
+ORDER BY DC_Channel.id, FB_Page.id
+;
+
 getAuthorizedPagesForChannel:
 SELECT FB_Page.*, FB_Page_Token.token FROM FB_Page
 INNER JOIN FB_Page_FB_Page_Token ON FB_Page.id = FB_Page_FB_Page_Token.fb_page_id
 INNER JOIN FB_Page_Token ON FB_Page_FB_Page_Token.fb_page_token_id = FB_Page_Token.id
 INNER JOIN DC_Channel_FB_Page ON FB_Page.id = DC_Channel_FB_Page.fb_page_id
 INNER JOIN DC_Channel ON DC_Channel_FB_Page.channel_id = DC_Channel.id
-WHERE channel_id = ?;
+WHERE channel_id = ?
+;

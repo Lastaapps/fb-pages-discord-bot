@@ -1,0 +1,20 @@
+import cz.lastaapps.api.domain.model.id.DBChannelID;
+import cz.lastaapps.api.domain.model.id.DBPageID;
+import cz.lastaapps.api.domain.model.id.DCMessageID;
+import cz.lastaapps.api.domain.model.id.FBPostID;
+
+-- ############################################################################
+CREATE TABLE Posted_Post(
+    id INTEGER PRIMARY KEY NOT NULL,
+    channel_id INTEGER AS DBChannelID NOT NULL,
+    page_id INTEGER AS DBPageID NOT NULL,
+    fb_id TEXT AS FBPostID NOT NULL,
+    dc_message_id INTEGER AS DCMessageID NOT NULL
+);
+
+createPostedPost:
+INSERT OR IGNORE INTO Posted_Post(id, channel_id, page_id, fb_id, dc_message_id) VALUES (?, ?, ?, ?, ?);
+
+getPostedPostsByIds:
+SELECT fb_id FROM Posted_Post
+WHERE channel_id = ? AND fb_id IN ?;

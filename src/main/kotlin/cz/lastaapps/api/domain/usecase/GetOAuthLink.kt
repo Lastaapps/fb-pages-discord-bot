@@ -1,9 +1,9 @@
 package cz.lastaapps.api.domain.usecase
 
-import cz.lastaapps.api.data.FBAuthAPI
+import cz.lastaapps.api.presentation.RestAPI
 
 class GetOAuthLink(
-    private val authApi: FBAuthAPI,
+    private val restAPI: RestAPI,
 ) {
-    operator fun invoke(): String = authApi.createOAuthURL()
+    operator fun invoke(): String = restAPI.oauthUserEndpoint()
 }

@@ -61,19 +61,6 @@ lastFBPageTokenID:
 SELECT id FROM FB_Page_Token WHERE rowid = last_insert_rowid();
 
 -- ############################################################################
-CREATE TABLE Post(
-    id INTEGER PRIMARY KEY NOT NULL,
-    channel_id INTEGER NOT NULL,
-    page_id INTEGER NOT NULL,
-    FB_id INTEGER NOT NULL,
-    DC_message_id INTEGER NOT NULL
-);
-
-createFBPost:
-INSERT OR IGNORE INTO Post(id, channel_id, page_id, FB_id, DC_message_id) VALUES (?, ?, ?, ?, ?);
-
-
--- ############################################################################
 CREATE TABLE DC_Channel_FB_Page(
     id INTEGER PRIMARY KEY NOT NULL,
     channel_id INTEGER AS DBChannelID NOT NULL REFERENCES DC_Channel(id),
@@ -99,51 +86,3 @@ CREATE TABLE FB_Page_FB_Page_Token(
 
 linkFBPageToFBPageToken:
 INSERT OR IGNORE INTO FB_Page_FB_Page_Token(id, fb_page_id, fb_page_token_id) VALUES (?, ?, ?);
-
-
-
--------------------------------------------------------------------------------
-
-
-CREATE TABLE AuthenticatedPage(
-    id TEXT PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL,
-    access_token TEXT NOT NULL
-);
-
-CREATE TABLE DiscordPage(
-    channel_id TEXT NOT NULL,
-    page_id TEXT NOT NULL REFERENCES AuthenticatedPage(id),
-    PRIMARY KEY(channel_id, page_id)
-);
-
-CREATE TABLE MessagePost(
-    channel_id TEXT NOT NULL,
-    message_id TEXT NOT NULL,
-    post_id TEXT NOT NULL,
-    PRIMARY KEY(message_id, post_id)
-);
-CREATE INDEX message_post_post_id_index ON MessagePost(post_id);
-
-insertAuthenticatedPage:
-INSERT OR REPLACE INTO AuthenticatedPage(id, name, access_token)
-VALUES (?, ?, ?);
-
-assignPageToDiscordChannel:
-INSERT INTO DiscordPage(channel_id, page_id) VALUES (?, ?);
-
-removePageToDiscordChannel:
-DELETE FROM DiscordPage WHERE channel_id = ? AND page_id = ?;
-
-assignMessageToPost:
-INSERT INTO MessagePost(channel_id, message_id, post_id) VALUES (?, ?, ?);
-
-selectChannelsWithPages:
-SELECT DiscordPage.channel_id AS channel_id, AuthenticatedPage.name AS page_name, AuthenticatedPage.id AS page_id, AuthenticatedPage.access_token AS page_access_token
-FROM AuthenticatedPage JOIN DiscordPage ON AuthenticatedPage.id = DiscordPage.page_id;
-
-selectMessagesWithPosts:
-SELECT MessagePost.* FROM MessagePost;
-
-selectMessagesForPost:
-SELECT MessagePost.* FROM MessagePost WHERE channel_id = ? AND post_id = ?;
