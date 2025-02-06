@@ -55,7 +55,7 @@ class PostsRepo(
     }
 
     private suspend fun processBatch() {
-        val concurrency = 3
+        val concurrency = 1 // 3
         log.i { "Starting badge processing..." }
 
         val badge = loadPageDiscordPairs()
@@ -85,7 +85,11 @@ class PostsRepo(
                     val events = post.eventIDs().parMap(concurrency = concurrency) { id ->
                         dataApi.loadEventData(FBEventID(id), page.accessToken)
                     }
-                    log.i { "Posting ${post.id} (${post.message?.take(24)}) to ${channel.name} (${channel.name})" }
+                    log.i {
+                        "Posting ${post.id} (${
+                            post.message?.take(24)?.plus("...")
+                        }) to ${channel.name} (${channel.name})"
+                    }
                     val messageID = discordApi.postPostAndEvents(
                         channel.dcId, page, post, events,
                     )

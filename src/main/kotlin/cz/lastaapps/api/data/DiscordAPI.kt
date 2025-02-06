@@ -70,6 +70,7 @@ class DiscordAPI(
                             append('\n')
                         }
                     }.trimToDescription()
+                        .takeUnless { it.isBlank() } ?: "Viz níže:"
 
                 if (postDescription.isNotBlank() || postImageUrl != null) {
                     embed {

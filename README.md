@@ -19,6 +19,14 @@ Translations from Czech are missing in both variants, feel free to create a PR.
 
 ## DC bot interface
 
+The bot needs following permission in the channel it's supposed to send messages into:
+
+- view channel
+- send messages
+- embed links
+- attach files
+- read message history
+
 ### Removing access to your pages
 
 To remove the access you granted this app to some of your pages,
