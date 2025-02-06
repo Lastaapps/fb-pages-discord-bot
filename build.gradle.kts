@@ -70,6 +70,11 @@ dependencies {
 
     implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
 
+    implementation(platform("io.insert-koin:koin-bom:4.0.2"))
+    implementation("io.insert-koin:koin-core")
+    testImplementation("io.insert-koin:koin-test")
+    testImplementation("io.insert-koin:koin-test-junit5")
+
     testImplementation(kotlin("test"))
     val kotestVersion = "5.9.1"
     testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")

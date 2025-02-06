@@ -1,4 +1,4 @@
-package cz.lastaapps.api
+package cz.lastaapps.api.data
 
 import co.touchlab.kermit.Message
 import co.touchlab.kermit.MessageStringFormatter

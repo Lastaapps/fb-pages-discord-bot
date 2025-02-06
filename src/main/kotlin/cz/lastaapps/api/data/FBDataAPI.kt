@@ -1,24 +1,29 @@
-package cz.lastaapps.api
+package cz.lastaapps.api.data
 
 import co.touchlab.kermit.Logger
+import cz.lastaapps.api.API_VERSION
+import cz.lastaapps.api.data.model.Event
+import cz.lastaapps.api.data.model.PagePost
+import cz.lastaapps.api.domain.model.id.FBPageID
+import cz.lastaapps.api.domain.model.token.PageAccessToken
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 
-class DataAPI(
+class FBDataAPI(
     private val client: HttpClient,
 ) {
     private val log = Logger.withTag("DataAPI")
 
     suspend fun loadPagePosts(
-        pageID: String,
-        pageAccessToken: String,
+        pageID: FBPageID,
+        pageAccessToken: PageAccessToken,
     ): List<PagePost> {
         log.d { "Loading page posts $pageID" }
         return client
-            .get("/${API_VERSION}/$pageID/feed") {
-                parameter("access_token", pageAccessToken)
+            .get("/$API_VERSION/${pageID.id}/feed") {
+                parameter("access_token", pageAccessToken.token)
                 parameter(
                     "fields",
                     "id,message,full_picture,place,is_hidden,is_published,is_expired,created_time,attachments{title,description,target,type,media,media_type,subattachments}",
@@ -31,11 +36,11 @@ class DataAPI(
 
     suspend fun loadEventData(
         eventID: String,
-        pageAccessToken: String,
+        pageAccessToken: PageAccessToken,
     ): Event {
         log.d { "Loading event $eventID" }
         return client
-            .get("/${API_VERSION}/$eventID") {
+            .get("/$API_VERSION/$eventID") {
                 parameter("access_token", pageAccessToken)
                 parameter(
                     "fields",

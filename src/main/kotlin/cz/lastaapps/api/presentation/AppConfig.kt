@@ -1,4 +1,4 @@
-package cz.lastaapps.api
+package cz.lastaapps.api.presentation
 
 data class AppConfig(
     val setupMode: Boolean,
@@ -11,10 +11,21 @@ data class AppConfig(
 ) {
     data class Facebook(
         val appID: String,
-        val configID: String,
         val appSecret: String,
-        val redirectURL: String,
-    )
+        val enabledPublicContent: Boolean,
+        val enabledSystemUser: Boolean,
+        val enabledLogin: Boolean,
+        val loginConfigID: String?,
+        val loginRedirectURL: String?,
+    ) {
+        init {
+            if (enabledLogin) {
+                check(loginConfigID != null && loginRedirectURL != null) {
+                    println("If facebook login is enabled, loginConfigID and loginRedirectURL must be set!")
+                }
+            }
+        }
+    }
 
     data class Discord(
         val token: String,
@@ -35,9 +46,12 @@ data class AppConfig(
                 facebook =
                     Facebook(
                         appID = str("FACEBOOK_APP_ID"),
-                        configID = str("FACEBOOK_CONFIG_ID"),
                         appSecret = str("FACEBOOK_APP_SECRET"),
-                        redirectURL = str("FACEBOOK_REDIRECT_URL"),
+                        enabledPublicContent = str("FACEBOOK_PUBLIC_ENABLED").toBoolean(),
+                        enabledSystemUser = str("FACEBOOK_SYSTEM_USER_ENABLED").toBoolean(),
+                        enabledLogin = str("FACEBOOK_LOGIN_ENABLED").toBoolean(),
+                        loginConfigID = str("FACEBOOK_LOGIN_CONFIG_ID"),
+                        loginRedirectURL = str("FACEBOOK_LOGIN_REDIRECT_URL"),
                     ),
                 discord =
                     Discord(
@@ -58,7 +72,10 @@ data class AppConfig(
 
         private fun key(key: String) = "FB_DC_API_$key"
 
-        private fun str(key: String) = System.getenv(key(key)).also { check(it.isNotBlank()) { "The env var $key cannot be blank" } }
+        private fun str(key: String) =
+            strNull(key).also { check(it.isNotBlank()) { "The env var $key cannot be blank" } }
+
+        private fun strNull(key: String) = System.getenv(key(key))
 
         private fun int(key: String) = str(key).toInt()
 

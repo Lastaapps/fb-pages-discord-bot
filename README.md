@@ -1,32 +1,71 @@
 # FB Pages Discord Bot
 
 The bot gets posts from the Facebook pages given and reposts them to
-specified Discord channels. It comes in two variants:
-Facebook Graph API where you need the page admins to log in to the app
-and scraping, that needs a bot account that will probably get banned quite quickly.
-No one said it's going to be easy.
+specified Discord channels.
 
+It uses official Facebook API to get the posts.
+You can either host it yourself, or contact me, add the Discord bot and enjoy.
 Translations from Czech are missing in both variants, feel free to create a PR.
 
-## Facebook Graph API
+## TODO
 
-This is the preferred mode, but it's significantly more complicated to set up.
-After you set up the server, an expected login link will be printed to the console.
-You send the link to page admins, they get redirected to a Facebook authorization
-page where they give your app a basic permission.
-Then you create a Discord bot and add it to your server.
-The app has no frontend for assigning pages to channels,
-all this is done using the API described bellow.
+- add pictures into README
+- add config section into README
+- add support for bot commands
+- update example env
 
-### Facebook APP
+## DC bot interface
 
-You log into Facebook developer account and create a business app.
-You enable Facebook Business Login (if it is not presented, you created a wrong app type),
-add redirect URL and create a configuration with `pages_show_list` permission.
-Facebook login required you to use https instead of http (you should do it anyway).
-To grant access to a page, you either need a Facebook business portfolio verified as a Tech Provider,
-or you need one of the page admins to become tester of your app. Facebook developer account
-is required to become a tester.
+### Removing access to your pages
+
+To remove the access you granted this app to some of your pages,
+do the according action in Facebook admin panel and just invalidate tokens.
+If the bot runs in public content mode, make your page private,
+otherwise the bot will get your page anyway.
+If you logged in using Business login,
+authenticate again and in list of pages the bot can manage select none.
+If you used system user token, revoke tokens of the system user.
+
+## Own deployment and Authorization
+
+### Facebook Graph API
+
+Head to [Facebook developer page](https://developers.facebook.com),
+create a **business** Facebook app and fill in basic information.
+There are three options how to set up Facebook app permissions:
+
+#### Page Public Content Access
+
+The easiest way to set up the bot is to
+obtain [Page Public Content Access](https://developers.facebook.com/docs/features-reference/page-public-content-access)
+feature.
+App review and business verification is needed for this feature,
+you should be able to pass it quite easily.
+With this permission, you can access any public page and bring it over to Discord
+
+#### Pages of a logged-in user
+
+Add business (not user) login feature to your app and fill in related settings.
+App review, business verification and tech provider verification (hard to get) is needed for this feature.
+Then, if a user logs into your app, you can access all the pages he has access to.
+You can access pages where one of the app's developers/testers is admin without verification.
+Therefore, to bypass app review and business verification, you need to become admin of the page or
+one of the admins needs to become your app tester.
+This app shows the auth link (if the module is set up) at startup, send this link to users to log in.
+Required permissions are `pages_show_list`, `page_events` and `pages_read_engagement`.
+
+#### Pages of a business portfolio
+
+This option is similar to the previous one. In your [Meta Business Suit](https://business.facebook.com/latest),
+head into the system users section. Make sure that your portfolio manages the given pages.
+Create a new system user, give it permissions for bot the bot and pages.
+Then click the bot, give it the same permissions as in the approach above and pass the token to this server.
+
+### Discord bot
+
+Create a Discord bot. Send invitation to a Discord admin with the following permissions:
+
+- **TODO**
 
 ### Setup
 
@@ -71,15 +110,11 @@ FB_DC_API_DATABASE_FILENAME=/storage/database.db
 ...
 ```
 
-#### Disclaimer
-
-The code for this part is quite a spaghetti one, I'm aware of it, and I'm not
-changing it as I don't have time nor will for it and this is good enough anyway.
-
-## Scraping
+## Scraping (deprecated)
 
 In this mode the app scrapes data from the `mbasic.facebook.com` Facebook frontend.
 This mode is no longer supported nor maintained, but it may still work.
+A fake account that will probably get banned quite quickly is needed.
 
 ### Deployment
 

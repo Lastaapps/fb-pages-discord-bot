@@ -1,0 +1,67 @@
+package cz.lastaapps.api.domain.usecase
+
+import arrow.core.Either
+import arrow.core.None
+import arrow.core.Some
+import arrow.core.raise.either
+import co.touchlab.kermit.Logger
+import cz.lastaapps.api.data.FBAuthAPI
+import cz.lastaapps.api.data.Repository
+import cz.lastaapps.api.domain.AppTokenProvider
+import cz.lastaapps.api.domain.error.DomainError
+import cz.lastaapps.api.domain.error.Outcome
+import cz.lastaapps.api.domain.model.id.FBPageID
+import cz.lastaapps.api.domain.model.token.toPageAccessToken
+import cz.lastaapps.api.presentation.AppConfig
+import io.ktor.http.Url
+
+class ParsePageIDUC(
+    private val config: AppConfig,
+    private val repo: Repository,
+    private val authApi: FBAuthAPI,
+    private val appTokenProvider: AppTokenProvider,
+) {
+    private val log = Logger.withTag("ParsePageID")
+
+    @Suppress("RemoveExplicitTypeArguments")
+    suspend operator fun invoke(pageReference: String, allowUrl: Boolean = true): Outcome<FBPageID> =
+        either<DomainError, FBPageID> {
+            // Page ID
+            pageReference.toULongOrNull()?.let { return@either FBPageID(it) }
+
+            // Page Name
+            pageReference.trim().takeIf { it.isNotBlank() }?.let { pageName ->
+                val res = repo.getPageIDByName(pageName).bind()
+                    .flatMap { repo.getPageByID(it).bind() }
+                when (res) {
+                    None -> {}
+                    is Some -> return@either res.value.fbId
+                }
+            }
+
+            if (config.facebook.enabledPublicContent && !pageReference.contains('/')) {
+                authApi.getPageMetadata(pageReference, appTokenProvider.provide().toPageAccessToken())
+                    .onRight {
+                        return@either FBPageID(it.fbId.toULong())
+                    }
+            }
+
+            if (allowUrl) {
+                Either.catch {
+                    val url = Url(pageReference)
+                    val pageID = url
+                        .segments
+                        .first()
+                    return invoke(pageID, allowUrl = false)
+                }
+            }
+
+            raise(DomainError.GivenPageNotFound)
+        }.also {
+            it.onRight {
+                log.d { "Parsed '$pageReference' -> '${it.id}'" }
+            }.onLeft {
+                log.d { "Failed to parse '$pageReference'" }
+            }
+        }
+}

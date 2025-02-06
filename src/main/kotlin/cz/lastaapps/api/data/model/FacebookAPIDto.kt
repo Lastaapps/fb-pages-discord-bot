@@ -1,11 +1,14 @@
-package cz.lastaapps.api
+package cz.lastaapps.api.data.model
 
+import cz.lastaapps.api.data.createdTimeToInstant
+import cz.lastaapps.api.data.idToFacebookURL
+import cz.lastaapps.api.data.isFBLink
 import cz.lastaapps.common.decodeFacebookUrl
+import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.math.absoluteValue
 
 @Serializable
 data class OAuthExchangeResponse(
@@ -26,7 +29,7 @@ data class MeResponse(
 @Serializable
 data class PageInfo(
     @SerialName("id")
-    val id: String,
+    val fbId: String,
     @SerialName("name")
     val name: String,
 )
