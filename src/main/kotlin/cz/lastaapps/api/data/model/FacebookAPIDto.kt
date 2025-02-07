@@ -27,6 +27,12 @@ data class MeResponse(
 )
 
 @Serializable
+data class PageInfoList(
+    @SerialName("data")
+    val data: List<PageInfo>,
+)
+
+@Serializable
 data class PageInfo(
     @SerialName("id")
     val fbId: String,

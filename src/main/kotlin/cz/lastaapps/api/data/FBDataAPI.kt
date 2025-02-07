@@ -1,11 +1,16 @@
 package cz.lastaapps.api.data
 
+import arrow.core.right
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.API_VERSION
 import cz.lastaapps.api.data.model.Event
+import cz.lastaapps.api.data.model.PageInfoList
 import cz.lastaapps.api.data.model.PagePost
+import cz.lastaapps.api.domain.error.Outcome
+import cz.lastaapps.api.domain.model.Page
 import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
+import cz.lastaapps.api.domain.model.token.AppAccessToken
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -51,5 +56,26 @@ class FBDataAPI(
                 log.d { "Status code: ${response.status}" }
                 response.body<Event>()
             }
+    }
+
+    suspend fun searchPages(
+        appAccessToken: AppAccessToken,
+        name: String,
+    ): Outcome<List<Page>> {
+        log.d { "Searching for $name" }
+        return client
+            .get("/$API_VERSION/pages/search") {
+                parameter("q", name)
+                parameter("access_token", appAccessToken.token)
+                parameter(
+                    "fields",
+                    "id,name",
+                )
+            }.let { response ->
+                log.d { "Status code: ${response.status}" }
+                response.body<PageInfoList>().data
+            }
+            .map { Page(FBPageID(it.fbId.toULong()), it.name) }
+            .right()
     }
 }

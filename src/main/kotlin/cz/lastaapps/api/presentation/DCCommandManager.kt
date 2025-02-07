@@ -13,6 +13,7 @@ import cz.lastaapps.api.domain.usecase.GetOAuthLink
 import cz.lastaapps.api.domain.usecase.GetPagesForChannelUC
 import cz.lastaapps.api.domain.usecase.ParsePageIDUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
+import cz.lastaapps.api.domain.usecase.SearchPagesUC
 import cz.lastaapps.api.domain.usecase.VerifyUserPagesUC
 import dev.kord.core.behavior.interaction.response.DeferredMessageInteractionResponseBehavior
 import dev.kord.core.behavior.interaction.response.respond
@@ -26,6 +27,7 @@ class DCCommandManager(
     private val config: AppConfig,
     private val getAuthorizedPages: GetAuthorizedPagesUC,
     private val getPagesForChannelUC: GetPagesForChannelUC,
+    private val searchPagesUC: SearchPagesUC,
     private val parsePageIDUC: ParsePageIDUC,
     private val addPageUC: AddPageUC,
     private val removePageUC: RemovePageUC,
@@ -39,6 +41,9 @@ class DCCommandManager(
         log.i { "Registering commands" }
         registerListVerified()
         registerListLocal()
+        if (config.facebook.enabledPublicContent) {
+            registerSearchPages()
+        }
         registerAddPage()
         registerRemovePage()
         if (config.facebook.enabledLogin) {
@@ -77,6 +82,23 @@ class DCCommandManager(
                     is Either.Left -> "Internal error: ${res.value.text()}"
                     is Either.Right -> res.value
                         .toTable { "No pages are handled in this channel." }
+                }
+            }
+
+    private suspend fun registerSearchPages() =
+        kord.createGlobalChatInputCommand("fb_search_pages", "Search for pages on Facebook and show their ID") {
+            string("name", "Name of the page to search for") {
+                required = true
+            }
+            disableCommandInGuilds()
+        }
+            .toHandler {
+                val name = interaction.command.strings["name"]!!
+                when (val res = searchPagesUC(name)) {
+                    is Either.Left -> "Internal error: ${res.value.text()}"
+                    is Either.Right -> res.value
+                        .toTable { "No pages found." }
+                        .let { "Only pages (not groups) can be searched and used\n".plus(it) }
                 }
             }
 
@@ -166,11 +188,11 @@ class DCCommandManager(
     private fun Collection<Page>.toTable(onEmpty: () -> String) =
         if (isNotEmpty()) {
             joinToString(
-                prefix = "```\nID\tNAME\n",
+                prefix = "\nID\tNAME\tLINK\n",
                 separator = "\n",
-                postfix = "\n```",
+                postfix = "\n",
             ) {
-                "${it.fbId.id}\t${it.name}"
+                "`${it.fbId.id}`\t${it.name}\thttps://facebook.com/${it.fbId.id}"
             }
         } else {
             onEmpty() + "\n"

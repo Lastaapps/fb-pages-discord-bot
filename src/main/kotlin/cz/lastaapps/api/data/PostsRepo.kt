@@ -83,7 +83,7 @@ class PostsRepo(
                     val (post, page) = postsMap[it]!!
                     val events = post.eventIDs().parMap(concurrency = 1) { id ->
                         dataApi.loadEventData(FBEventID(id), page.accessToken)
-                    }
+                    }.filter { event -> event.canBePublished() }
                     log.i {
                         "Posting ${post.id} (${
                             post.message?.take(24)?.replace("\n", "\\n")?.plus("...")

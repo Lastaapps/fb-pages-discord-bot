@@ -13,19 +13,21 @@ Make sure bot has access to the channels where you use them.
 
 ## TODO
 
+- support events
 - add try catches everywhere
 - add pictures into README
-- simple pages search
 - explicit post refresh request (updates the current post or posts a new one if the old one is deleted)
 - some bulk delete option/clear channel option
 
 ## DC bot interface
 
-Bot support multiple commands:
+Bot support multiple commands. Their availability may vary based on which FB authorization
+features are enabled.
 
 - `fb_list_available` - pages that are available to the bot. If the bot has proper rights,
   all the facebook pages are accessible.
-- `fb_list_local` - list pages that are relaied to this channel.
+- `fb_list_local` - list pages that are relayed to this channel.
+- `fb_search` - searches FB for the given name and shows id's of the related pages
 - `fb_add_page` - add page posts to this channel, use page id, url name, ... Comma separated list is also supported.
 - `fb_remove_page` - removes pages from this channel, same interface as `fb_add_page`.
 - `fb_authorize_login` - shows link that can be used to log into the app and authorize more pages
