@@ -24,6 +24,7 @@ Make sure bot has access to the channels where you use them.
 Bot support multiple commands. Their availability may vary based on which FB authorization
 features are enabled.
 
+- `fb_ping` - tests connection and basic permissions
 - `fb_list_available` - pages that are available to the bot. If the bot has proper rights,
   all the facebook pages are accessible.
 - `fb_list_local` - list pages that are relayed to this channel.

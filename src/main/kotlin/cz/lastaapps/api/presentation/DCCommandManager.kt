@@ -39,6 +39,7 @@ class DCCommandManager(
 
     suspend fun register() {
         log.i { "Registering commands" }
+        registerPing()
         registerListVerified()
         registerListLocal()
         if (config.facebook.enabledPublicContent) {
@@ -53,6 +54,11 @@ class DCCommandManager(
             registerAuthorizeUserToken()
         }
     }
+
+    private suspend fun registerPing() =
+        kord.createGlobalChatInputCommand("fb_ping", "Ping pong (use for basic permissions testing)")
+        { disableCommandInGuilds() }
+            .toHandler { "FB pong" }
 
     private suspend fun registerListVerified() =
         kord.createGlobalChatInputCommand("fb_list_available", "Lists pages that were verified and can be used")
