@@ -155,13 +155,15 @@ data class PagePost(
 
     fun titlesAndDescriptions(): List<Pair<String?, String?>> {
         val list = mutableListOf<Pair<String?, String?>>(null to message)
-        attachments?.data?.forEach {
-            if (it.type !in listOf("event", "map")) {
-                if (it.mediaType !in listOf("album")) {
-                    list.add(it.title to it.description)
+        attachments?.data
+            ?.filter { it.title != "This content isn't available right now" }
+            ?.forEach {
+                if (it.type !in listOf("event", "map")) {
+                    if (it.mediaType !in listOf("album")) {
+                        list.add(it.title to it.description)
+                    }
                 }
             }
-        }
         return list
             .filter { it.first != null || it.second != null }
             .distinct()

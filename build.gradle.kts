@@ -43,6 +43,9 @@ dependencies {
     implementation("dev.kord:kord-core:$kordVersion")
     implementation("dev.kord:kord-common:$kordVersion")
     implementation("dev.kord:kord-rest:$kordVersion")
+    // for some reason sometimes required to run the app
+    // this was not required before, so it's probably just some caches error
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 
     implementation("it.skrape:skrapeit:1.3.0-alpha.2")
     // fix security vulnerabilities in skrapeit libs

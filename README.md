@@ -7,17 +7,29 @@ It uses official Facebook API to get the posts.
 You can either host it yourself, or contact me, add the Discord bot and enjoy.
 Translations from Czech are missing in both variants, feel free to create a PR.
 
+You can add the bot to your server using this
+[invite link](https://discord.com/oauth2/authorize?client_id=1252917635948216401).
+Make sure bot has access to the channels where you use them.
+
 ## TODO
 
 - add try catches everywhere
 - add pictures into README
-- add config section into README
-- add doc for bot commands
-- update example env
 - simple pages search
-- explicit post refresh request
+- explicit post refresh request (updates the current post or posts a new one if the old one is deleted)
+- some bulk delete option/clear channel option
 
 ## DC bot interface
+
+Bot support multiple commands:
+
+- `fb_list_available` - pages that are available to the bot. If the bot has proper rights,
+  all the facebook pages are accessible.
+- `fb_list_local` - list pages that are relaied to this channel.
+- `fb_add_page` - add page posts to this channel, use page id, url name, ... Comma separated list is also supported.
+- `fb_remove_page` - removes pages from this channel, same interface as `fb_add_page`.
+- `fb_authorize_login` - shows link that can be used to log into the app and authorize more pages
+- `fb_authorize_user` - authorize pages of the user given by a `user_access_token`. System user token is also supported.
 
 The bot needs following permission in the channel it's supposed to send messages into:
 
@@ -38,6 +50,10 @@ authenticate again and in list of pages the bot can manage select none.
 If you used system user token, revoke tokens of the system user.
 
 ## Own deployment and Authorization
+
+The server is configured using envirinment variables.
+All the variables have to be set.
+See `env_example` with configuration example.
 
 ### Facebook Graph API
 
@@ -129,6 +145,8 @@ A fake account that will probably get banned quite quickly is needed.
 
 ### Deployment
 
+Configuration is done using environment variables,
+see `env_example` in git history.
 First you need to create a bot account and
 set up the account's translation options
 https://m.facebook.com/settings/language/auto_translate_disabled_dialects/

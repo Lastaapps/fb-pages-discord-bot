@@ -55,11 +55,10 @@ class PostsRepo(
     }
 
     private suspend fun processBatch() {
-        val concurrency = 1 // 3
         log.i { "Starting badge processing..." }
 
         val badge = loadPageDiscordPairs()
-        val pageToPosts = badge.pages.entries.parMap(concurrency = concurrency) { (pageID, page) ->
+        val pageToPosts = badge.pages.entries.parMap(concurrency = 5) { (pageID, page) ->
             log.d { "Fetching page ${page.name}" }
             pageID to dataApi.loadPagePosts(page.fbId, page.accessToken)
                 .filter { it.canBePublished() }
@@ -67,7 +66,7 @@ class PostsRepo(
         }.toMap()
         val postsMap = pageToPosts.values.flatten().associateBy { FBPostID(it.first.id) }
 
-        badge.requests.entries.parMap(concurrency = concurrency) { (channel, pages) ->
+        badge.requests.entries.parMap(concurrency = 1) { (channel, pages) ->
             log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
             val posts = pages.map { pageToPosts[it.fbId] ?: emptyList() }
                 .flatten()
@@ -82,12 +81,12 @@ class PostsRepo(
                 .sortedBy { postsMap[it]!!.first.createdAt }
                 .forEach {
                     val (post, page) = postsMap[it]!!
-                    val events = post.eventIDs().parMap(concurrency = concurrency) { id ->
+                    val events = post.eventIDs().parMap(concurrency = 1) { id ->
                         dataApi.loadEventData(FBEventID(id), page.accessToken)
                     }
                     log.i {
                         "Posting ${post.id} (${
-                            post.message?.take(24)?.plus("...")
+                            post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
                         }) to ${channel.name} (${channel.name})"
                     }
                     val messageID = discordApi.postPostAndEvents(

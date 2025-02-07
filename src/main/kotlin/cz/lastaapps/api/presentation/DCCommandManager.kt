@@ -81,27 +81,34 @@ class DCCommandManager(
             }
 
     private suspend fun registerAddPage() =
-        kord.createGlobalChatInputCommand("fb_add_page", "Adds a page to the current channel (ID, url, not name)") {
+        kord.createGlobalChatInputCommand(
+            "fb_add_page",
+            "Adds a page to the current channel (ID, url, not name, comma separated list)",
+        ) {
             string("page_id", "Page ID or link") {
                 required = true
             }
             disableCommandInGuilds()
         }.toHandler {
-            val pageID = when (val res = parsePageIDUC(interaction.command.strings["page_id"]!!)) {
-                is Either.Left -> {
-                    return@toHandler "Failed to parse page ID: ${res.value.text()}."
-                }
+            interaction.command.strings["page_id"]!!
+                .split(",")
+                .map {
+                    val pageID = when (val res = parsePageIDUC(it)) {
+                        is Either.Left -> {
+                            return@toHandler "Failed to parse page ID: ${res.value.text()}."
+                        }
 
-                is Either.Right -> res.value
-            }
+                        is Either.Right -> res.value
+                    }
 
-            when (val page = addPageUC(interaction.channelId.toChannelID(), pageID)) {
-                is Either.Left ->
-                    "Failed to add page: ${page.value.text()}."
+                    when (val page = addPageUC(interaction.channelId.toChannelID(), pageID)) {
+                        is Either.Left ->
+                            "Failed to add page: ${page.value.text()}."
 
-                is Either.Right ->
-                    "Page *${page.value.name}* added. Posts will be synced in at most ${config.interval}."
-            }
+                        is Either.Right ->
+                            "Page *${page.value.name}* added. Posts will be synced in at most ${config.interval}."
+                    }
+                }.joinToString("\n")
         }
 
     private suspend fun registerRemovePage() =
@@ -111,21 +118,25 @@ class DCCommandManager(
             }
             disableCommandInGuilds()
         }.toHandler {
-            val pageID = when (val res = parsePageIDUC(interaction.command.strings["page_id"]!!)) {
-                is Either.Left -> {
-                    return@toHandler "Failed to parse page ID: ${res.value.text()}."
-                }
+            interaction.command.strings["page_id"]!!
+                .split(",")
+                .map {
+                    val pageID = when (val res = parsePageIDUC(it)) {
+                        is Either.Left -> {
+                            return@toHandler "Failed to parse page ID: ${res.value.text()}."
+                        }
 
-                is Either.Right -> res.value
-            }
+                        is Either.Right -> res.value
+                    }
 
-            when (val page = removePageUC(interaction.channelId.toChannelID(), pageID)) {
-                is Either.Left ->
-                    "Failed to remove page: ${page.value.text()}."
+                    when (val page = removePageUC(interaction.channelId.toChannelID(), pageID)) {
+                        is Either.Left ->
+                            "Failed to remove page: ${page.value.text()}."
 
-                is Either.Right ->
-                    "Page *${page.value.name}* removed."
-            }
+                        is Either.Right ->
+                            "Page *${page.value.name}* removed."
+                    }
+                }.joinToString("\n")
         }
 
     private suspend fun registerAuthorizeLogin() =
