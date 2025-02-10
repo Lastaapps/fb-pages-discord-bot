@@ -1,9 +1,15 @@
 package cz.lastaapps.api.data.model
 
 import cz.lastaapps.api.data.createdTimeToInstant
+import cz.lastaapps.api.data.extractLinks
 import cz.lastaapps.api.data.idToFacebookURL
+import cz.lastaapps.api.data.isFBEventLink
 import cz.lastaapps.api.data.isFBLink
+import cz.lastaapps.api.data.isFBRedirectLink
 import cz.lastaapps.common.decodeFacebookUrl
+import io.ktor.client.HttpClient
+import io.ktor.client.request.head
+import io.ktor.http.Url
 import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -61,6 +67,8 @@ data class ManagedPage(
  * "full_picture,id,is_hidden,is_published,message,place,status_type,is_expired,child_attachments,attachments"
  *
  *
+ * This is hell lot of a spaghetti code that should NOT be in model.
+ * But I did it anyway out of laziness, sorry.
  *
  * # Just text
  * simple, just take the message
@@ -162,7 +170,7 @@ data class PagePost(
     fun titlesAndDescriptions(): List<Pair<String?, String?>> {
         val list = mutableListOf<Pair<String?, String?>>(null to message)
         attachments?.data
-            ?.filter { it.title != "This content isn't available right now" }
+            ?.filter { it.title != "This content isn't available at the moment" }
             ?.forEach {
                 if (it.type !in listOf("event", "map")) {
                     if (it.mediaType !in listOf("album")) {
@@ -175,17 +183,36 @@ data class PagePost(
             .distinct()
     }
 
+    private fun rawLinksInText(): List<String> =
+        message?.extractLinks().orEmpty()
+
+    /**
+     * Returns links in the text of the post
+     * excluding links to Facebook events
+     * that should be handled separately
+     */
+    fun linksInText(): List<String> =
+        rawLinksInText()
+            .filterNot(::isFBLink)
+            .filterNot(::isFBEventLink)
+            .run {
+                val attachmentEvents = attachmentLinks()
+                filterNot { it in attachmentEvents }
+            }
+
     /** Returns a list of links associated with the post */
-    fun links(): List<String> =
+    fun attachmentLinks(): List<String> =
         attachments?.data?.mapNotNull { it ->
             it.target
                 ?.url
-                ?.takeIf(::isFBLink)
+                ?.takeIf(::isFBRedirectLink)
                 ?.let(::decodeFacebookUrl)
         } ?: emptyList()
 
-    /** Returns a list of event IDs associated with the post */
-    fun eventIDs(): List<String> =
+    /** Returns a list of event IDs associated with the post.
+     * The token used should have rights to access the events details using API
+     */
+    fun accessibleEventIDs(): List<String> =
         attachments?.data?.mapNotNull {
             if (it.type == "event") {
                 it.target?.id
@@ -194,7 +221,42 @@ data class PagePost(
             }
         } ?: emptyList()
 
+    /** Returns a list of event IDs destiled from the posts content.
+     * This happens when a page shares an event by
+     * adding a link to the event into the post text.
+     * We also have to make sure that in case we have access to the event,
+     * we do not return it twice, therefore we have to filter out event IDs
+     * from the attachment section.
+     * These should be previewed using Discord automatically
+     * by just posting the link in a separate message
+     */
+    suspend fun unavailableEventIDs(): List<String> =
+        rawLinksInText()
+            .filter(::isFBEventLink)
+            .map(::Url)
+            .map {
+                if (it.host == "fb.me") {
+                    // resolves the link into usual facebook.com format
+                    val response = client.head(it)
+                    response.call.request.url
+                } else {
+                    it
+                }
+            }
+            .mapNotNull {
+                it.segments.lastOrNull()?.trim()
+            }
+            .run {
+                val attachmentEvents = accessibleEventIDs()
+                filterNot { it in attachmentEvents }
+            }
+
     fun canBePublished() = !isHidden && isPublished && !isExpired
+}
+
+// this is terrible design and practise, chacha
+private val client = HttpClient {
+    followRedirects = true
 }
 
 @Serializable

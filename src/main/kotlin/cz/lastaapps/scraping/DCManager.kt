@@ -14,8 +14,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
-import kotlinx.datetime.Instant
 import kotlin.math.absoluteValue
+import kotlinx.datetime.Instant
 
 class DCManager private constructor(
     private val config: AppConfig,
@@ -39,7 +39,7 @@ class DCManager private constructor(
         client: HttpClient,
     ): NamedFile? {
         val extension =
-            imageExtensions.firstOrNull { url.contains(it) } ?: run {
+            imageExtensions.firstOrNull { url.lowercase().contains(it) } ?: run {
                 println("Url does not contain any of the known extensions!")
                 return null
             }

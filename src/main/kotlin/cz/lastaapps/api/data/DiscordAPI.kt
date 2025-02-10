@@ -25,15 +25,13 @@ class DiscordAPI(
     private val log = Logger.withTag("DiscordAPI")
 
     private val kord get() = discordKord.kord
-    private val rest get() = kord.rest
-
     private suspend fun UserMessageCreateBuilder.addFile(
         nameWithoutExtension: String,
         url: String,
         client: HttpClient,
     ): NamedFile? {
         val extension =
-            imageExtensions.firstOrNull { url.contains(it) } ?: run {
+            imageExtensions.firstOrNull { url.lowercase().contains(it) } ?: run {
                 log.e { "Url ($url) does not contain any of the known extensions!" }
                 return null
             }
@@ -70,13 +68,14 @@ class DiscordAPI(
                             append('\n')
                         }
                     }.trimToDescription()
-                        .takeUnless { it.isBlank() } ?: "Viz níže:"
 
                 if (postDescription.isNotBlank() || postImageUrl != null) {
                     embed {
                         timestamp = post.createdAt
                         title = page.name
-                        description = postDescription
+                        // post's description cannot be empty.
+                        // It may be empty for posts with only a single photo
+                        description = postDescription.takeUnless { it.isBlank() } ?: "\uD83D\uDCF7"
                         url = post.toURL()
                         image = postImageUrl
                         color = postColor
@@ -102,7 +101,7 @@ class DiscordAPI(
                                 value = "Tento příspěvek skrývá více fotek/videí"
                             }
                         }
-                        post.links().takeIf { it.isNotEmpty() }?.let {
+                        post.attachmentLinks().takeIf { it.isNotEmpty() }?.let {
                             field {
                                 name = "Odkazy"
                                 value = it.joinToString("\n")
@@ -153,6 +152,19 @@ class DiscordAPI(
                     }
                 }
             }
+
+        // Creates previews for links contained in the post's text
+        // that were not present in attachments (we cannot access them using API)
+        (post.unavailableEventIDs()
+            .map { "https://www.facebook.com/events/${it}" } +
+            post.linksInText())
+            .forEach { link ->
+                kord.rest.channel.createMessage(channelID.toSnowflake()) {
+                    content = link
+                    messageReference = message.id
+                }
+            }
+
         return DCMessageID(message.id.value)
     }
 

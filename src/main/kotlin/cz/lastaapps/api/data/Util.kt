@@ -4,6 +4,7 @@ import co.touchlab.kermit.Message
 import co.touchlab.kermit.MessageStringFormatter
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.Tag
+import io.ktor.http.Url
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
@@ -38,9 +39,34 @@ fun String.createdTimeToInstant() = Instant.parse(this, facebookTimestampParser)
 fun String.idToFacebookURL() = "https://www.facebook.com/$this"
 
 fun isFBLink(link: String) =
+    Url(link).host.run {
+        endsWith("facebook.com") or
+            endsWith("fb.me")
+    }
+
+fun isFBRedirectLink(link: String) =
     link.startsWith("https://l.facebook.com") or
         link.startsWith("https://lm.facebook.com")
 
+fun isFBEventLink(link: String) =
+    link.startsWith("https://www.facebook.com/events")
+        || link.startsWith("https://fb.me/e")
+
+// private val linksRegex = """(http|https)\\:\\/\\/[a-zA-Z0-9\\.]+\\.[a-zA-Z]{2,3}(\\/\\S*)?""".toRegex()
+private val linksRegex = ("(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)"
+    + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
+    + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)").toRegex(
+    setOf(
+        RegexOption.IGNORE_CASE,
+        RegexOption.MULTILINE,
+        RegexOption.DOT_MATCHES_ALL,
+    ),
+)
+
+fun String.extractLinks(): List<String> =
+    linksRegex.findAll(this)
+        .map { it.value.trim() }
+        .toList()
 fun Instant.formatDateTime(timeZone: TimeZone) =
     this
         .toLocalDateTime(timeZone)

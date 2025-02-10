@@ -47,7 +47,7 @@ class FBDataAPI(
         log.d { "Loading event ${eventID.id}" }
         return client
             .get("/$API_VERSION/${eventID.id}") {
-                parameter("access_token", pageAccessToken)
+                parameter("access_token", pageAccessToken.token)
                 parameter(
                     "fields",
                     "id,cover,name,description,type,place,start_time,end_time,timezone,is_canceled,is_draft,is_online,photos,created_time",

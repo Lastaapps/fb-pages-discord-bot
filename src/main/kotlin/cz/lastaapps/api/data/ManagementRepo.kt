@@ -1,9 +1,12 @@
 package cz.lastaapps.api.data
 
+import arrow.core.None
 import arrow.core.Option
+import arrow.core.filterOption
 import arrow.core.left
 import arrow.core.raise.either
 import arrow.core.right
+import arrow.core.some
 import arrow.core.toOption
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.domain.AppTokenProvider
@@ -110,41 +113,32 @@ class ManagementRepo(
             .right()
     }
 
-    suspend fun loadAuthorizedPages(): List<AuthorizedPage> =
-        if (config.facebook.enabledPublicContent) {
-            val appToken = appTokenProvider.provide().toPageAccessToken()
-            curd
-                .getAllPages()
-                .executeAsList()
-                .map { (dbPageID, pageName, fbPageID) ->
-                    AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = appToken)
-                }
-        } else {
-            queries
-                .getAuthorizedPages()
-                .executeAsList()
-                .map { (dbPageID, pageName, fbPageID, pageAccessToken) ->
-                    AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = pageAccessToken)
-                }
-        }
+    fun loadAuthorizedPages(): List<AuthorizedPage> =
+        queries
+            .getAuthorizedPages()
+            .executeAsList()
+            .map { (dbPageID, pageName, fbPageID, pageAccessToken) ->
+                AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = pageAccessToken)
+            }
 
-    suspend fun loadAuthorizedPagesForChannel(channelID: DBChannelID): List<AuthorizedPage> =
-        if (config.facebook.enabledPublicContent) {
-            val appToken = appTokenProvider.provide().toPageAccessToken()
-            queries
-                .getPagesForChannel(channelID)
-                .executeAsList()
-                .map { (dbPageID, pageName, fbPageID) ->
-                    AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = appToken)
-                }
+    suspend fun loadAuthorizedPagesForChannel(channelID: DBChannelID): List<AuthorizedPage> = run {
+        val hasPublic = config.facebook.enabledPublicContent
+        val appToken = if (hasPublic) {
+            appTokenProvider.provide().toPageAccessToken()
         } else {
-            queries
-                .getAuthorizedPagesForChannel(channelID)
-                .executeAsList()
-                .map { (dbPageID, pageName, fbPageID, pageAccessToken) ->
-                    AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = pageAccessToken)
-                }
+            null
         }
+        queries.getPagesForChannelWithTokens(channelID) { dbPageID, pageName, fbPageID, pageAccessToken ->
+            // TODO notify user somehow, probably IOR
+            val token = pageAccessToken ?: appToken ?: run {
+                log.e { "Page $pageName is requested by channel ${channelID.id}, but it's not authorized" }
+                return@getPagesForChannelWithTokens None
+            }
+            AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = token).some()
+        }
+            .executeAsList()
+            .filterOption()
+    }
 
     fun createChannelPageRelation(
         channelID: DBChannelID,

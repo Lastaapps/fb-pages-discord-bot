@@ -31,7 +31,6 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-private val log = Logger.withTag("DI")
 val diModule = module {
     singleOf(::ManagementRepo)
     single { createHttpClient() }
@@ -63,6 +62,7 @@ private fun createHttpClient() =
             level = LogLevel.INFO
             logger =
                 object : io.ktor.client.plugins.logging.Logger {
+                    private val log = Logger.withTag("HttpClient")
                     private val tokenRegexes = listOf(
                         """access_token=[^?&#]*""".toRegex(),
                         """client_id=[^?&#]*""".toRegex(),

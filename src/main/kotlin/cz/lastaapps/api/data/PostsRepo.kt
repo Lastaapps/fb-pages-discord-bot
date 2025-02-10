@@ -1,5 +1,8 @@
 package cz.lastaapps.api.data
 
+import arrow.core.None
+import arrow.core.filterOption
+import arrow.core.some
 import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.domain.AppTokenProvider
@@ -81,7 +84,7 @@ class PostsRepo(
                 .sortedBy { postsMap[it]!!.first.createdAt }
                 .forEach {
                     val (post, page) = postsMap[it]!!
-                    val events = post.eventIDs().parMap(concurrency = 1) { id ->
+                    val events = post.accessibleEventIDs().parMap(concurrency = 1) { id ->
                         dataApi.loadEventData(FBEventID(id), page.accessToken)
                     }.filter { event -> event.canBePublished() }
                     log.i {
@@ -107,42 +110,37 @@ class PostsRepo(
      * Return discord channel ID and page access token of the pages related to the channel
      */
     private suspend fun loadPageDiscordPairs(): BatchParam = run {
-        if (config.facebook.enabledPublicContent) {
-            val token = appTokenProvider.provide().toPageAccessToken()
-            queries.getPagesAndChannels {
-                    id: DBChannelID,
-                    chName: String,
-                    dcId: DCChannelID,
-                    dbId: DBPageID,
-                    fbId: FBPageID,
-                    name: String,
-                ->
-                DiscordChannel(id, chName, dcId) to AuthorizedPage(
-                    dbId = dbId,
-                    fbId = fbId,
-                    name = name,
-                    accessToken = token,
-                )
-            }
+        val hasPublic = config.facebook.enabledPublicContent
+        val appToken = if (hasPublic) {
+            appTokenProvider.provide().toPageAccessToken()
         } else {
-            queries.getAuthorizedPagesAndChannels {
-                    id: DBChannelID,
-                    chName: String,
-                    dcId: DCChannelID,
-                    dbId: DBPageID,
-                    fbId: FBPageID,
-                    name: String,
-                    token: PageAccessToken,
-                ->
-                DiscordChannel(id, chName, dcId) to AuthorizedPage(
-                    dbId = dbId,
-                    fbId = fbId,
-                    name = name,
-                    accessToken = token,
-                )
+            null
+        }
+
+        queries.getPagesAndChannelsWithTokens {
+                id: DBChannelID,
+                chName: String,
+                dcId: DCChannelID,
+                dbId: DBPageID,
+                fbId: FBPageID,
+                name: String,
+                token: PageAccessToken?,
+            ->
+            val pageToken = token ?: appToken ?: run {
+                // TODO notify user somehow, probably IOR
+                log.e { "Page $name is requested by $chName (${id.id}), but it's not authorized" }
+                return@getPagesAndChannelsWithTokens None
             }
+
+            (DiscordChannel(id, chName, dcId) to AuthorizedPage(
+                dbId = dbId,
+                fbId = fbId,
+                name = name,
+                accessToken = pageToken,
+            )).some()
         }
             .executeAsList()
+            .filterOption()
             .groupBy { it.first }
             .mapValues { (_, value) -> value.map { it.second } }
             .let { channelsToPages ->

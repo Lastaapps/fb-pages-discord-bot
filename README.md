@@ -13,7 +13,6 @@ Make sure bot has access to the channels where you use them.
 
 ## TODO
 
-- support events
 - add try catches everywhere
 - add pictures into README
 - explicit post refresh request (updates the current post or posts a new one if the old one is deleted)
@@ -41,6 +40,16 @@ The bot needs following permission in the channel it's supposed to send messages
 - embed links
 - attach files
 - read message history
+
+### Events and embeds
+
+If the bot is running in public content mode,
+it cannot access post details like events or previews of the included links.
+Bot tries to overcome this by searching for links in the post's text
+and at least trying to make an embed out of them (using a Discord's mechanisms).
+To access the posts, the page needs to be authorized by some of its admins logging in
+or by using a system user of the portfolio.
+`page_events` permission is most probably required.
 
 ### Removing access to your pages
 
