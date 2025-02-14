@@ -9,6 +9,7 @@ import cz.lastaapps.api.data.FBAuthAPI
 import cz.lastaapps.api.data.ManagementRepo
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
+import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.model.token.toPageAccessToken
@@ -40,7 +41,7 @@ class ParsePageIDUC(
             }
 
             if (config.facebook.enabledPublicContent && !pageReference.contains('/')) {
-                authApi.getPageMetadata(pageReference, appTokenProvider.provide().toPageAccessToken())
+                authApi.getPageMetadata(pageReference, appTokenProvider.provide().bind().toPageAccessToken())
                     .onRight {
                         return@either FBPageID(it.fbId.toULong())
                     }
@@ -62,7 +63,7 @@ class ParsePageIDUC(
                 }
             }
 
-            raise(DomainError.GivenPageNotFound)
+            raise(LogicError.GivenPageNotFound)
         }.also {
             it.onRight {
                 log.d { "Parsed '$pageReference' -> '${it.id}'" }

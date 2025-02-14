@@ -3,6 +3,8 @@ package cz.lastaapps.api.data
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.model.Event
 import cz.lastaapps.api.data.model.PagePost
+import cz.lastaapps.api.domain.error.Outcome
+import cz.lastaapps.api.domain.error.catchingDiscord
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.id.DCChannelID
 import cz.lastaapps.api.domain.model.id.DCMessageID
@@ -29,14 +31,14 @@ class DiscordAPI(
         nameWithoutExtension: String,
         url: String,
         client: HttpClient,
-    ): NamedFile? {
+    ): Outcome<NamedFile?> = catchingDiscord {
         val extension =
             imageExtensions.firstOrNull { url.lowercase().contains(it) } ?: run {
                 log.e { "Url ($url) does not contain any of the known extensions!" }
-                return null
+                return@catchingDiscord null
             }
         val response = client.get(url).bodyAsChannel()
-        return addFile(nameWithoutExtension + extension, ChannelProvider(null) { response })
+        addFile(nameWithoutExtension + extension, ChannelProvider(null) { response })
     }
 
     suspend fun postPostAndEvents(
@@ -44,7 +46,7 @@ class DiscordAPI(
         page: AuthorizedPage,
         post: PagePost,
         events: List<Event>,
-    ): DCMessageID {
+    ): Outcome<DCMessageID> = catchingDiscord {
         log.d { "Posting post ${post.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
 
         val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
@@ -56,7 +58,7 @@ class DiscordAPI(
                         .images()
                         .firstOrNull()
                         ?.let { url ->
-                            addFile("post_img", url, client)
+                            addFile("post_img", url, client).bind()
                         }?.url
 
                 val postDescription =
@@ -115,7 +117,7 @@ class DiscordAPI(
                         event.coverPhoto
                             ?.source
                             ?.let { url ->
-                                addFile("event_img", url, client)
+                                addFile("event_img", url, client).bind()
                             }?.url
 
                     embed {
@@ -165,7 +167,7 @@ class DiscordAPI(
                 }
             }
 
-        return DCMessageID(message.id.value)
+        DCMessageID(message.id.value)
     }
 
     // description has a limit of 4096 characters

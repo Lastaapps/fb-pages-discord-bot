@@ -3,6 +3,8 @@ package cz.lastaapps.api.presentation
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.FBAuthAPI
 import cz.lastaapps.api.data.ManagementRepo
+import cz.lastaapps.api.domain.error.e
+import cz.lastaapps.api.domain.error.respondError
 import cz.lastaapps.api.domain.model.id.DCChannelID
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.usecase.AddPageUC
@@ -52,7 +54,14 @@ class RestAPI(
                 }
                 get(config.server.endpointOAuth) {
                     val params = call.request.queryParameters
-                    val userAccessToken = authApi.exchangeOAuth(params)
+                    val userAccessToken = authApi.exchangeOAuth(params).fold(
+                        {
+                            log.e(it) { "Failed to exchange OAuth" }
+                            call.respondError(it)
+                            return@get
+                        },
+                        { it },
+                    )
                     val pages = authApi.grantAccessToUserPages(userAccessToken).getOrNull()!!
                     pages.forEach(repository::storeAuthorizedPage)
                     call.respond(

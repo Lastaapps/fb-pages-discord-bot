@@ -13,6 +13,6 @@ class GetPagesForChannelUC(
     suspend operator fun invoke(channelID: DCChannelID): Outcome<List<Page>> = either {
         @Suppress("NAME_SHADOWING")
         val channelID = repo.getDiscordChannelID(channelID).bind()
-        repo.loadAuthorizedPagesForChannel(channelID).toPages()
+        repo.loadAuthorizedPagesForChannel(channelID).bind().toPages()
     }
 }

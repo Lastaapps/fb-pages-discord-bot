@@ -13,7 +13,6 @@ Make sure bot has access to the channels where you use them.
 
 ## TODO
 
-- add try catches everywhere
 - add pictures into README
 - explicit post refresh request (updates the current post or posts a new one if the old one is deleted)
 - some bulk delete option/clear channel option

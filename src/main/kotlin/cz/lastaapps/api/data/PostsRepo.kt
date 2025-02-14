@@ -1,11 +1,16 @@
 package cz.lastaapps.api.data
 
+import arrow.core.Either
 import arrow.core.None
 import arrow.core.filterOption
+import arrow.core.raise.either
 import arrow.core.some
 import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.domain.AppTokenProvider
+import cz.lastaapps.api.domain.error.DomainError
+import cz.lastaapps.api.domain.error.Outcome
+import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.DiscordChannel
 import cz.lastaapps.api.domain.model.id.DBChannelID
@@ -25,6 +30,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 class PostsRepo(
     private val config: AppConfig,
@@ -43,36 +51,51 @@ class PostsRepo(
     private var scheduleJob: Job? = null
 
     suspend fun requestNow() = mutex.withLock {
-        if (processBatchJob?.isActive == true) return
+        if (processBatchJob?.isActive == true) {
+            log.i { "Batch job is already running, skipping" }
+            return
+        }
+
+        log.i { "Starting a new post posts job" }
 
         scheduleJob?.cancel()
         scheduleJob = scope.launch {
             while (true) {
                 mutex.withLock {
-                    processBatchJob = scope.launch { processBatch() }
+                    processBatchJob = scope.launch {
+                        Either.runCatching {
+                            processBatch().onLeft {
+                                log.e(it) { "Failed to fetch and post new posts" }
+                            }
+                        }.onFailure { log.e(it) { "Failed to fetch and post new posts (CRITICAL)" } }
+                    }
                 }
-                log.i { "Waiting for ${config.interval}" }
+                val nextRun = Clock.System.now().plus(config.interval).toLocalDateTime(TimeZone.UTC)
+                log.i { "Waiting for ${config.interval} (next run at $nextRun)" }
                 delay(config.interval)
             }
         }
     }
 
-    private suspend fun processBatch() {
+    private suspend fun processBatch() = either<DomainError, Unit> {
         log.i { "Starting badge processing..." }
 
-        val badge = loadPageDiscordPairs()
+        val badge = loadPageDiscordPairs().bind()
         val pageToPosts = badge.pages.entries.parMap(concurrency = 5) { (pageID, page) ->
             log.d { "Fetching page ${page.name}" }
-            pageID to dataApi.loadPagePosts(page.fbId, page.accessToken)
-                .filter { it.canBePublished() }
-                .map { it to page }
-        }.toMap()
-        val postsMap = pageToPosts.values.flatten().associateBy { FBPostID(it.first.id) }
+            dataApi.loadPagePosts(page.fbId, page.accessToken).map { posts ->
+                posts.filter { it.canBePublished() }
+                    .map { pageID to (it to page) }
+            }
+        }.map { it.bind() }
+            .flatten()
+            .toMap()
+
+        val postsMap = pageToPosts.values.associateBy { FBPostID(it.first.id) }
 
         badge.requests.entries.parMap(concurrency = 1) { (channel, pages) ->
             log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
-            val posts = pages.map { pageToPosts[it.fbId] ?: emptyList() }
-                .flatten()
+            val posts = pages.mapNotNull { pageToPosts[it.fbId] }
             val postIds = posts.map { FBPostID(it.first.id) }.toSet()
             val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
                 .executeAsList()
@@ -85,7 +108,7 @@ class PostsRepo(
                 .forEach {
                     val (post, page) = postsMap[it]!!
                     val events = post.accessibleEventIDs().parMap(concurrency = 1) { id ->
-                        dataApi.loadEventData(FBEventID(id), page.accessToken)
+                        dataApi.loadEventData(FBEventID(id), page.accessToken).bind()
                     }.filter { event -> event.canBePublished() }
                     log.i {
                         "Posting ${post.id} (${
@@ -94,7 +117,7 @@ class PostsRepo(
                     }
                     val messageID = discordApi.postPostAndEvents(
                         channel.dcId, page, post, events,
-                    )
+                    ).bind()
                     createMessagePostRelation(channel.dbId, page.dbId, FBPostID(post.id), messageID)
                 }
         }
@@ -109,10 +132,10 @@ class PostsRepo(
     /**
      * Return discord channel ID and page access token of the pages related to the channel
      */
-    private suspend fun loadPageDiscordPairs(): BatchParam = run {
+    private suspend fun loadPageDiscordPairs(): Outcome<BatchParam> = either {
         val hasPublic = config.facebook.enabledPublicContent
         val appToken = if (hasPublic) {
-            appTokenProvider.provide().toPageAccessToken()
+            appTokenProvider.provide().bind().toPageAccessToken()
         } else {
             null
         }

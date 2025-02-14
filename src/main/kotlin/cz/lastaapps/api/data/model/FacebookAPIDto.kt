@@ -170,7 +170,8 @@ data class PagePost(
     fun titlesAndDescriptions(): List<Pair<String?, String?>> {
         val list = mutableListOf<Pair<String?, String?>>(null to message)
         attachments?.data
-            ?.filter { it.title != "This content isn't available at the moment" }
+            // there are two variants: "at the moment" and "right now"
+            ?.filterNot { it.title?.startsWith("This content isn't available") == true }
             ?.forEach {
                 if (it.type !in listOf("event", "map")) {
                     if (it.mediaType !in listOf("album")) {

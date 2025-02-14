@@ -1,12 +1,12 @@
 package cz.lastaapps.api.data
 
-import arrow.core.right
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.API_VERSION
 import cz.lastaapps.api.data.model.Event
 import cz.lastaapps.api.data.model.PageInfoList
 import cz.lastaapps.api.data.model.PagePost
 import cz.lastaapps.api.domain.error.Outcome
+import cz.lastaapps.api.domain.error.catchingFacebookAPI
 import cz.lastaapps.api.domain.model.Page
 import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
@@ -25,9 +25,9 @@ class FBDataAPI(
     suspend fun loadPagePosts(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
-    ): List<PagePost> {
+    ): Outcome<List<PagePost>> = catchingFacebookAPI {
         log.d { "Loading page posts ${pageID.id}" }
-        return client
+        client
             .get("/$API_VERSION/${pageID.id}/feed") {
                 parameter("access_token", pageAccessToken.token)
                 parameter(
@@ -43,9 +43,9 @@ class FBDataAPI(
     suspend fun loadEventData(
         eventID: FBEventID,
         pageAccessToken: PageAccessToken,
-    ): Event {
+    ): Outcome<Event> = catchingFacebookAPI {
         log.d { "Loading event ${eventID.id}" }
-        return client
+        client
             .get("/$API_VERSION/${eventID.id}") {
                 parameter("access_token", pageAccessToken.token)
                 parameter(
@@ -61,9 +61,9 @@ class FBDataAPI(
     suspend fun searchPages(
         appAccessToken: AppAccessToken,
         name: String,
-    ): Outcome<List<Page>> {
+    ): Outcome<List<Page>> = catchingFacebookAPI {
         log.d { "Searching for $name" }
-        return client
+        client
             .get("/$API_VERSION/pages/search") {
                 parameter("q", name)
                 parameter("access_token", appAccessToken.token)
@@ -76,6 +76,5 @@ class FBDataAPI(
                 response.body<PageInfoList>().data
             }
             .map { Page(FBPageID(it.fbId.toULong()), it.name) }
-            .right()
     }
 }

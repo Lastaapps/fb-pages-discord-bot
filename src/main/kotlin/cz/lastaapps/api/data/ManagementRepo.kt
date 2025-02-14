@@ -10,7 +10,7 @@ import arrow.core.some
 import arrow.core.toOption
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.domain.AppTokenProvider
-import cz.lastaapps.api.domain.error.DomainError
+import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.AuthorizedPageFromUser
@@ -73,10 +73,10 @@ class ManagementRepo(
         }?.let { return@either it }
 
         if (!allowUnauthorized || !allowFetch) {
-            return DomainError.PageNotAuthorized.left()
+            return LogicError.PageNotAuthorized.left()
         }
 
-        val appToken = appTokenProvider.provide()
+        val appToken = appTokenProvider.provide().bind()
         val metadata = authApi.getPageMetadata(pageID = fbPageID, pageAccessToken = appToken.toPageAccessToken()).bind()
         curd.transactionWithResult {
             curd.createFBPage(null, name = metadata.name, FBPageID(metadata.fbId.toULong()))
@@ -121,10 +121,10 @@ class ManagementRepo(
                 AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = pageAccessToken)
             }
 
-    suspend fun loadAuthorizedPagesForChannel(channelID: DBChannelID): List<AuthorizedPage> = run {
+    suspend fun loadAuthorizedPagesForChannel(channelID: DBChannelID): Outcome<List<AuthorizedPage>> = either {
         val hasPublic = config.facebook.enabledPublicContent
         val appToken = if (hasPublic) {
-            appTokenProvider.provide().toPageAccessToken()
+            appTokenProvider.provide().bind().toPageAccessToken()
         } else {
             null
         }
@@ -145,7 +145,7 @@ class ManagementRepo(
         pageID: DBPageID,
     ): Outcome<Unit> = curd.transactionWithResult {
         if (curd.isLinkedDCChannelToFBPage(channelID, pageID).executeAsOneOrNull() != null) {
-            return@transactionWithResult DomainError.PageAlreadyLinkedToChannel.left()
+            return@transactionWithResult LogicError.PageAlreadyLinkedToChannel.left()
         }
 
         log.d { "Creating relation between channel ${channelID.id} and page ${pageID.id}" }
