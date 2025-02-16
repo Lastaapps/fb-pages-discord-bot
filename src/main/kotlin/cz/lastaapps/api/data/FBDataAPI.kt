@@ -75,6 +75,6 @@ class FBDataAPI(
                 log.d { "Status code: ${response.status}" }
                 response.body<PageInfoList>().data
             }
-            .map { Page(FBPageID(it.fbId.toULong()), it.name) }
+            .map { Page(it.fbId, it.name) }
     }
 }

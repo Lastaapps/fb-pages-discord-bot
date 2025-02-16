@@ -47,7 +47,7 @@ class DiscordAPI(
         post: PagePost,
         events: List<Event>,
     ): Outcome<DCMessageID> = catchingDiscord {
-        log.d { "Posting post ${post.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
+        log.d { "Posting post ${post.fbId.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
 
         val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
 

@@ -79,7 +79,7 @@ class ManagementRepo(
         val appToken = appTokenProvider.provide().bind()
         val metadata = authApi.getPageMetadata(pageID = fbPageID, pageAccessToken = appToken.toPageAccessToken()).bind()
         curd.transactionWithResult {
-            curd.createFBPage(null, name = metadata.name, FBPageID(metadata.fbId.toULong()))
+            curd.createFBPage(null, name = metadata.name, metadata.fbId)
             curd.lastFBPageID().executeAsOne()
         }
     }

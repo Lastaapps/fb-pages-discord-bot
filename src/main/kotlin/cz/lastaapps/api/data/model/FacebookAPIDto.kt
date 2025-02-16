@@ -6,6 +6,12 @@ import cz.lastaapps.api.data.idToFacebookURL
 import cz.lastaapps.api.data.isFBEventLink
 import cz.lastaapps.api.data.isFBLink
 import cz.lastaapps.api.data.isFBRedirectLink
+import cz.lastaapps.api.domain.model.id.FBPageID
+import cz.lastaapps.api.domain.model.id.FBPostID
+import cz.lastaapps.api.domain.model.id.FBUserID
+import cz.lastaapps.api.domain.model.token.AppAccessToken
+import cz.lastaapps.api.domain.model.token.PageAccessToken
+import cz.lastaapps.api.domain.model.token.UserAccessToken
 import cz.lastaapps.common.decodeFacebookUrl
 import io.ktor.client.HttpClient
 import io.ktor.client.request.head
@@ -19,18 +25,24 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class OAuthExchangeResponse(
     @SerialName("access_token")
-    val accessToken: String,
+    private val accessToken: String,
     @SerialName("token_type")
     val tokenType: String,
-)
+) {
+    // only one of these function will be valid in the given context
+    val userAccessToken get() = UserAccessToken(accessToken)
+    val appAccessToken get() = AppAccessToken(accessToken)
+}
 
 @Serializable
 data class MeResponse(
     @SerialName("id")
-    val id: String,
+    private val id: String,
     @SerialName("name")
     val name: String,
-)
+) {
+    val fbId get() = FBUserID(id.toULong())
+}
 
 @Serializable
 data class PageInfoList(
@@ -41,10 +53,12 @@ data class PageInfoList(
 @Serializable
 data class PageInfo(
     @SerialName("id")
-    val fbId: String,
+    private val id: String,
     @SerialName("name")
     val name: String,
-)
+) {
+    val fbId get() = FBPageID(id.toULong())
+}
 
 @Serializable
 data class ManagedPages(
@@ -55,12 +69,15 @@ data class ManagedPages(
 @Serializable
 data class ManagedPage(
     @SerialName("id")
-    val id: String,
+    private val id: String,
     @SerialName("name")
     val name: String,
     @SerialName("access_token")
-    val pageAccessToken: String,
-)
+    private val accessToken: String,
+) {
+    val fbId get() = FBPageID(id.toULong())
+    val pageAccessToken get() = PageAccessToken(accessToken)
+}
 
 /**
  * https://developers.facebook.com/docs/graph-api/reference/v20.0/page/feed
@@ -97,7 +114,7 @@ data class ManagedPage(
 @Serializable
 data class PagePost(
     @SerialName("id")
-    val id: String,
+    private val id: String,
     @SerialName("message")
     val message: String? = null,
     @SerialName("full_picture")
@@ -116,6 +133,8 @@ data class PagePost(
     private val createdTime: String,
 ) {
     val createdAt: Instant = createdTime.createdTimeToInstant()
+
+    val fbId get() = FBPostID(id)
 
     @Serializable
     data class Container(
@@ -186,6 +205,10 @@ data class PagePost(
 
     private fun rawLinksInText(): List<String> =
         message?.extractLinks().orEmpty()
+            // the regex also matches links that are in parentheses
+            // "(https://www.example.com)"
+            .map { it.dropWhile { it == '(' } }
+            .map { it.dropLastWhile { it == ')' } }
 
     /**
      * Returns links in the text of the post

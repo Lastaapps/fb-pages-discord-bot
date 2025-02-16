@@ -80,23 +80,26 @@ class PostsRepo(
     private suspend fun processBatch() = either<DomainError, Unit> {
         log.i { "Starting badge processing..." }
 
-        val badge = loadPageDiscordPairs().bind()
-        val pageToPosts = badge.pages.entries.parMap(concurrency = 5) { (pageID, page) ->
+        val batch = loadPageDiscordPairs().bind()
+
+        val pageIdToPage = batch.pages.values.associateBy { it.fbId }
+        val pageIdToPosts = batch.pages.entries.parMap(concurrency = 5) { (pageID, page) ->
             log.d { "Fetching page ${page.name}" }
             dataApi.loadPagePosts(page.fbId, page.accessToken).map { posts ->
                 posts.filter { it.canBePublished() }
-                    .map { pageID to (it to page) }
+                    .let { pageID to it }
             }
-        }.map { it.bind() }
-            .flatten()
-            .toMap()
+        }.associate { it.bind() }
 
-        val postsMap = pageToPosts.values.associateBy { FBPostID(it.first.id) }
+        val postsMap = pageIdToPosts.values.flatten().associateBy { it.fbId }
+        val postIdToPage = pageIdToPosts.entries.map { (page, posts) ->
+            posts.map { it.fbId to page }
+        }.flatten().toMap()
 
-        badge.requests.entries.parMap(concurrency = 1) { (channel, pages) ->
+        batch.requests.entries.parMap(concurrency = 1) { (channel, pages) ->
             log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
-            val posts = pages.mapNotNull { pageToPosts[it.fbId] }
-            val postIds = posts.map { FBPostID(it.first.id) }.toSet()
+            val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
+            val postIds = posts.map { it.fbId }.toSet()
             val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
                 .executeAsList()
                 .toSet()
@@ -104,21 +107,23 @@ class PostsRepo(
             log.d { "Found ${newPosts.size} new posts" }
 
             newPosts
-                .sortedBy { postsMap[it]!!.first.createdAt }
+                .sortedBy { postsMap[it]!!.createdAt }
                 .forEach {
-                    val (post, page) = postsMap[it]!!
+                    val post = postsMap[it]!!
+                    val page = pageIdToPage[postIdToPage[it]!!]!!
+
                     val events = post.accessibleEventIDs().parMap(concurrency = 1) { id ->
                         dataApi.loadEventData(FBEventID(id), page.accessToken).bind()
                     }.filter { event -> event.canBePublished() }
                     log.i {
-                        "Posting ${post.id} (${
+                        "Posting ${post.fbId.id} (${
                             post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
                         }) to ${channel.name} (${channel.name})"
                     }
                     val messageID = discordApi.postPostAndEvents(
                         channel.dcId, page, post, events,
                     ).bind()
-                    createMessagePostRelation(channel.dbId, page.dbId, FBPostID(post.id), messageID)
+                    createMessagePostRelation(channel.dbId, page.dbId, post.fbId, messageID)
                 }
         }
     }

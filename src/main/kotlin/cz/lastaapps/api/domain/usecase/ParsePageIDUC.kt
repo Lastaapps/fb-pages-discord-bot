@@ -43,7 +43,7 @@ class ParsePageIDUC(
             if (config.facebook.enabledPublicContent && !pageReference.contains('/')) {
                 authApi.getPageMetadata(pageReference, appTokenProvider.provide().bind().toPageAccessToken())
                     .onRight {
-                        return@either FBPageID(it.fbId.toULong())
+                        return@either it.fbId
                     }
             }
 

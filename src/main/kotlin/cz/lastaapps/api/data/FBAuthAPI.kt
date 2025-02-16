@@ -14,7 +14,6 @@ import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingFacebookAPI
 import cz.lastaapps.api.domain.model.AuthorizedPageFromUser
 import cz.lastaapps.api.domain.model.id.FBPageID
-import cz.lastaapps.api.domain.model.id.FBUserID
 import cz.lastaapps.api.domain.model.token.AppAccessToken
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.UserAccessToken
@@ -85,14 +84,14 @@ class FBAuthAPI(
             )
         log.d { "Exchange result: ${response.status}" }
         val data = response.body<OAuthExchangeResponse>()
-        UserAccessToken(data.accessToken)
+        data.userAccessToken
     }
 
     suspend fun grantAccessToUserPages(
         userAccessToken: UserAccessToken,
     ): Outcome<List<AuthorizedPageFromUser>> = catchingFacebookAPI {
         log.d { "Granting user access" }
-        val (userId, userName) =
+        val user =
             client
                 .get("/$API_VERSION/me") {
                     parameter("fields", "id,name")
@@ -103,24 +102,24 @@ class FBAuthAPI(
                     response.body<MeResponse>()
                 }
 
-        log.d { "User - id: $userId, name: $userName" }
+        log.d { "User - id: ${user.fbId.id}, name: ${user.name}" }
         client
             .get(
-                "/$API_VERSION/$userId/accounts",
+                "/$API_VERSION/${user.fbId.id}/accounts",
             ) {
                 parameter("access_token", userAccessToken.token)
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
                 response.body<ManagedPages>().data
             }.parMap {
-                val info = getPageMetadata(FBPageID(it.id.toULong()), PageAccessToken(it.pageAccessToken)).bind()
+                val info = getPageMetadata(it.fbId, it.pageAccessToken).bind()
                 AuthorizedPageFromUser(
-                    userId.toULong().let(::FBUserID),
-                    userName,
+                    user.fbId,
+                    user.name,
                     userAccessToken,
-                    info.fbId.toULong().let(::FBPageID),
+                    info.fbId,
                     info.name,
-                    PageAccessToken(it.pageAccessToken),
+                    it.pageAccessToken,
                 )
             }
     }
@@ -156,7 +155,7 @@ class FBAuthAPI(
             )
         log.d { "Exchange result: ${response.status}" }
         val data = response.body<OAuthExchangeResponse>()
-        AppAccessToken(data.accessToken)
+        data.appAccessToken
     }
 
     private class OAuthStateManager(
