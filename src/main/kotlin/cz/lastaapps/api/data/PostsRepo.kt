@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -61,6 +62,14 @@ class PostsRepo(
         scheduleJob?.cancel()
         scheduleJob = scope.launch {
             while (true) {
+                log.i {
+                    val nextRun = Clock.System.now()
+                        .epochSeconds.let(Instant::fromEpochSeconds)
+                        .plus(config.interval).toLocalDateTime(TimeZone.UTC)
+
+                    "Next run is scheduled for $nextRun (in ${config.interval})"
+                }
+
                 mutex.withLock {
                     processBatchJob = scope.launch {
                         Either.runCatching {
@@ -70,8 +79,6 @@ class PostsRepo(
                         }.onFailure { log.e(it) { "Failed to fetch and post new posts (CRITICAL)" } }
                     }
                 }
-                val nextRun = Clock.System.now().plus(config.interval).toLocalDateTime(TimeZone.UTC)
-                log.i { "Waiting for ${config.interval} (next run at $nextRun)" }
                 delay(config.interval)
             }
         }

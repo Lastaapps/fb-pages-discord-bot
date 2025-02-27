@@ -53,6 +53,7 @@ class DiscordAPI(
 
         val message =
             kord.rest.channel.createMessage(channelID.toSnowflake()) {
+                var anyEmbedPosted = false
                 val postImageUrl =
                     post
                         .images()
@@ -72,6 +73,7 @@ class DiscordAPI(
                     }.trimToDescription()
 
                 if (postDescription.isNotBlank() || postImageUrl != null) {
+                    anyEmbedPosted = true
                     embed {
                         timestamp = post.createdAt
                         title = page.name
@@ -113,6 +115,7 @@ class DiscordAPI(
                 }
 
                 events.forEach { event ->
+                    anyEmbedPosted = true
                     val eventImageUrl =
                         event.coverPhoto
                             ?.source
@@ -153,7 +156,22 @@ class DiscordAPI(
                         }
                     }
                 }
+
+                // If the post references another post or event that we don't have access to
+                // both the message and images can be empty. In that case the code would send
+                // an empty message, which is prohibited by DC API.
+                // https://facecook.com/1446471142347491_1183196140476661
+                if (!anyEmbedPosted) {
+                    embed {
+                        timestamp = post.createdAt
+                        title = page.name
+                        url = post.toURL()
+                        color = postColor
+                        description = "This post cannot be sadly process by the bot.\n" + post.toURL()
+                    }
+                }
             }
+
 
         // Creates previews for links contained in the post's text
         // that were not present in attachments (we cannot access them using API)

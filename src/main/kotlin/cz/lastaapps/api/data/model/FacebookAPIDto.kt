@@ -162,7 +162,7 @@ data class PagePost(
 
         fun processAttachment(attachment: Attachment) {
             // to handle albums, where media type is not presented
-            if (attachment.type == "photo") {
+            if (attachment.type in listOf("photo", "cover_photo")) {
                 attachment.media
                     ?.image
                     ?.src
