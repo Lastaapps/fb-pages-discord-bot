@@ -185,6 +185,10 @@ class DiscordAPI(
                 }
             }
 
+        // If the channel is an announcement channel and some other servers follow it,
+        // this will also send the message to the other servers
+        kord.rest.channel.crossPost(channelID.toSnowflake(), message.id)
+
         DCMessageID(message.id.value)
     }
 
