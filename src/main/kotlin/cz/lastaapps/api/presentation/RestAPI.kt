@@ -1,8 +1,8 @@
 package cz.lastaapps.api.presentation
 
 import co.touchlab.kermit.Logger
-import cz.lastaapps.api.data.FBAuthAPI
-import cz.lastaapps.api.data.ManagementRepo
+import cz.lastaapps.api.data.api.FBAuthAPI
+import cz.lastaapps.api.data.repo.ManagementRepo
 import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.respondError
 import cz.lastaapps.api.domain.model.id.DCChannelID

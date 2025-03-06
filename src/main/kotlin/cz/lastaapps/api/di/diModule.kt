@@ -1,11 +1,11 @@
 package cz.lastaapps.api.di
 
 import co.touchlab.kermit.Logger
-import cz.lastaapps.api.data.DiscordAPI
-import cz.lastaapps.api.data.FBAuthAPI
-import cz.lastaapps.api.data.FBDataAPI
-import cz.lastaapps.api.data.ManagementRepo
-import cz.lastaapps.api.data.PostsRepo
+import cz.lastaapps.api.data.api.DiscordAPI
+import cz.lastaapps.api.data.api.FBAuthAPI
+import cz.lastaapps.api.data.api.FBDataAPI
+import cz.lastaapps.api.data.repo.ManagementRepo
+import cz.lastaapps.api.data.repo.PostsRepo
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.usecase.AddPageUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC

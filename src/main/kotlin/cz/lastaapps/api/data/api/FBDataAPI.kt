@@ -1,4 +1,4 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.api
 
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.API_VERSION
@@ -20,7 +20,7 @@ import io.ktor.client.request.parameter
 class FBDataAPI(
     private val client: HttpClient,
 ) {
-    private val log = Logger.withTag("DataAPI")
+    private val log = Logger.Companion.withTag("DataAPI")
 
     suspend fun loadPagePosts(
         pageID: FBPageID,
@@ -28,7 +28,7 @@ class FBDataAPI(
     ): Outcome<List<PagePost>> = catchingFacebookAPI {
         log.d { "Loading page posts ${pageID.id}" }
         client
-            .get("/$API_VERSION/${pageID.id}/feed") {
+            .get("/${API_VERSION}/${pageID.id}/feed") {
                 parameter("access_token", pageAccessToken.token)
                 parameter(
                     "fields",
@@ -46,7 +46,7 @@ class FBDataAPI(
     ): Outcome<Event> = catchingFacebookAPI {
         log.d { "Loading event ${eventID.id}" }
         client
-            .get("/$API_VERSION/${eventID.id}") {
+            .get("/${API_VERSION}/${eventID.id}") {
                 parameter("access_token", pageAccessToken.token)
                 parameter(
                     "fields",
@@ -64,7 +64,7 @@ class FBDataAPI(
     ): Outcome<List<Page>> = catchingFacebookAPI {
         log.d { "Searching for $name" }
         client
-            .get("/$API_VERSION/pages/search") {
+            .get("/${API_VERSION}/pages/search") {
                 parameter("q", name)
                 parameter("access_token", appAccessToken.token)
                 parameter(

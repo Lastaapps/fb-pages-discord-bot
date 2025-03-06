@@ -1,4 +1,4 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.repo
 
 import arrow.core.Either
 import arrow.core.None
@@ -7,6 +7,9 @@ import arrow.core.raise.either
 import arrow.core.some
 import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
+import cz.lastaapps.api.data.AppDatabase
+import cz.lastaapps.api.data.api.DiscordAPI
+import cz.lastaapps.api.data.api.FBDataAPI
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.Outcome

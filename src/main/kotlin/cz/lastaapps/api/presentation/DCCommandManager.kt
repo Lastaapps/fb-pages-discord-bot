@@ -2,7 +2,7 @@ package cz.lastaapps.api.presentation
 
 import arrow.core.Either
 import co.touchlab.kermit.Logger
-import cz.lastaapps.api.data.DiscordKord
+import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.domain.error.text
 import cz.lastaapps.api.domain.model.Page
 import cz.lastaapps.api.domain.model.id.toChannelID

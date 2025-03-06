@@ -4,7 +4,7 @@ import arrow.core.None
 import arrow.core.Option
 import arrow.core.Some
 import arrow.core.right
-import cz.lastaapps.api.data.FBAuthAPI
+import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.token.AppAccessToken
 import cz.lastaapps.api.presentation.AppConfig

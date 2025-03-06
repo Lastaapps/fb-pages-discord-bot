@@ -1,4 +1,4 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.repo
 
 import arrow.core.None
 import arrow.core.Option
@@ -9,6 +9,9 @@ import arrow.core.right
 import arrow.core.some
 import arrow.core.toOption
 import co.touchlab.kermit.Logger
+import cz.lastaapps.api.data.AppDatabase
+import cz.lastaapps.api.data.api.DiscordKord
+import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome

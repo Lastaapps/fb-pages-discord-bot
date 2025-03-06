@@ -1,6 +1,7 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.api
 
 import co.touchlab.kermit.Logger
+import cz.lastaapps.api.data.formatDateTime
 import cz.lastaapps.api.data.model.Event
 import cz.lastaapps.api.data.model.PagePost
 import cz.lastaapps.api.domain.error.Outcome

@@ -5,8 +5,8 @@ import arrow.core.None
 import arrow.core.Some
 import arrow.core.raise.either
 import co.touchlab.kermit.Logger
-import cz.lastaapps.api.data.FBAuthAPI
-import cz.lastaapps.api.data.ManagementRepo
+import cz.lastaapps.api.data.api.FBAuthAPI
+import cz.lastaapps.api.data.repo.ManagementRepo
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.LogicError

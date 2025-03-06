@@ -1,7 +1,7 @@
 package cz.lastaapps.api.domain.usecase
 
 import arrow.core.flatten
-import cz.lastaapps.api.data.FBDataAPI
+import cz.lastaapps.api.data.api.FBDataAPI
 import cz.lastaapps.api.domain.AppTokenProvider
 
 class SearchPagesUC(

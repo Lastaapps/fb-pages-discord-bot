@@ -1,6 +1,6 @@
 package cz.lastaapps.api.domain.usecase
 
-import cz.lastaapps.api.data.PostsRepo
+import cz.lastaapps.api.data.repo.PostsRepo
 
 class RunJobsUC(
     private val repo: PostsRepo,

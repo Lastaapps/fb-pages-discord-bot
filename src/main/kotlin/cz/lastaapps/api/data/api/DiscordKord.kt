@@ -1,4 +1,4 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.api
 
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.presentation.AppConfig
@@ -16,7 +16,7 @@ value class DiscordKord private constructor(val kord: Kord) {
     }
 
     companion object {
-        private val log = Logger.withTag("DiscordKord")
+        private val log = Logger.Companion.withTag("DiscordKord")
 
         suspend fun create(
             config: AppConfig,
@@ -27,4 +27,3 @@ value class DiscordKord private constructor(val kord: Kord) {
     }
 
 }
-

@@ -1,4 +1,4 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.api
 
 import arrow.core.left
 import arrow.core.right
