@@ -5,10 +5,10 @@ import arrow.core.right
 import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.API_VERSION
-import cz.lastaapps.api.data.model.ManagedPages
-import cz.lastaapps.api.data.model.MeResponse
-import cz.lastaapps.api.data.model.OAuthExchangeResponse
-import cz.lastaapps.api.data.model.PageInfo
+import cz.lastaapps.api.data.model.FBManagedPages
+import cz.lastaapps.api.data.model.FBMeResponse
+import cz.lastaapps.api.data.model.FBOAuthExchangeResponse
+import cz.lastaapps.api.data.model.FBPageInfo
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingFacebookAPI
@@ -83,7 +83,7 @@ class FBAuthAPI(
                     "&code=${code.encodeURLParameter()}",
             )
         log.d { "Exchange result: ${response.status}" }
-        val data = response.body<OAuthExchangeResponse>()
+        val data = response.body<FBOAuthExchangeResponse>()
         data.userAccessToken
     }
 
@@ -99,7 +99,7 @@ class FBAuthAPI(
                 }.let { response ->
                     log.d { "Status code: ${response.status}" }
                     println(response.bodyAsText())
-                    response.body<MeResponse>()
+                    response.body<FBMeResponse>()
                 }
 
         log.d { "User - id: ${user.fbId.id}, name: ${user.name}" }
@@ -110,7 +110,7 @@ class FBAuthAPI(
                 parameter("access_token", userAccessToken.token)
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<ManagedPages>().data
+                response.body<FBManagedPages>().data
             }.parMap {
                 val info = getPageMetadata(it.fbId, it.pageAccessToken).bind()
                 AuthorizedPageFromUser(
@@ -132,14 +132,14 @@ class FBAuthAPI(
     suspend fun getPageMetadata(
         pageIDOrUrlPart: String,
         pageAccessToken: PageAccessToken,
-    ): Outcome<PageInfo> = catchingFacebookAPI {
+    ): Outcome<FBPageInfo> = catchingFacebookAPI {
         log.d { "Loading page info $pageIDOrUrlPart" }
         client
             .get("/$API_VERSION/${pageIDOrUrlPart}") {
                 parameter("access_token", pageAccessToken.token)
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<PageInfo>()
+                response.body<FBPageInfo>()
             }
     }
 
@@ -154,7 +154,7 @@ class FBAuthAPI(
                     "&grant_type=client_credentials",
             )
         log.d { "Exchange result: ${response.status}" }
-        val data = response.body<OAuthExchangeResponse>()
+        val data = response.body<FBOAuthExchangeResponse>()
         data.appAccessToken
     }
 

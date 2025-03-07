@@ -5,7 +5,7 @@ import co.touchlab.kermit.SystemWriter
 import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.TimeStampFormatter
 import cz.lastaapps.api.data.api.DiscordKord
-import cz.lastaapps.api.data.repo.PostsRepo
+import cz.lastaapps.api.data.repo.ProcessingRepo
 import cz.lastaapps.api.di.diModule
 import cz.lastaapps.api.presentation.AppConfig
 import cz.lastaapps.api.presentation.DCCommandManager
@@ -53,5 +53,5 @@ fun main() =
         log.i { "-".repeat(80) }
 
         // starts posts fetching
-        koin.get<PostsRepo>().requestNow()
+        koin.get<ProcessingRepo>().requestNow()
     }

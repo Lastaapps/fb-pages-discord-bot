@@ -1,9 +1,9 @@
 package cz.lastaapps.api.domain.usecase
 
-import cz.lastaapps.api.data.repo.PostsRepo
+import cz.lastaapps.api.data.repo.ProcessingRepo
 
 class RunJobsUC(
-    private val repo: PostsRepo,
+    private val repo: ProcessingRepo,
 ) {
     suspend operator fun invoke() {
         repo.requestNow()

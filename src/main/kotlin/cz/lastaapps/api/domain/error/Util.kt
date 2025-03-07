@@ -11,8 +11,8 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.RoutingCall
 import kotlin.time.Duration.Companion.seconds
 
-suspend fun <E : DomainError, T> catchingNetwork(
-    block: suspend Raise<E>.() -> T,
+suspend fun <T> catchingNetwork(
+    block: suspend Raise<DomainError>.() -> T,
 ): Outcome<T> =
     Either.catch { either { block() } }.mapLeft {
         Logger.withTag("catchingNetwork").e(it) { "Failed network call" }

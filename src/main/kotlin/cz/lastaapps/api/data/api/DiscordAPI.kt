@@ -1,12 +1,13 @@
 package cz.lastaapps.api.data.api
 
+import arrow.core.Either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.formatDateTime
-import cz.lastaapps.api.data.model.Event
-import cz.lastaapps.api.data.model.PagePost
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingDiscord
 import cz.lastaapps.api.domain.model.AuthorizedPage
+import cz.lastaapps.api.domain.model.Event
+import cz.lastaapps.api.domain.model.Post
 import cz.lastaapps.api.domain.model.id.DCChannelID
 import cz.lastaapps.api.domain.model.id.DCMessageID
 import cz.lastaapps.api.domain.model.id.toSnowflake
@@ -45,10 +46,10 @@ class DiscordAPI(
     suspend fun postPostAndEvents(
         channelID: DCChannelID,
         page: AuthorizedPage,
-        post: PagePost,
+        post: Post,
         events: List<Event>,
     ): Outcome<DCMessageID> = catchingDiscord {
-        log.d { "Posting post ${post.fbId.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
+        log.d { "Posting post ${post.id.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
 
         val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
 
@@ -57,17 +58,17 @@ class DiscordAPI(
                 var anyEmbedPosted = false
                 val postImageUrl =
                     post
-                        .images()
+                        .images
                         .firstOrNull()
                         ?.let { url ->
-                            addFile("post_img", url, client).bind()
+                            addFile("post_img", url.toString(), client).bind()
                         }?.url
 
                 val postDescription =
                     buildString {
-                        post.titlesAndDescriptions().forEach { (title, body) ->
-                            title?.let { append("**$it**\n") }
-                            body?.let { append("$it\n") }
+                        post.sections.forEach { section ->
+                            section.title?.let { append("**$it**\n") }
+                            section.message?.let { append("$it\n") }
                             append('\n')
                             append('\n')
                         }
@@ -81,7 +82,7 @@ class DiscordAPI(
                         // post's description cannot be empty.
                         // It may be empty for posts with only a single photo
                         description = postDescription.takeUnless { it.isBlank() } ?: "\uD83D\uDCF7"
-                        url = post.toURL()
+                        url = post.link.link.toString()
                         image = postImageUrl
                         color = postColor
 
@@ -95,18 +96,18 @@ class DiscordAPI(
                                             it.location?.formattedLatitude,
                                             it.location?.formattedLongitude,
                                         ).joinToString(", ").takeIf { it.isNotBlank() },
-                                        it.toURL(),
+                                        it.link,
                                     ).joinToString("\n")
                             }
                         }
 
-                        if (post.images().size > 1) {
+                        if (post.images.size > 1) {
                             field {
                                 name = "Album"
                                 value = "Tento příspěvek skrývá více fotek/videí"
                             }
                         }
-                        post.attachmentLinks().takeIf { it.isNotEmpty() }?.let {
+                        post.linksInAttachments.takeIf { it.isNotEmpty() }?.let {
                             field {
                                 name = "Odkazy"
                                 value = it.joinToString("\n")
@@ -118,17 +119,16 @@ class DiscordAPI(
                 events.forEach { event ->
                     anyEmbedPosted = true
                     val eventImageUrl =
-                        event.coverPhoto
-                            ?.source
+                        event.coverPhotoLink
                             ?.let { url ->
-                                addFile("event_img", url, client).bind()
+                                addFile("event_img", url.toString(), client).bind()
                             }?.url
 
                     embed {
                         timestamp = post.createdAt
                         title = event.name
                         description = event.description?.trimToDescription()
-                        url = event.toURL()
+                        url = event.link.toString()
                         image = eventImageUrl
                         color = postColor
 
@@ -166,9 +166,9 @@ class DiscordAPI(
                     embed {
                         timestamp = post.createdAt
                         title = page.name
-                        url = post.toURL()
+                        url = post.link.link.toString()
                         color = postColor
-                        description = "This post cannot be sadly process by the bot.\n" + post.toURL()
+                        description = "This post cannot be sadly process by the bot.\n" + post.link.link.toString()
                     }
                 }
             }
@@ -176,9 +176,8 @@ class DiscordAPI(
 
         // Creates previews for links contained in the post's text
         // that were not present in attachments (we cannot access them using API)
-        (post.unavailableEventIDs()
-            .map { "https://www.facebook.com/events/${it}" } +
-            post.linksInText())
+        (post.inaccessibleEventIds.map { "https://www.facebook.com/events/${it}" } +
+            post.linksInText.map { it.link.toString() })
             .forEach { link ->
                 kord.rest.channel.createMessage(channelID.toSnowflake()) {
                     content = link
@@ -188,7 +187,11 @@ class DiscordAPI(
 
         // If the channel is an announcement channel and some other servers follow it,
         // this will also send the message to the other servers
-        kord.rest.channel.crossPost(channelID.toSnowflake(), message.id)
+        Either.catch {
+            kord.rest.channel.crossPost(channelID.toSnowflake(), message.id)
+        }.onLeft {
+            log.e { "Failed to cross post the message (is it an announcement channel)" }
+        }
 
         DCMessageID(message.id.value)
     }

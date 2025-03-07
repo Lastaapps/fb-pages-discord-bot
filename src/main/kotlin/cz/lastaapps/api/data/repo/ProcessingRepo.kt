@@ -9,7 +9,8 @@ import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordAPI
-import cz.lastaapps.api.data.api.FBDataAPI
+import cz.lastaapps.api.data.provider.EventProvider
+import cz.lastaapps.api.data.provider.PostProvider
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.Outcome
@@ -20,7 +21,6 @@ import cz.lastaapps.api.domain.model.id.DBChannelID
 import cz.lastaapps.api.domain.model.id.DBPageID
 import cz.lastaapps.api.domain.model.id.DCChannelID
 import cz.lastaapps.api.domain.model.id.DCMessageID
-import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.model.id.FBPostID
 import cz.lastaapps.api.domain.model.token.PageAccessToken
@@ -38,14 +38,17 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-class PostsRepo(
+// Yes, this is business logic and it should not be in data layer
+// I may fix it later at some point, will see
+class ProcessingRepo(
     private val config: AppConfig,
     private val database: AppDatabase,
     private val appTokenProvider: AppTokenProvider,
-    private val dataApi: FBDataAPI,
+    private val postProvider: PostProvider,
+    private val eventProvider: EventProvider,
     private val discordApi: DiscordAPI,
 ) {
-    private val log = Logger.withTag("PostsRepo")
+    private val log = Logger.withTag("ProcessingRepo")
     private inline val curd get() = database.database.postedPostQueries
     private inline val queries get() = database.database.queriesQueries
 
@@ -76,9 +79,9 @@ class PostsRepo(
                 mutex.withLock {
                     processBatchJob = scope.launch {
                         Either.runCatching {
-                            processBatch().onLeft {
-                                log.e(it) { "Failed to fetch and post new posts" }
-                            }
+                            processBatch()
+                                .onLeft { log.e(it) { "Failed to fetch and post new posts" } }
+                                .onRight { log.i { "Batch processed, see you soon" } }
                         }.onFailure { log.e(it) { "Failed to fetch and post new posts (CRITICAL)" } }
                     }
                 }
@@ -89,27 +92,28 @@ class PostsRepo(
 
     private suspend fun processBatch() = either<DomainError, Unit> {
         log.i { "Starting badge processing..." }
+        val fetchPagesConcurrency = 5
+        val postPostsConcurrency = 1
 
         val batch = loadPageDiscordPairs().bind()
 
         val pageIdToPage = batch.pages.values.associateBy { it.fbId }
-        val pageIdToPosts = batch.pages.entries.parMap(concurrency = 5) { (pageID, page) ->
+        val pageIdToPosts = batch.pages.entries.parMap(concurrency = fetchPagesConcurrency) { (pageID, page) ->
             log.d { "Fetching page ${page.name}" }
-            dataApi.loadPagePosts(page.fbId, page.accessToken).map { posts ->
-                posts.filter { it.canBePublished() }
-                    .let { pageID to it }
+            postProvider.loadPagePosts(page.fbId, page.accessToken).map { posts ->
+                posts.let { pageID to it }
             }
         }.associate { it.bind() }
 
-        val postsMap = pageIdToPosts.values.flatten().associateBy { it.fbId }
+        val postsMap = pageIdToPosts.values.flatten().associateBy { it.id }
         val postIdToPage = pageIdToPosts.entries.map { (page, posts) ->
-            posts.map { it.fbId to page }
+            posts.map { it.id to page }
         }.flatten().toMap()
 
-        batch.requests.entries.parMap(concurrency = 1) { (channel, pages) ->
+        batch.requests.entries.parMap(concurrency = postPostsConcurrency) { (channel, pages) ->
             log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
             val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
-            val postIds = posts.map { it.fbId }.toSet()
+            val postIds = posts.map { it.id }.toSet()
             val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
                 .executeAsList()
                 .toSet()
@@ -122,18 +126,18 @@ class PostsRepo(
                     val post = postsMap[it]!!
                     val page = pageIdToPage[postIdToPage[it]!!]!!
 
-                    val events = post.accessibleEventIDs().parMap(concurrency = 1) { id ->
-                        dataApi.loadEventData(FBEventID(id), page.accessToken).bind()
-                    }.filter { event -> event.canBePublished() }
+                    val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
+                        eventProvider.loadEventData(id, page.accessToken).bind()
+                    }.filterOption()
                     log.i {
-                        "Posting ${post.fbId.id} (${
+                        "Posting ${post.id.id} (${
                             post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
                         }) to ${channel.name} (${channel.name})"
                     }
                     val messageID = discordApi.postPostAndEvents(
                         channel.dcId, page, post, events,
                     ).bind()
-                    createMessagePostRelation(channel.dbId, page.dbId, post.fbId, messageID)
+                    createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
                 }
         }
     }

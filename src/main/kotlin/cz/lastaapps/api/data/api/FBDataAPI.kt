@@ -2,9 +2,9 @@ package cz.lastaapps.api.data.api
 
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.API_VERSION
-import cz.lastaapps.api.data.model.Event
-import cz.lastaapps.api.data.model.PageInfoList
-import cz.lastaapps.api.data.model.PagePost
+import cz.lastaapps.api.data.model.FBEvent
+import cz.lastaapps.api.data.model.FBPageInfoList
+import cz.lastaapps.api.data.model.FBPagePost
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingFacebookAPI
 import cz.lastaapps.api.domain.model.Page
@@ -25,7 +25,7 @@ class FBDataAPI(
     suspend fun loadPagePosts(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
-    ): Outcome<List<PagePost>> = catchingFacebookAPI {
+    ): Outcome<List<FBPagePost>> = catchingFacebookAPI {
         log.d { "Loading page posts ${pageID.id}" }
         client
             .get("/${API_VERSION}/${pageID.id}/feed") {
@@ -36,14 +36,14 @@ class FBDataAPI(
                 )
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<PagePost.Container>().data
+                response.body<FBPagePost.Container>().data
             }
     }
 
     suspend fun loadEventData(
         eventID: FBEventID,
         pageAccessToken: PageAccessToken,
-    ): Outcome<Event> = catchingFacebookAPI {
+    ): Outcome<FBEvent> = catchingFacebookAPI {
         log.d { "Loading event ${eventID.id}" }
         client
             .get("/${API_VERSION}/${eventID.id}") {
@@ -54,7 +54,7 @@ class FBDataAPI(
                 )
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<Event>()
+                response.body<FBEvent>()
             }
     }
 
@@ -73,7 +73,7 @@ class FBDataAPI(
                 )
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<PageInfoList>().data
+                response.body<FBPageInfoList>().data
             }
             .map { Page(it.fbId, it.name) }
     }

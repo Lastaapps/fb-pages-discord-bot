@@ -1,29 +1,22 @@
 package cz.lastaapps.api.data.model
 
 import cz.lastaapps.api.data.createdTimeToInstant
-import cz.lastaapps.api.data.extractLinks
 import cz.lastaapps.api.data.idToFacebookURL
-import cz.lastaapps.api.data.isFBEventLink
-import cz.lastaapps.api.data.isFBLink
-import cz.lastaapps.api.data.isFBRedirectLink
+import cz.lastaapps.api.domain.model.Place
+import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.model.id.FBPostID
 import cz.lastaapps.api.domain.model.id.FBUserID
 import cz.lastaapps.api.domain.model.token.AppAccessToken
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.UserAccessToken
-import cz.lastaapps.common.decodeFacebookUrl
-import io.ktor.client.HttpClient
-import io.ktor.client.request.head
-import io.ktor.http.Url
-import kotlin.math.absoluteValue
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class OAuthExchangeResponse(
+data class FBOAuthExchangeResponse(
     @SerialName("access_token")
     private val accessToken: String,
     @SerialName("token_type")
@@ -35,7 +28,7 @@ data class OAuthExchangeResponse(
 }
 
 @Serializable
-data class MeResponse(
+data class FBMeResponse(
     @SerialName("id")
     private val id: String,
     @SerialName("name")
@@ -45,13 +38,13 @@ data class MeResponse(
 }
 
 @Serializable
-data class PageInfoList(
+data class FBPageInfoList(
     @SerialName("data")
-    val data: List<PageInfo>,
+    val data: List<FBPageInfo>,
 )
 
 @Serializable
-data class PageInfo(
+data class FBPageInfo(
     @SerialName("id")
     private val id: String,
     @SerialName("name")
@@ -61,13 +54,13 @@ data class PageInfo(
 }
 
 @Serializable
-data class ManagedPages(
+data class FBManagedPages(
     @SerialName("data")
-    val data: List<ManagedPage>,
+    val data: List<FBManagedPage>,
 )
 
 @Serializable
-data class ManagedPage(
+data class FBManagedPage(
     @SerialName("id")
     private val id: String,
     @SerialName("name")
@@ -112,7 +105,7 @@ data class ManagedPage(
  * attachment.title is the event title
  */
 @Serializable
-data class PagePost(
+data class FBPagePost(
     @SerialName("id")
     private val id: String,
     @SerialName("message")
@@ -120,9 +113,9 @@ data class PagePost(
     @SerialName("full_picture")
     private val fullPicture: String? = null,
     @SerialName("attachments")
-    private val attachments: Attachment.Container? = null,
+    private val attachments: FBAttachment.Container? = null,
     @SerialName("place")
-    val place: Place? = null,
+    val place: FBPlace? = null,
     @SerialName("is_hidden")
     private val isHidden: Boolean,
     @SerialName("is_published")
@@ -136,155 +129,25 @@ data class PagePost(
 
     val fbId get() = FBPostID(id)
 
+    fun toURL() = id.idToFacebookURL()
+
+    fun canBePublished() = !isHidden && isPublished && !isExpired
+
     @Serializable
     data class Container(
         @SerialName("data")
-        val data: List<PagePost>,
+        val data: List<FBPagePost>,
     )
 
-    fun toURL() = id.idToFacebookURL()
-
-    /** Returns a list of image URLs associated with the post */
-    fun images(limit: Int = 5): List<String> {
-        val imagesSet = mutableSetOf<String>()
-        val imagesOrdered = mutableListOf<String>()
-
-        fun addImage(src: String) {
-            if ("fbcdn" in src && src !in imagesSet) {
-                imagesSet += src
-                imagesOrdered += src
-            }
-        }
-
-        // this is the most important image of the whole post
-        // disabled for now as it interferes with events
-//        fullPicture?.let(::addImage)
-
-        fun processAttachment(attachment: Attachment) {
-            // to handle albums, where media type is not presented
-            if (attachment.type in listOf("photo", "cover_photo")) {
-                attachment.media
-                    ?.image
-                    ?.src
-                    ?.let(::addImage)
-                return
-            }
-
-            when (attachment.mediaType) {
-                "photo", "link" ->
-                    if (attachment.type in listOf("photo", "link", "status", "share")) {
-                        attachment.media
-                            ?.image
-                            ?.src
-                            ?.let(::addImage)
-                    }
-
-                "album" -> attachment.subAttachments?.data?.forEach(::processAttachment)
-            }
-        }
-        attachments?.data?.forEach(::processAttachment)
-        return imagesOrdered.take(limit)
-    }
-
-    fun titlesAndDescriptions(): List<Pair<String?, String?>> {
-        val list = mutableListOf<Pair<String?, String?>>(null to message)
+    fun attachments() =
         attachments?.data
             // there are two variants: "at the moment" and "right now"
             ?.filterNot { it.title?.startsWith("This content isn't available") == true }
-            ?.forEach {
-                if (it.type !in listOf("event", "map")) {
-                    if (it.mediaType !in listOf("album")) {
-                        list.add(it.title to it.description)
-                    }
-                }
-            }
-        return list
-            .filter { it.first != null || it.second != null }
-            .distinct()
-    }
-
-    private fun rawLinksInText(): List<String> =
-        message?.extractLinks().orEmpty()
-            // the regex also matches links that are in parentheses
-            // "(https://www.example.com)"
-            .map { it.dropWhile { it == '(' } }
-            .map { it.dropLastWhile { it == ')' } }
-
-    /**
-     * Returns links in the text of the post
-     * excluding links to Facebook events
-     * that should be handled separately
-     */
-    fun linksInText(): List<String> =
-        rawLinksInText()
-            .filterNot(::isFBLink)
-            .filterNot(::isFBEventLink)
-            .run {
-                val attachmentEvents = attachmentLinks()
-                filterNot { it in attachmentEvents }
-            }
-
-    /** Returns a list of links associated with the post */
-    fun attachmentLinks(): List<String> =
-        attachments?.data?.mapNotNull { it ->
-            it.target
-                ?.url
-                ?.takeIf(::isFBRedirectLink)
-                ?.let(::decodeFacebookUrl)
-        } ?: emptyList()
-
-    /** Returns a list of event IDs associated with the post.
-     * The token used should have rights to access the events details using API
-     */
-    fun accessibleEventIDs(): List<String> =
-        attachments?.data?.mapNotNull {
-            if (it.type == "event") {
-                it.target?.id
-            } else {
-                null
-            }
-        } ?: emptyList()
-
-    /** Returns a list of event IDs destiled from the posts content.
-     * This happens when a page shares an event by
-     * adding a link to the event into the post text.
-     * We also have to make sure that in case we have access to the event,
-     * we do not return it twice, therefore we have to filter out event IDs
-     * from the attachment section.
-     * These should be previewed using Discord automatically
-     * by just posting the link in a separate message
-     */
-    suspend fun unavailableEventIDs(): List<String> =
-        rawLinksInText()
-            .filter(::isFBEventLink)
-            .map(::Url)
-            .map {
-                if (it.host == "fb.me") {
-                    // resolves the link into usual facebook.com format
-                    val response = client.head(it)
-                    response.call.request.url
-                } else {
-                    it
-                }
-            }
-            .mapNotNull {
-                it.segments.lastOrNull()?.trim()
-            }
-            .run {
-                val attachmentEvents = accessibleEventIDs()
-                filterNot { it in attachmentEvents }
-            }
-
-    fun canBePublished() = !isHidden && isPublished && !isExpired
-}
-
-// this is terrible design and practise, chacha
-private val client = HttpClient {
-    followRedirects = true
+            .orEmpty()
 }
 
 @Serializable
-data class Place(
+data class FBPlace(
     @SerialName("id")
     val id: String? = null,
     @SerialName("name")
@@ -301,16 +164,12 @@ data class Place(
         val latitude: Double? = null,
         val longitude: Double? = null,
     ) {
-        val formattedLatitude
-            get() =
-                latitude?.let { coordinate ->
-                    "%.6f%s".format(coordinate.absoluteValue, if (coordinate >= 0) "N" else "S")
-                }
-        val formattedLongitude
-            get() =
-                longitude?.let { coordinate ->
-                    "%.6f%s".format(coordinate.absoluteValue, if (coordinate >= 0) "E" else "W")
-                }
+        fun toDomain() = Place.Location(
+            city = city,
+            country = country,
+            latitude = latitude,
+            longitude = longitude,
+        )
     }
 }
 
@@ -318,7 +177,7 @@ data class Place(
  * https://developers.facebook.com/docs/graph-api/reference/story-attachment
  */
 @Serializable
-data class Attachment(
+data class FBAttachment(
     @SerialName("title")
     val title: String? = null,
     @SerialName("description")
@@ -342,7 +201,7 @@ data class Attachment(
     @Serializable
     data class Container(
         @SerialName("data")
-        val data: List<Attachment>,
+        val data: List<FBAttachment>,
     )
 
     @Serializable
@@ -365,9 +224,9 @@ data class Attachment(
 }
 
 @Serializable
-data class Event(
+data class FBEvent(
     @SerialName("id")
-    val id: String,
+    private val id: String,
     @SerialName("cover")
     val coverPhoto: CoverPhoto? = null,
     @SerialName("name")
@@ -375,7 +234,7 @@ data class Event(
     @SerialName("description")
     val description: String? = null,
     @SerialName("place")
-    val place: Place? = null,
+    val place: FBPlace? = null,
     @SerialName("start_time")
     private val startTime: String? = null,
     @SerialName("end_time")
@@ -421,6 +280,8 @@ data class Event(
 
     val startAt = startTime?.createdTimeToInstant()
     val endAt = endTime?.createdTimeToInstant()
+
+    val fbId get() = FBEventID(id)
 
     fun toURL() = id.idToFacebookURL()
 

@@ -4,8 +4,12 @@ import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.data.api.FBDataAPI
+import cz.lastaapps.api.data.provider.EventProvider
+import cz.lastaapps.api.data.provider.LinkResolver
+import cz.lastaapps.api.data.provider.LocationConverter
+import cz.lastaapps.api.data.provider.PostProvider
 import cz.lastaapps.api.data.repo.ManagementRepo
-import cz.lastaapps.api.data.repo.PostsRepo
+import cz.lastaapps.api.data.repo.ProcessingRepo
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.usecase.AddPageUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
@@ -39,11 +43,15 @@ val diModule = module {
     singleOf(::DCCommandManager)
     singleOf(::RestAPI)
     singleOf(::AppTokenProvider)
-    singleOf(::PostsRepo)
+    singleOf(::ProcessingRepo)
 
     factoryOf(::FBAuthAPI)
     factoryOf(::FBDataAPI)
     factoryOf(::DiscordAPI)
+    factoryOf(::LinkResolver)
+    factoryOf(::PostProvider)
+    factoryOf(::EventProvider)
+    factoryOf(::LocationConverter)
 
     factoryOf(::AddPageUC)
     factoryOf(::GetOAuthLink)
