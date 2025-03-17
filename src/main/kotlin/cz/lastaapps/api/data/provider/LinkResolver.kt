@@ -1,5 +1,6 @@
 package cz.lastaapps.api.data.provider
 
+import arrow.core.right
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingNetwork
@@ -10,6 +11,7 @@ import io.ktor.client.plugins.BrowserUserAgent
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.head
+import io.ktor.http.Url
 
 class LinkResolver(
     client: HttpClient = HttpClient(),
@@ -22,19 +24,20 @@ class LinkResolver(
         }
     }
 
-    suspend fun resolve(link: String): Outcome<ResolvedLink> = catchingNetwork {
+    suspend fun resolve(link: Url): Outcome<ResolvedLink> = catchingNetwork {
         // yes, this is a potential security risk - remote url execution or something
-        val response = client.head(link.trim())
+        val response = client.head(link)
         ResolvedLink(response.call.request.url)
     }
         .onRight {
-            if (it.link.toString() != link) {
+            if (it.link != link) {
                 log.i { "Resolved \"$link\" -> \"${it.link}\"" }
             }
         }
         .onLeft {
             log.e(it) { "Failed to resolve link $link" }
         }
+        .fold({ ResolvedLink(link) }, { it }).right()
 
     companion object {
         private val log = Logger.withTag("LinkResolver")

@@ -10,6 +10,7 @@ import cz.lastaapps.api.data.isFBLink
 import cz.lastaapps.api.data.isFBRedirectLink
 import cz.lastaapps.api.data.model.FBAttachment
 import cz.lastaapps.api.data.model.FBPagePost
+import cz.lastaapps.api.data.toUrlOrNull
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.Post
 import cz.lastaapps.api.domain.model.ResolvedLink
@@ -37,7 +38,7 @@ class PostProvider(
         }
 
     private suspend fun FBPagePost.toDomain() = either {
-        suspend fun resolve(url: String) = linkResolver.resolve(url).bind()
+        suspend fun resolve(url: Url) = linkResolver.resolve(url).bind()
 
         val resolvedLink = resolve(toURL())
         val sections = sections()
@@ -108,21 +109,23 @@ class PostProvider(
         return imagesOrdered.take(limit)
     }
 
-    private fun FBPagePost.rawLinksInText(): List<String> =
+    private fun FBPagePost.rawLinksInText(): List<Url> =
         message?.extractLinks().orEmpty()
             // the regex also matches links that are in parentheses
             // "(https://www.example.com)"
             .map { it.dropWhile { it == '(' } }
             .map { it.dropLastWhile { it == ')' } }
+            .mapNotNull { it.toUrlOrNull(log) }
 
     /** Returns a list of links associated with the post */
-    private fun FBPagePost.attachmentLinks(): List<String> =
+    private fun FBPagePost.attachmentLinks(): List<Url> =
         attachments().mapNotNull { it ->
             it.target
                 ?.url
                 ?.takeIf(::isFBRedirectLink)
                 ?.let(::decodeFacebookUrl)
         }
+            .mapNotNull { it.toUrlOrNull(log) }
 
     /**
      * Returns links in the text of the post

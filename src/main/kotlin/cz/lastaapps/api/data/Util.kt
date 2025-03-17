@@ -1,5 +1,6 @@
 package cz.lastaapps.api.data
 
+import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Message
 import co.touchlab.kermit.MessageStringFormatter
 import co.touchlab.kermit.Severity
@@ -36,7 +37,15 @@ private val facebookTimestampParser =
 // yes, I don't like this either, but I'm to lazy to do it properly
 fun String.createdTimeToInstant() = Instant.parse(this, facebookTimestampParser)
 
-fun String.idToFacebookURL() = "https://www.facebook.com/$this"
+fun String.idToFacebookURL() = Url("https://www.facebook.com/$this")
+
+fun String.toUrl() = Url(this.trim())
+fun String.toUrlOrNull(logger: Logger?) = try {
+    toUrl()
+} catch (e: Exception) {
+    logger?.e(e) { "Cannot parse provider URL: \"$this\"" }
+    null
+}
 
 fun isFBLink(link: String) =
     Url(link).host.run {
@@ -67,6 +76,7 @@ fun String.extractLinks(): List<String> =
     linksRegex.findAll(this)
         .map { it.value.trim() }
         .toList()
+
 fun Instant.formatDateTime(timeZone: TimeZone) =
     this
         .toLocalDateTime(timeZone)
