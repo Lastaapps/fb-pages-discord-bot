@@ -94,6 +94,7 @@ class ProcessingRepo(
         log.i { "Starting badge processing..." }
         val fetchPagesConcurrency = 5
         val postPostsConcurrency = 1
+        val resolvePostsConcurrency = 1
 
         val batch = loadPageDiscordPairs().bind()
 
@@ -106,7 +107,7 @@ class ProcessingRepo(
         }.associate { it.bind() }
 
         val postsMap = pageIdToPosts.values.flatten().associateBy { it.id }
-        val postIdToPage = pageIdToPosts.entries.map { (page, posts) ->
+        val postIdToPageId = pageIdToPosts.entries.map { (page, posts) ->
             posts.map { it.id to page }
         }.flatten().toMap()
 
@@ -117,17 +118,18 @@ class ProcessingRepo(
             val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
                 .executeAsList()
                 .toSet()
-            val newPosts = postIds - existingPosts
+
+            val newPosts = (postIds - existingPosts)
+                .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
             log.d { "Found ${newPosts.size} new posts" }
 
             newPosts
-                .sortedBy { postsMap[it]!!.createdAt }
-                .forEach {
-                    val post = postsMap[it]!!
-                    val page = pageIdToPage[postIdToPage[it]!!]!!
+                .sortedBy { it.createdAt }
+                .forEach { post ->
+                    val page = pageIdToPage[postIdToPageId[post.id]!!]!!
 
                     val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
-                        eventProvider.loadEventData(id, page.accessToken).bind()
+                        eventProvider.loadEventData(id, page.accessToken)().bind()
                     }.filterOption()
                     log.i {
                         "Posting ${post.id.id} (${

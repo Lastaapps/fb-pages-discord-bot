@@ -1,6 +1,5 @@
 package cz.lastaapps.api.data.provider
 
-import arrow.core.flatMap
 import arrow.core.raise.either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.FBDataAPI
@@ -11,11 +10,13 @@ import cz.lastaapps.api.data.isFBRedirectLink
 import cz.lastaapps.api.data.model.FBAttachment
 import cz.lastaapps.api.data.model.FBPagePost
 import cz.lastaapps.api.data.toUrlOrNull
+import cz.lastaapps.api.domain.LazyProvider
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.Post
 import cz.lastaapps.api.domain.model.ResolvedLink
 import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
+import cz.lastaapps.api.domain.model.id.FBPostID
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.common.decodeFacebookUrl
 import io.ktor.http.Url
@@ -28,13 +29,11 @@ class PostProvider(
     suspend fun loadPagePosts(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
-    ): Outcome<List<Post>> = api.loadPagePosts(pageID, pageAccessToken)
-        .flatMap { posts ->
-            either {
-                posts
-                    .filter { it.canBePublished() }
-                    .map { post -> post.toDomain().bind() }
-            }
+    ): Outcome<List<LazyProvider<FBPostID, Outcome<Post>>>> = api.loadPagePosts(pageID, pageAccessToken)
+        .map { posts ->
+            posts
+                .filter { it.canBePublished() }
+                .map { post -> LazyProvider(post.fbId) { post.toDomain() } }
         }
 
     private suspend fun FBPagePost.toDomain() = either {
