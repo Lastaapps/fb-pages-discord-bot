@@ -1,7 +1,7 @@
 package cz.lastaapps.api.data.model
 
-import cz.lastaapps.api.data.createdTimeToInstant
-import cz.lastaapps.api.data.idToFacebookURL
+import cz.lastaapps.api.data.util.createdTimeToInstant
+import cz.lastaapps.api.data.util.idToFacebookURL
 import cz.lastaapps.api.domain.model.Place
 import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID

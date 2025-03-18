@@ -9,6 +9,7 @@ import cz.lastaapps.api.data.model.FBManagedPages
 import cz.lastaapps.api.data.model.FBMeResponse
 import cz.lastaapps.api.data.model.FBOAuthExchangeResponse
 import cz.lastaapps.api.data.model.FBPageInfo
+import cz.lastaapps.api.data.util.bindBody
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingFacebookAPI
@@ -19,7 +20,6 @@ import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.UserAccessToken
 import cz.lastaapps.api.presentation.AppConfig
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
@@ -83,7 +83,7 @@ class FBAuthAPI(
                     "&code=${code.encodeURLParameter()}",
             )
         log.d { "Exchange result: ${response.status}" }
-        val data = response.body<FBOAuthExchangeResponse>()
+        val data = response.bindBody<FBOAuthExchangeResponse>()
         data.userAccessToken
     }
 
@@ -99,7 +99,7 @@ class FBAuthAPI(
                 }.let { response ->
                     log.d { "Status code: ${response.status}" }
                     println(response.bodyAsText())
-                    response.body<FBMeResponse>()
+                    response.bindBody<FBMeResponse>()
                 }
 
         log.d { "User - id: ${user.fbId.id}, name: ${user.name}" }
@@ -110,7 +110,7 @@ class FBAuthAPI(
                 parameter("access_token", userAccessToken.token)
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<FBManagedPages>().data
+                response.bindBody<FBManagedPages>().data
             }.parMap {
                 val info = getPageMetadata(it.fbId, it.pageAccessToken).bind()
                 AuthorizedPageFromUser(
@@ -139,7 +139,7 @@ class FBAuthAPI(
                 parameter("access_token", pageAccessToken.token)
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<FBPageInfo>()
+                response.bindBody<FBPageInfo>()
             }
     }
 
@@ -154,7 +154,7 @@ class FBAuthAPI(
                     "&grant_type=client_credentials",
             )
         log.d { "Exchange result: ${response.status}" }
-        val data = response.body<FBOAuthExchangeResponse>()
+        val data = response.bindBody<FBOAuthExchangeResponse>()
         data.appAccessToken
     }
 

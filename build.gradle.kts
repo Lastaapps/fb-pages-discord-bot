@@ -20,7 +20,7 @@ application {
 kotlin {
     jvmToolchain(21)
     compilerOptions {
-        freeCompilerArgs.add("-Xwhen-guards")
+        freeCompilerArgs.addAll("-Xwhen-guards", "-Xcontext-receivers")
     }
 }
 

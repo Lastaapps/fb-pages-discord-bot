@@ -2,7 +2,7 @@ package cz.lastaapps.api.data.api
 
 import arrow.core.Either
 import co.touchlab.kermit.Logger
-import cz.lastaapps.api.data.formatDateTime
+import cz.lastaapps.api.data.util.formatDateTime
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingDiscord
 import cz.lastaapps.api.domain.model.AuthorizedPage

@@ -19,6 +19,9 @@
 
 package cz.lastaapps.api.domain.error
 
+import cz.lastaapps.api.data.model.FBError
+import io.ktor.http.HttpStatusCode
+
 sealed interface NetworkError : DomainError {
     data object Timeout : NetworkError
 
@@ -28,5 +31,14 @@ sealed interface NetworkError : DomainError {
 
     data class SerializationError(
         override val throwable: Throwable,
+        val responseBody: String? = null,
     ) : NetworkError
+
+    data class FBAPIError(
+        val httpCode: HttpStatusCode,
+        // yes, I'm using a data model in domain layer
+        val error: FBError,
+    ) : NetworkError {
+        val isRateLimit get() = error.code == 4
+    }
 }

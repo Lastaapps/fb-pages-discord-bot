@@ -1,4 +1,4 @@
-package cz.lastaapps.api.data
+package cz.lastaapps.api.data.util
 
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Message

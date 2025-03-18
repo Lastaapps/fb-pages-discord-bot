@@ -5,6 +5,7 @@ import cz.lastaapps.api.API_VERSION
 import cz.lastaapps.api.data.model.FBEvent
 import cz.lastaapps.api.data.model.FBPageInfoList
 import cz.lastaapps.api.data.model.FBPagePost
+import cz.lastaapps.api.data.util.bindBody
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingFacebookAPI
 import cz.lastaapps.api.domain.model.Page
@@ -13,7 +14,6 @@ import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.model.token.AppAccessToken
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 
@@ -36,7 +36,7 @@ class FBDataAPI(
                 )
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<FBPagePost.Container>().data
+                response.bindBody<FBPagePost.Container>().data
             }
     }
 
@@ -54,7 +54,7 @@ class FBDataAPI(
                 )
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<FBEvent>()
+                response.bindBody<FBEvent>()
             }
     }
 
@@ -73,7 +73,7 @@ class FBDataAPI(
                 )
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
-                response.body<FBPageInfoList>().data
+                response.bindBody<FBPageInfoList>().data
             }
             .map { Page(it.fbId, it.name) }
     }

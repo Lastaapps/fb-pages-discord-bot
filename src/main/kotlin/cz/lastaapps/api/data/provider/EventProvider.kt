@@ -7,7 +7,7 @@ import arrow.core.raise.either
 import arrow.core.some
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.FBDataAPI
-import cz.lastaapps.api.data.toUrlOrNull
+import cz.lastaapps.api.data.util.toUrlOrNull
 import cz.lastaapps.api.domain.LazyProvider
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.Event

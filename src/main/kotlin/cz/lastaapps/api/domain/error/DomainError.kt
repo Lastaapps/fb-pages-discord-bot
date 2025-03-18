@@ -24,8 +24,9 @@ fun DomainError.text(): String = when (this) {
     LogicError.PageNotAuthorized -> "Page not authorized"
     NetworkError.ConnectionClosed -> "Connection closed"
     NetworkError.NoInternet -> "No internet connection"
-    is NetworkError.SerializationError -> "Failed to parse response"
     NetworkError.Timeout -> "Request timed out"
+    is NetworkError.SerializationError -> "Failed to parse response " + throwable.localizedMessage
+    is NetworkError.FBAPIError -> "FB API error: $error"
 }
 
 fun DomainError.httpCode(): HttpStatusCode = with(HttpStatusCode.Companion) {
