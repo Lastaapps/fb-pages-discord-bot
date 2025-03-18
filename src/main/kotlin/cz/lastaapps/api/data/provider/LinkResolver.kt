@@ -25,9 +25,13 @@ class LinkResolver(
     }
 
     suspend fun resolve(link: Url): Outcome<ResolvedLink> = catchingNetwork {
-        // yes, this is a potential security risk - remote url execution or something
-        val response = client.head(link)
-        ResolvedLink(response.call.request.url)
+        if (link.host.contains("facebook") || link.host.contains("fb")) {
+            // yes, this is a potential security risk - remote url execution or something
+            val response = client.head(link)
+            ResolvedLink(response.call.request.url)
+        } else {
+            ResolvedLink(link)
+        }
     }
         .onRight {
             if (it.link != link) {
