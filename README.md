@@ -13,7 +13,6 @@ Make sure bot has access to the channels where you use them.
 
 ## TODO
 
-- fails per channel
 - add "add bot tutorial" (mention pink pong)
 - add check_status command (to make sure the bot has all the required rights)
 - add pictures into README

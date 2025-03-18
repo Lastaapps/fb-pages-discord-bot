@@ -112,36 +112,40 @@ class ProcessingRepo(
         }.flatten().toMap()
 
         batch.requests.entries.parMap(concurrency = postPostsConcurrency) { (channel, pages) ->
-            log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
-            val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
-            val postIds = posts.map { it.id }.toSet()
-            val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
-                .executeAsList()
-                .toSet()
+            either {
+                log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
+                val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
+                val postIds = posts.map { it.id }.toSet()
+                val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
+                    .executeAsList()
+                    .toSet()
 
-            val newPosts = (postIds - existingPosts)
-                .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
-            log.d { "Found ${newPosts.size} new posts" }
+                val newPosts = (postIds - existingPosts)
+                    .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
+                log.d { "Found ${newPosts.size} new posts" }
 
-            newPosts
-                .sortedBy { it.createdAt }
-                .forEach { post ->
-                    val page = pageIdToPage[postIdToPageId[post.id]!!]!!
+                newPosts
+                    .sortedBy { it.createdAt }
+                    .forEach { post ->
+                        val page = pageIdToPage[postIdToPageId[post.id]!!]!!
 
-                    val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
-                        eventProvider.loadEventData(id, page.accessToken)().bind()
-                    }.filterOption()
-                    log.i {
-                        "Posting ${post.id.id} (${
-                            post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
-                        }) to ${channel.name} (${channel.name})"
+                        val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
+                            eventProvider.loadEventData(id, page.accessToken)().bind()
+                        }.filterOption()
+                        log.i {
+                            "Posting ${post.id.id} (${
+                                post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
+                            }) to ${channel.name} (${channel.name})"
+                        }
+                        val messageID = discordApi.postPostAndEvents(
+                            channel.dcId, page, post, events,
+                        ).bind()
+                        createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
                     }
-                    val messageID = discordApi.postPostAndEvents(
-                        channel.dcId, page, post, events,
-                    ).bind()
-                    createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
-                }
-        }
+            } to channel
+        }.onEach { (it, channel) ->
+            it.onLeft { log.e(it) { "Failed to process channel $channel" } }
+        }.forEach { it.first.bind() }
     }
 
     private data class BatchParam(

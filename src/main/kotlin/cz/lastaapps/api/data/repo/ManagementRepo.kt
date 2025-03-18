@@ -125,7 +125,7 @@ class ManagementRepo(
             .executeAsList()
             .map { (dbId, name, dcId) ->
                 val serverName = discordAPI.getServerNameForChannel(dcId)
-                    .onLeft { log.e(it) { "Failed to obtain server name for channel $dcId ($name)" } }
+                    .onLeft { log.e(it) { "Failed to obtain server name for channel ${dcId.id} ($name)" } }
                 Tuple4(dbId, dcId, name, serverName.fold({ None }, { it.some() }))
             }
 
