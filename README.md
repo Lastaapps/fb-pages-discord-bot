@@ -48,7 +48,10 @@ The bot needs following permission in the channel it's supposed to send messages
 - send messages
 - embed links
 - attach files
+  The following permissions will be required in the future, so better add them now
+- manage messages
 - read message history
+- manage events
 
 ### Events and embeds
 

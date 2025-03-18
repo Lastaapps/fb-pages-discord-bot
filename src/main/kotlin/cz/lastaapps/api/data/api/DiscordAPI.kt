@@ -14,6 +14,7 @@ import cz.lastaapps.api.domain.model.id.DCMessageID
 import cz.lastaapps.api.domain.model.id.toSnowflake
 import cz.lastaapps.common.colorsSet
 import cz.lastaapps.common.imageExtensions
+import dev.kord.common.entity.Permissions
 import dev.kord.rest.NamedFile
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.embed
@@ -211,5 +212,41 @@ class DiscordAPI(
         val serverId = channel.guildId.value ?: raise(LogicError.CannotAccessServerName)
         val server = kord.rest.guild.getGuild(serverId)
         server.name
+    }
+
+    suspend fun checkBotPermissions(
+        channelID: DCChannelID,
+        requiredPermissions: Permissions,
+    ): Outcome<Boolean> = catchingDiscord {
+        val botId = kord.selfId
+
+        val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
+        val guildId = channel.guildId.value
+        if (guildId == null) {
+            log.e { "Channel $channelID guild cannot be accessed" }
+            return@catchingDiscord false
+        }
+
+        val member = kord.rest.guild.getGuildMember(guildId, botId)
+        val roles = kord.rest.guild.getGuildRoles(guildId)
+
+        var guildPermissions = Permissions()
+        member.roles.forEach { roleId ->
+            roles.find { it.id == roleId }?.let { role ->
+                guildPermissions += role.permissions
+            }
+        }
+
+        var channelPermissionsAllowed = Permissions()
+        var channelPermissionsDenied = Permissions()
+        channel.permissionOverwrites.value?.forEach { overwrite ->
+            if (overwrite.id == botId || member.roles.contains(overwrite.id)) {
+                channelPermissionsAllowed += overwrite.allow
+                channelPermissionsDenied += overwrite.deny
+            }
+        }
+
+        val permissions = guildPermissions + channelPermissionsAllowed - channelPermissionsDenied
+        permissions.contains(requiredPermissions)
     }
 }

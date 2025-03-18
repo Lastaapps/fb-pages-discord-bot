@@ -3,6 +3,8 @@ package cz.lastaapps.api.presentation
 import arrow.core.Either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.DiscordKord
+import cz.lastaapps.api.data.repo.ManagementRepo
+import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.text
 import cz.lastaapps.api.domain.model.Page
 import cz.lastaapps.api.domain.model.id.toChannelID
@@ -33,6 +35,7 @@ class DCCommandManager(
     private val removePageUC: RemovePageUC,
     private val getOAuthLink: GetOAuthLink,
     private val verifyUserPages: VerifyUserPagesUC,
+    private val managementRepo: ManagementRepo,
 ) {
     private val log = Logger.withTag("DCCommands")
     private val kord get() = discordKord.kord
@@ -58,7 +61,23 @@ class DCCommandManager(
     private suspend fun registerPing() =
         kord.createGlobalChatInputCommand("fb_ping", "Ping pong (use for basic permissions testing)")
         { disableCommandInGuilds() }
-            .toHandler { "FB pong" }
+            .toHandler {
+                val channelId = interaction.channelId.toChannelID()
+                val canAccess = managementRepo.hasFullPermissionsInChannel(channelId)
+                when (canAccess) {
+                    is Either.Right if canAccess.value ->
+                        "All the permissions are set correctly"
+
+                    is Either.Right ->
+                        "Some permissions are missing, see docs https://github.com/LastaApps/fb-pages-discord-bot"
+
+                    is Either.Left ->
+                        "Failed to check permissions, contact developer, please"
+                            .also { log.e(canAccess.value) { "Pink pong failed" } }
+                }.let {
+                    "FB pong\n$it\n"
+                }
+            }
 
     private suspend fun registerListVerified() =
         kord.createGlobalChatInputCommand("fb_list_available", "Lists pages that were verified and can be used")

@@ -103,8 +103,10 @@ class RestAPI(
                             append("Assigned pages:\n")
                             repository.loadChannelsWithInfo().forEach { (dbId, dcId, name, serverName) ->
                                 val pages = repository.loadAuthorizedPagesForChannel(dbId)
+                                val canAccess = repository.hasFullPermissionsInChannel(dcId).getOrNull()
+
                                 append("> ")
-                                append("$name (DC: ${dcId.id}) (DB: ${dbId.id}) on server ${serverName.getOrNull()}\n")
+                                append("$name (DC: ${dcId.id}) (DB: ${dbId.id}) (server: ${serverName.getOrNull()}) (permissions: $canAccess)\n")
                                 // yes, this should happen only once in one query and I also do it like that elsewhere,
                                 // but I need to fix my architecture first before I can access it
                                 pages.getOrNull()?.also {

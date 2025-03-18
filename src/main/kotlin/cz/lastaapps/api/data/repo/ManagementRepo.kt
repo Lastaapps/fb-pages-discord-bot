@@ -14,6 +14,7 @@ import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.data.api.FBAuthAPI
+import cz.lastaapps.api.domain.AppDCPermissions
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
@@ -177,4 +178,8 @@ class ManagementRepo(
         curd.unlinkDCChannelToFBPage(channel_id = channelID, fb_page_id = pageID)
         Unit.right()
     }
+
+    suspend fun hasFullPermissionsInChannel(channelID: DCChannelID): Outcome<Boolean> =
+        discordAPI.checkBotPermissions(channelID, AppDCPermissions.all)
+            .onLeft { log.e(it) { "Failed to obtain bot's permissions for channel ${channelID.id}" } }
 }

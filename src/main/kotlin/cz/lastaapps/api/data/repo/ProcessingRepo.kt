@@ -3,6 +3,7 @@ package cz.lastaapps.api.data.repo
 import arrow.core.Either
 import arrow.core.None
 import arrow.core.filterOption
+import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.some
 import arrow.fx.coroutines.parMap
@@ -11,6 +12,7 @@ import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.provider.EventProvider
 import cz.lastaapps.api.data.provider.PostProvider
+import cz.lastaapps.api.domain.AppDCPermissions
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.Outcome
@@ -111,41 +113,48 @@ class ProcessingRepo(
             posts.map { it.id to page }
         }.flatten().toMap()
 
-        batch.requests.entries.parMap(concurrency = postPostsConcurrency) { (channel, pages) ->
-            either {
-                log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
-                val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
-                val postIds = posts.map { it.id }.toSet()
-                val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
-                    .executeAsList()
-                    .toSet()
+        batch.requests.entries
+            .filter { (channel, _) ->
+                discordApi.checkBotPermissions(channel.dcId, AppDCPermissions.forPosting)
+                    .onLeft { log.e(it) { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions" } }
+                    .onRight { log.e { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions" } }
+                    .getOrElse { false }
+            }
+            .parMap(concurrency = postPostsConcurrency) { (channel, pages) ->
+                either {
+                    log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
+                    val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
+                    val postIds = posts.map { it.id }.toSet()
+                    val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
+                        .executeAsList()
+                        .toSet()
 
-                val newPosts = (postIds - existingPosts)
-                    .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
-                log.d { "Found ${newPosts.size} new posts" }
+                    val newPosts = (postIds - existingPosts)
+                        .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
+                    log.d { "Found ${newPosts.size} new posts" }
 
-                newPosts
-                    .sortedBy { it.createdAt }
-                    .forEach { post ->
-                        val page = pageIdToPage[postIdToPageId[post.id]!!]!!
+                    newPosts
+                        .sortedBy { it.createdAt }
+                        .forEach { post ->
+                            val page = pageIdToPage[postIdToPageId[post.id]!!]!!
 
-                        val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
-                            eventProvider.loadEventData(id, page.accessToken)().bind()
-                        }.filterOption()
-                        log.i {
-                            "Posting ${post.id.id} (${
-                                post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
-                            }) to ${channel.name} (${channel.name})"
+                            val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
+                                eventProvider.loadEventData(id, page.accessToken)().bind()
+                            }.filterOption()
+                            log.i {
+                                "Posting ${post.id.id} (${
+                                    post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
+                                }) to ${channel.name} (${channel.name})"
+                            }
+                            val messageID = discordApi.postPostAndEvents(
+                                channel.dcId, page, post, events,
+                            ).bind()
+                            createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
                         }
-                        val messageID = discordApi.postPostAndEvents(
-                            channel.dcId, page, post, events,
-                        ).bind()
-                        createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
-                    }
-            } to channel
-        }.onEach { (it, channel) ->
-            it.onLeft { log.e(it) { "Failed to process channel $channel" } }
-        }.forEach { it.first.bind() }
+                } to channel
+            }.onEach { (it, channel) ->
+                it.onLeft { log.e(it) { "Failed to process channel $channel" } }
+            }.forEach { it.first.bind() }
     }
 
     private data class BatchParam(
