@@ -7,19 +7,27 @@ It uses official Facebook API to get the posts.
 You can either host it yourself, or contact me, add the Discord bot and enjoy.
 Translations from Czech are missing in both variants, feel free to create a PR.
 
-You can add the bot to your server using this
-[invite link](https://discord.com/oauth2/authorize?client_id=1252917635948216401).
-Make sure bot has access to the channels where you use them.
-
 ## TODO
 
-- add "add bot tutorial" (mention pink pong)
-- add check_status command (to make sure the bot has all the required rights)
 - add pictures into README
 - explicit post refresh request (updates the current post or posts a new one if the old one is deleted)
 - some bulk delete option/clear channel option
 
-## DC bot interface
+## DC bot
+
+You can add the bot hosted by me to your server using this
+[invite link](https://discord.com/oauth2/authorize?client_id=1252917635948216401).
+Make sure bot has access to the channels where you want to relay the posts (see bellow)
+Use the `fb_ping` command to test if the bot works.
+Current refresh period is set to 15 minutes.
+Also, in case this bot becomes popular the rate limit will be reached
+as login is not enabled for my instance - I can handle ~40 pages.
+See also events section for details as events don't work correctly in this mode.
+I have plans to obtain necessary permissions from Facebook to overcome this issue.
+
+If the bot does not work for you, please open an issue as it's still in a beta stage.
+The bot is provided with no guaranties (when my server dies,
+the bot will also die permanently as I don't back up bot's database).
 
 Bot support multiple commands. Their availability may vary based on which FB authorization
 features are enabled.
