@@ -9,6 +9,8 @@ import arrow.resilience.retryEither
 import co.touchlab.kermit.Logger
 import io.ktor.server.response.respond
 import io.ktor.server.routing.RoutingCall
+import kotlin.random.Random
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("catchingNetwork")
@@ -49,17 +51,38 @@ suspend fun <T> catchingDiscord(
 ): Outcome<T> = catchingNetwork(block)
 
 suspend fun <T> catchingFacebookAPI(
+    reoccurs: Long = 3,
+    initialDelay: Duration = 10.seconds,
+    callID: Int = Random.nextInt(1000),
     block: suspend Raise<DomainError>.() -> T,
 ): Outcome<T> = Schedule
-    .recurs<DomainError>(3)
+    // up to k retries -> k+1 in total
+    .recurs<DomainError>(reoccurs)
     // has to be long so rate limit is not reached
-    .and(Schedule.exponential(10.seconds))
+    .and(Schedule.exponential(initialDelay))
     // retry if a timeout exception occurred
-    .doWhile { input, _ ->
-        (input is NetworkError.Timeout)
-            .also { log.w { "Retrying network call because of a timeout" } }
+    .doWhile { input, (retryIndex, _) ->
+        when (input) {
+            is NetworkError.Timeout -> {
+                log.w { "Retrying network call ($callID) because of a timeout (retry: $retryIndex)" }
+                true
+            }
+
+            is NetworkError.FBAPIError if input.isRateLimit -> {
+                log.w { "Retrying network call ($callID) because of rate limit (retry: $retryIndex)" }
+                true
+            }
+
+            else -> {
+                log.v { "Retry skipped for call ($callID) as error is ${input::class.simpleName}" }
+                false
+            }
+        }
     }
-    .retryEither { catchingNetwork(block) }
+    .retryEither {
+        log.v { "Performing recoverable network call ($callID)" }
+        catchingNetwork(block)
+    }
 
 suspend inline fun RoutingCall.respondError(error: DomainError) =
     respond(error.httpCode(), error.text())

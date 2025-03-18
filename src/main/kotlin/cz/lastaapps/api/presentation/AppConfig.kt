@@ -1,5 +1,6 @@
 package cz.lastaapps.api.presentation
 
+import co.touchlab.kermit.Severity
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -7,6 +8,7 @@ data class AppConfig(
     val facebook: Facebook,
     val discord: Discord,
     val server: Server,
+    val logLevel: Severity,
     val databaseFileName: String,
     val adminToken: String,
     val interval: Duration,
@@ -66,6 +68,8 @@ data class AppConfig(
                         endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
                         hostURL = str("SERVER_HOST_URL"),
                     ),
+                logLevel = str("LOG_LEVEL").lowercase()
+                    .let { env -> Severity.entries.first { it.name.lowercase() == env } },
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
                 interval = int("INTERVAL_SEC").seconds,

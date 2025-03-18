@@ -3,10 +3,15 @@ package cz.lastaapps.api.data.api
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.presentation.AppConfig
 import dev.kord.core.Kord
+import dev.kord.core.supplier.EntitySupplyStrategy
+import dev.kord.gateway.DefaultGateway
+import dev.kord.gateway.ratelimit.IdentifyRateLimiter
+import dev.kord.gateway.retry.LinearRetry
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.serialization.kotlinx.json.json
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -40,6 +45,19 @@ value class DiscordKord private constructor(val kord: Kord) {
                     }
                     install(ContentNegotiation) { json(json) }
                     install(WebSockets)
+                }
+                this.defaultStrategy = EntitySupplyStrategy.cacheWithRestFallback
+                this.gateways { resources, shards ->
+                    val rateLimiter =
+                        IdentifyRateLimiter(resources.maxConcurrency, defaultDispatcher)
+                    shards.map {
+                        DefaultGateway {
+                            client = resources.httpClient
+//                            identifyRateLimiter = rateLimiter
+//                            this.sendRateLimiter = RequestResponse.BucketRateLimit
+                            this.reconnectRetry = LinearRetry(10.seconds, 120.seconds, 60)
+                        }
+                    }
                 }
             }
             return DiscordKord(kord)
