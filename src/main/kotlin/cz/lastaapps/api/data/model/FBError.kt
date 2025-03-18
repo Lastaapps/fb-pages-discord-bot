@@ -12,11 +12,11 @@ data class FBError(
     @SerialName("code")
     val code: Int,
     @SerialName("error_subcode")
-    val errorSubcode: Int,
+    val errorSubcode: Int? = null,
     @SerialName("error_user_title")
-    val errorUserTitle: String,
+    val errorUserTitle: String? = null,
     @SerialName("error_user_msg")
-    val errorUserMsg: String,
+    val errorUserMsg: String? = null,
     @SerialName("fbtrace_id")
     val fbtraceId: String,
 ) {
