@@ -51,8 +51,8 @@ suspend fun <T> catchingDiscord(
 ): Outcome<T> = catchingNetwork(block)
 
 suspend fun <T> catchingFacebookAPI(
-    reoccurs: Long = 3,
-    initialDelay: Duration = 10.seconds,
+    reoccurs: Long = 6,
+    initialDelay: Duration = 10.seconds, // 10, 20, 40, 1:20, 2:40, 5:20 | 10:40 21:20
     callID: Int = Random.nextInt(1000),
     block: suspend Raise<DomainError>.() -> T,
 ): Outcome<T> = Schedule
