@@ -5,4 +5,5 @@ sealed interface LogicError : DomainError {
     data object PageAlreadyLinkedToChannel : LogicError
     data object GivenPageNotFound : LogicError
     data object InvalidOAuthState : LogicError
+    data object CannotAccessServerName : LogicError
 }

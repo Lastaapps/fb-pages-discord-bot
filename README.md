@@ -13,9 +13,8 @@ Make sure bot has access to the channels where you use them.
 
 ## TODO
 
-- Fix Rest API (add Discord server)
-- add "add bot tutorial" (mention pink pong)
 - fails per channel
+- add "add bot tutorial" (mention pink pong)
 - add check_status command (to make sure the bot has all the required rights)
 - add pictures into README
 - explicit post refresh request (updates the current post or posts a new one if the old one is deleted)

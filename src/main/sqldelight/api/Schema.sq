@@ -16,6 +16,9 @@ CREATE TABLE DC_Channel(
 createDCChannel:
 INSERT OR IGNORE INTO DC_Channel(id, name, dc_id) VALUES (?, ?, ?);
 
+getAllDCChannels:
+SELECT * FROM DC_Channel;
+
 getByDCID:
 SELECT id FROM DC_Channel WHERE dc_id = ?;
 

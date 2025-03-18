@@ -22,6 +22,8 @@ fun DomainError.text(): String = when (this) {
     LogicError.InvalidOAuthState -> "Invalid OAuth state"
     LogicError.PageAlreadyLinkedToChannel -> "Page already linked to channel"
     LogicError.PageNotAuthorized -> "Page not authorized"
+    LogicError.CannotAccessServerName -> "Cannot access server name"
+
     NetworkError.ConnectionClosed -> "Connection closed"
     NetworkError.NoInternet -> "No internet connection"
     NetworkError.Timeout -> "Request timed out"
@@ -36,6 +38,7 @@ fun DomainError.httpCode(): HttpStatusCode = with(HttpStatusCode.Companion) {
         LogicError.InvalidOAuthState -> BadRequest
         LogicError.PageAlreadyLinkedToChannel -> BadRequest
         LogicError.PageNotAuthorized -> BadRequest
+        LogicError.CannotAccessServerName -> Forbidden
         is NetworkError -> InternalServerError
     }
 }

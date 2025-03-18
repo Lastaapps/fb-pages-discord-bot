@@ -100,16 +100,27 @@ class RestAPI(
                                     append('\n')
                                 }
                             append('\n')
-//                            append("Assigned pages:\n")
-//                            repository.loadPageDiscordPairs().forEach { (key, value) ->
-//                                append("> ")
-//                                append(discordAPI.getChannelName(key))
-//                                append(" \t")
-//                                append(key)
-//                                append(": \t")
-//                                append(value.map { it.fbId to it.name })
-//                                append("\n")
-//                            }
+                            append("Assigned pages:\n")
+                            repository.loadChannelsWithInfo().forEach { (dbId, dcId, name, serverName) ->
+                                val pages = repository.loadAuthorizedPagesForChannel(dbId)
+                                append("> ")
+                                append("$name (DC: ${dcId.id}) (DB: ${dbId.id}) on server ${serverName.getOrNull()}\n")
+                                // yes, this should happen only once in one query and I also do it like that elsewhere,
+                                // but I need to fix my architecture first before I can access it
+                                pages.getOrNull()?.also {
+                                    if (it.isEmpty()) {
+                                        append("No pages\n")
+                                    }
+                                }?.forEach { page ->
+                                    append("  \t")
+                                    append(page.accessToken.token)
+                                    append("\t | \t")
+                                    append(page.name)
+                                    append("\t | \t")
+                                    append("https://facebook.com/${page.fbId.id}")
+                                    append("\n")
+                                } ?: append("Null pages\n")
+                            }
                         }.let { call.respond(HttpStatusCode.OK, it) }
                     }
                     post("/run-jobs") {

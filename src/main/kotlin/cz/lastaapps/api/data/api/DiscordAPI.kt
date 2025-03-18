@@ -3,6 +3,7 @@ package cz.lastaapps.api.data.api
 import arrow.core.Either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.util.formatDateTime
+import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingDiscord
 import cz.lastaapps.api.domain.model.AuthorizedPage
@@ -204,4 +205,11 @@ class DiscordAPI(
         } else {
             this
         }
+
+    suspend fun getServerNameForChannel(channelID: DCChannelID): Outcome<String> = catchingDiscord {
+        val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
+        val serverId = channel.guildId.value ?: raise(LogicError.CannotAccessServerName)
+        val server = kord.rest.guild.getGuild(serverId)
+        server.name
+    }
 }

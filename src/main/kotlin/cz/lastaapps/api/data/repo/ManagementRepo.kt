@@ -2,6 +2,7 @@ package cz.lastaapps.api.data.repo
 
 import arrow.core.None
 import arrow.core.Option
+import arrow.core.Tuple4
 import arrow.core.filterOption
 import arrow.core.left
 import arrow.core.raise.either
@@ -10,11 +11,13 @@ import arrow.core.some
 import arrow.core.toOption
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.AppDatabase
+import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
+import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.AuthorizedPageFromUser
 import cz.lastaapps.api.domain.model.Page
@@ -31,7 +34,8 @@ class ManagementRepo(
     private val database: AppDatabase,
     private val discordKord: DiscordKord,
     private val appTokenProvider: AppTokenProvider,
-    private val authApi: FBAuthAPI,
+    private val discordAPI: DiscordAPI,
+    private val authAPI: FBAuthAPI,
 ) {
     private val log = Logger.withTag("ManagementRepo")
 
@@ -80,7 +84,7 @@ class ManagementRepo(
         }
 
         val appToken = appTokenProvider.provide().bind()
-        val metadata = authApi.getPageMetadata(pageID = fbPageID, pageAccessToken = appToken.toPageAccessToken()).bind()
+        val metadata = authAPI.getPageMetadata(pageID = fbPageID, pageAccessToken = appToken.toPageAccessToken()).bind()
         curd.transactionWithResult {
             curd.createFBPage(null, name = metadata.name, metadata.fbId)
             curd.lastFBPageID().executeAsOne()
@@ -115,6 +119,15 @@ class ManagementRepo(
             .toOption()
             .right()
     }
+
+    suspend fun loadChannelsWithInfo(): List<Tuple4<DBChannelID, DCChannelID, String, Option<String>>> =
+        curd.getAllDCChannels()
+            .executeAsList()
+            .map { (dbId, name, dcId) ->
+                val serverName = discordAPI.getServerNameForChannel(dcId)
+                    .onLeft { log.e(it) { "Failed to obtain server name for channel $dcId ($name)" } }
+                Tuple4(dbId, dcId, name, serverName.fold({ None }, { it.some() }))
+            }
 
     fun loadAuthorizedPages(): List<AuthorizedPage> =
         queries
