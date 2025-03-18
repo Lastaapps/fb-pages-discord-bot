@@ -20,12 +20,12 @@ import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.RunJobsUC
 import cz.lastaapps.api.domain.usecase.SearchPagesUC
 import cz.lastaapps.api.domain.usecase.VerifyUserPagesUC
+import cz.lastaapps.api.presentation.AppConfig
 import cz.lastaapps.api.presentation.DCCommandManager
 import cz.lastaapps.api.presentation.RestAPI
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.datetime.Clock
@@ -37,7 +37,7 @@ import org.koin.dsl.module
 
 val diModule = module {
     singleOf(::ManagementRepo)
-    single { createHttpClient() }
+    single { createHttpClient(get()) }
     single { Clock.System } bind Clock::class
 
     singleOf(::DCCommandManager)
@@ -64,10 +64,12 @@ val diModule = module {
     factoryOf(::RunJobsUC)
 }
 
-private fun createHttpClient() =
+private fun createHttpClient(
+    config: AppConfig,
+) =
     HttpClient {
         install(Logging) {
-            level = LogLevel.INFO
+            level = config.logLevelHttp
             logger =
                 object : io.ktor.client.plugins.logging.Logger {
                     private val log = Logger.withTag("HttpClient")

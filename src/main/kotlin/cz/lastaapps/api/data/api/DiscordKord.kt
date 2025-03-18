@@ -5,7 +5,6 @@ import cz.lastaapps.api.presentation.AppConfig
 import dev.kord.core.Kord
 import dev.kord.core.supplier.EntitySupplyStrategy
 import dev.kord.gateway.DefaultGateway
-import dev.kord.gateway.ratelimit.IdentifyRateLimiter
 import dev.kord.gateway.retry.LinearRetry
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -48,8 +47,8 @@ value class DiscordKord private constructor(val kord: Kord) {
                 }
                 this.defaultStrategy = EntitySupplyStrategy.cacheWithRestFallback
                 this.gateways { resources, shards ->
-                    val rateLimiter =
-                        IdentifyRateLimiter(resources.maxConcurrency, defaultDispatcher)
+//                    val rateLimiter =
+//                        IdentifyRateLimiter(resources.maxConcurrency, defaultDispatcher)
                     shards.map {
                         DefaultGateway {
                             client = resources.httpClient

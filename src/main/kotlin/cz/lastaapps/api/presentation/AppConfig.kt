@@ -1,6 +1,8 @@
 package cz.lastaapps.api.presentation
 
 import co.touchlab.kermit.Severity
+import io.ktor.client.plugins.logging.LogLevel
+
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -9,6 +11,7 @@ data class AppConfig(
     val discord: Discord,
     val server: Server,
     val logLevel: Severity,
+    val logLevelHttp: LogLevel,
     val databaseFileName: String,
     val adminToken: String,
     val interval: Duration,
@@ -70,6 +73,8 @@ data class AppConfig(
                     ),
                 logLevel = str("LOG_LEVEL").lowercase()
                     .let { env -> Severity.entries.first { it.name.lowercase() == env } },
+                logLevelHttp = str("LOG_LEVEL_HTTP").lowercase()
+                    .let { env -> LogLevel.entries.first { it.name.lowercase() == env } },
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
                 interval = int("INTERVAL_SEC").seconds,

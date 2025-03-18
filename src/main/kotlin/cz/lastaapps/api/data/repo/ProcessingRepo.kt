@@ -95,8 +95,8 @@ class ProcessingRepo(
     private suspend fun processBatch() = either<DomainError, Unit> {
         log.i { "Starting badge processing..." }
         val fetchPagesConcurrency = 5
-        val postPostsConcurrency = 1
-        val resolvePostsConcurrency = 1
+        val postPostsConcurrency = 1 // may be dangerous as we respond to messages
+        val resolvePostsConcurrency = 5
 
         val batch = loadPageDiscordPairs().bind()
 
@@ -134,8 +134,8 @@ class ProcessingRepo(
                         .toSet()
 
                     val newPosts = (postIds - existingPosts)
+                        .also { log.d { "Found ${it.size} new posts" } }
                         .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
-                    log.d { "Found ${newPosts.size} new posts" }
 
                     newPosts
                         .sortedBy { it.createdAt }
