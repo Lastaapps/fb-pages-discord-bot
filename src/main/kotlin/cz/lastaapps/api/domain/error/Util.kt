@@ -50,7 +50,8 @@ suspend fun <T> catchingFacebookAPI(
     block: suspend Raise<DomainError>.() -> T,
 ): Outcome<T> = Schedule
     .recurs<DomainError>(3)
-    .and(Schedule.exponential(5.seconds))
+    // has to be long so rate limit is not reached
+    .and(Schedule.exponential(30.seconds))
     // retry if a timeout exception occurred
     .doWhile { input, _ -> input is NetworkError.Timeout }
     .retryEither { catchingNetwork(block) }
