@@ -19,15 +19,14 @@ You can add the bot hosted by me to your server using this
 [invite link](https://discord.com/oauth2/authorize?client_id=1252917635948216401).
 Make sure bot has access to the channels where you want to relay the posts (see bellow)
 Use the `fb_ping` command to test if the bot works.
-Current refresh period is set to 15 minutes.
+Current refresh period can be seen when a new page is added.
 Also, in case this bot becomes popular the rate limit will be reached
 as login is not enabled for my instance - I can handle ~40 pages.
 See also events section for details as events don't work correctly in this mode.
 I have plans to obtain necessary permissions from Facebook to overcome this issue.
 
 If the bot does not work for you, please open an issue as it's still in a beta stage.
-The bot is provided with no guaranties (when my server dies,
-the bot will also die permanently as I don't back up bot's database).
+The bot is provided with no guaranties, see License.
 
 Bot support multiple commands. Their availability may vary based on which FB authorization
 features are enabled.

@@ -28,16 +28,15 @@ class LinkResolver(
         if (link.host.contains("facebook") || link.host.contains("fb")) {
             // yes, this is a potential security risk - remote url execution or something
             val response = client.head(link)
-            ResolvedLink(response.call.request.url)
+            val newLink = response.call.request.url
+            if (newLink != link) {
+                log.v { "Resolved \"$link\" -> \"${newLink}\"" }
+            }
+            ResolvedLink(newLink)
         } else {
             ResolvedLink(link)
         }
     }
-        .onRight {
-            if (it.link != link) {
-                log.i { "Resolved \"$link\" -> \"${it.link}\"" }
-            }
-        }
         .onLeft {
             log.e(it) { "Failed to resolve link $link" }
         }

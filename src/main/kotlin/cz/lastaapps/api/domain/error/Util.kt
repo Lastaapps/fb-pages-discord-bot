@@ -11,11 +11,13 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.RoutingCall
 import kotlin.time.Duration.Companion.seconds
 
+private val log = Logger.withTag("catchingNetwork")
+
 suspend fun <T> catchingNetwork(
     block: suspend Raise<DomainError>.() -> T,
 ): Outcome<T> =
     Either.catch { either { block() } }.mapLeft {
-        Logger.withTag("catchingNetwork").e { "Failed network call: ${it.message}" }
+        log.e { "Failed network call: ${it.message}" }
 
         when (it::class.simpleName) {
             "TimeoutException",
@@ -51,9 +53,12 @@ suspend fun <T> catchingFacebookAPI(
 ): Outcome<T> = Schedule
     .recurs<DomainError>(3)
     // has to be long so rate limit is not reached
-    .and(Schedule.exponential(30.seconds))
+    .and(Schedule.exponential(10.seconds))
     // retry if a timeout exception occurred
-    .doWhile { input, _ -> input is NetworkError.Timeout }
+    .doWhile { input, _ ->
+        (input is NetworkError.Timeout)
+            .also { log.w { "Retrying network call because of a timeout" } }
+    }
     .retryEither { catchingNetwork(block) }
 
 suspend inline fun RoutingCall.respondError(error: DomainError) =

@@ -34,7 +34,7 @@ fun main() =
         koin.loadModules(listOf(module { single { AppDatabase.create(get<AppConfig>()) } }))
 
         log.i { "Starting Discord" }
-        val discordKord = DiscordKord.create(config)
+        val discordKord = DiscordKord.create(config, koin.get())
         discordKord.start(this)
         koin.loadModules(listOf(module { single { discordKord } }))
 

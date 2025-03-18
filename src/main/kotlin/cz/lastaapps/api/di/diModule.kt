@@ -78,7 +78,7 @@ private fun createHttpClient() =
                     )
 
                     override fun log(message: String) {
-                        log.v {
+                        log.d {
                             message.let {
                                 tokenRegexes.fold(it) { acc, regex ->
                                     regex.replace(acc, "redacted=XXX")

@@ -39,11 +39,14 @@ fun String.createdTimeToInstant() = Instant.parse(this, facebookTimestampParser)
 
 fun String.idToFacebookURL() = Url("https://www.facebook.com/$this")
 
-fun String.toUrl() = Url(this.trim())
+fun String.toUrl(): Url = trim()
+    .filterNot { it.isSurrogate() } // filters out links starting with emojis like: 🔗https://...
+    .let(::Url)
+
 fun String.toUrlOrNull(logger: Logger?) = try {
     toUrl()
-} catch (e: Exception) {
-    logger?.e(e) { "Cannot parse provider URL: \"$this\"" }
+} catch (_: Exception) {
+    logger?.e { "Cannot parse provider URL: \"$this\"" }
     null
 }
 
