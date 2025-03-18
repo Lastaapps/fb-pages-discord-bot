@@ -1,6 +1,7 @@
 package cz.lastaapps.api
 
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import co.touchlab.kermit.SystemWriter
 import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordKord
@@ -21,6 +22,8 @@ private val log by lazy { Logger.withTag("Main") }
 fun main() =
     runBlocking {
         Logger.setLogWriters(SystemWriter(TimeStampFormatter))
+        Logger.setMinSeverity(Severity.Debug)
+
         log.i { "Starting the bot" }
 
         startKoin { modules(diModule) }

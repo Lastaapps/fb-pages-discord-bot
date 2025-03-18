@@ -117,7 +117,11 @@ class ProcessingRepo(
             .filter { (channel, _) ->
                 discordApi.checkBotPermissions(channel.dcId, AppDCPermissions.forPosting)
                     .onLeft { log.e(it) { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions" } }
-                    .onRight { log.e { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions" } }
+                    .onRight {
+                        if (!it) {
+                            log.e { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions for posting" }
+                        }
+                    }
                     .getOrElse { false }
             }
             .parMap(concurrency = postPostsConcurrency) { (channel, pages) ->

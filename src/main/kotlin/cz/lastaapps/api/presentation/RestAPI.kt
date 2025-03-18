@@ -111,17 +111,17 @@ class RestAPI(
                                 // but I need to fix my architecture first before I can access it
                                 pages.getOrNull()?.also {
                                     if (it.isEmpty()) {
-                                        append("No pages\n")
+                                        append("\tNo pages\n")
                                     }
                                 }?.forEach { page ->
-                                    append("  \t")
+                                    append("\t")
                                     append(page.accessToken.token)
                                     append("\t | \t")
                                     append(page.name)
                                     append("\t | \t")
                                     append("https://facebook.com/${page.fbId.id}")
                                     append("\n")
-                                } ?: append("Null pages\n")
+                                } ?: append("\tNull pages\n")
                             }
                         }.let { call.respond(HttpStatusCode.OK, it) }
                     }

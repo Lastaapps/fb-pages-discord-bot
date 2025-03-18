@@ -15,6 +15,7 @@ object AppDCPermissions {
         Permission.ReadMessageHistory,
     )
     val forEvents = Permissions(
+        Permission.CreateEvents,
         Permission.ManageEvents,
     )
     val all = forPosting + forManagement + forEvents

@@ -15,7 +15,7 @@ suspend fun <T> catchingNetwork(
     block: suspend Raise<DomainError>.() -> T,
 ): Outcome<T> =
     Either.catch { either { block() } }.mapLeft {
-        Logger.withTag("catchingNetwork").e(it) { "Failed network call" }
+        Logger.withTag("catchingNetwork").e { "Failed network call: ${it.message}" }
 
         when (it::class.simpleName) {
             "TimeoutException",
