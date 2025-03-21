@@ -1,6 +1,5 @@
 package cz.lastaapps.api.data.api
 
-import arrow.core.Either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.util.formatDateTime
 import cz.lastaapps.api.domain.error.LogicError
@@ -189,11 +188,12 @@ class DiscordAPI(
 
         // If the channel is an announcement channel and some other servers follow it,
         // this will also send the message to the other servers
-        Either.catch {
-            kord.rest.channel.crossPost(channelID.toSnowflake(), message.id)
-        }.onLeft {
-            log.e { "Failed to cross post the message (is it an announcement channel)" }
-        }
+        // TODO This has to be made opt in per channel as it causes rate limiting in case many posts are posted at once
+//        Either.catch {
+//            kord.rest.channel.crossPost(channelID.toSnowflake(), message.id)
+//        }.onLeft {
+//            log.e { "Failed to cross post the message (is it an announcement channel)" }
+//        }
 
         DCMessageID(message.id.value)
     }
