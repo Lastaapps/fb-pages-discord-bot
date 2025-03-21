@@ -6,7 +6,7 @@ import dev.kord.common.entity.Snowflake
 value class DCChannelID(val id: ULong) {
     override fun toString(): String =
         if (ENABLE_ID_PRINT) id.toString() else
-        error("Forbidden")
+            error("Forbidden use of toString() on a value class ${this::class.simpleName}")
 }
 
 fun Snowflake.toChannelID() = DCChannelID(this.value)

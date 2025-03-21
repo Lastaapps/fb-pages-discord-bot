@@ -4,5 +4,5 @@ package cz.lastaapps.api.domain.model.id
 value class DCMessageID(val id: ULong) {
     override fun toString(): String =
         if (ENABLE_ID_PRINT) id.toString() else
-        error("Forbidden")
+            error("Forbidden use of toString() on a value class ${this::class.simpleName}")
 }

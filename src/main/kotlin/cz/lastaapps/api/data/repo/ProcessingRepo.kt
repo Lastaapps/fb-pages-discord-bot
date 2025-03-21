@@ -157,7 +157,7 @@ class ProcessingRepo(
                         }
                 } to channel
             }.onEach { (it, channel) ->
-                it.onLeft { log.e(it) { "Failed to process channel $channel" } }
+                it.onLeft { log.e(it) { "Failed to process channel ${channel.name} (${channel.dcId.id})" } }
             }.forEach { it.first.bind() }
     }
 

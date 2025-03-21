@@ -21,6 +21,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.Url
+import io.ktor.http.fullPath
 import kotlin.math.absoluteValue
 
 class DiscordAPI(
@@ -32,11 +34,11 @@ class DiscordAPI(
     private val kord get() = discordKord.kord
     private suspend fun UserMessageCreateBuilder.addFile(
         nameWithoutExtension: String,
-        url: String,
+        url: Url,
         client: HttpClient,
     ): Outcome<NamedFile?> = catchingDiscord {
         val extension =
-            imageExtensions.firstOrNull { url.lowercase().contains(it) } ?: run {
+            imageExtensions.firstOrNull { url.fullPath.lowercase().contains(it) } ?: run {
                 log.e { "Url ($url) does not contain any of the known extensions!" }
                 return@catchingDiscord null
             }
@@ -62,7 +64,7 @@ class DiscordAPI(
                         .images
                         .firstOrNull()
                         ?.let { url ->
-                            addFile("post_img", url.toString(), client).bind()
+                            addFile("post_img", url, client).bind()
                         }?.url
 
                 val postDescription =
@@ -118,11 +120,12 @@ class DiscordAPI(
                 }
 
                 events.forEach { event ->
+                    log.i { "Posting event (accessible) ${event.link}" }
                     anyEmbedPosted = true
                     val eventImageUrl =
                         event.coverPhotoLink
                             ?.let { url ->
-                                addFile("event_img", url.toString(), client).bind()
+                                addFile("event_img", url, client).bind()
                             }?.url
 
                     embed {
@@ -177,11 +180,12 @@ class DiscordAPI(
 
         // Creates previews for links contained in the post's text
         // that were not present in attachments (we cannot access them using API)
-        (post.inaccessibleEventIds.map { "https://www.facebook.com/events/${it}" } +
-            post.linksInText.map { it.link.toString() })
+        (post.inaccessibleEventIds.map { eventId -> Url("https://www.facebook.com/events/${eventId.id}") } +
+            post.linksInText.map { it.link })
             .forEach { link ->
+                log.i { "Posting event (inaccessible) $link" }
                 kord.rest.channel.createMessage(channelID.toSnowflake()) {
-                    content = link
+                    content = link.toString()
                     messageReference = message.id
                 }
             }
@@ -223,7 +227,7 @@ class DiscordAPI(
         val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
         val guildId = channel.guildId.value
         if (guildId == null) {
-            log.e { "Channel $channelID guild cannot be accessed" }
+            log.e { "Channel ${channelID.id} guild cannot be accessed" }
             return@catchingDiscord false
         }
 
