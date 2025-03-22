@@ -94,19 +94,17 @@ class ProcessingRepo(
 
     private suspend fun processBatch() = either<DomainError, Unit> {
         log.i { "Starting badge processing..." }
-        val fetchPagesConcurrency = 5
-        val postPostsConcurrency = 1 // may be dangerous as we respond to messages
-        val resolvePostsConcurrency = 5
 
         val batch = loadPageDiscordPairs().bind()
 
         val pageIdToPage = batch.pages.values.associateBy { it.fbId }
-        val pageIdToPosts = batch.pages.entries.parMap(concurrency = fetchPagesConcurrency) { (pageID, page) ->
-            log.d { "Fetching page ${page.name}" }
-            postProvider.loadPagePosts(page.fbId, page.accessToken).map { posts ->
-                posts.let { pageID to it }
-            }
-        }.associate { it.bind() }
+        val pageIdToPosts = batch.pages.entries
+            .parMap(concurrency = config.concurrency.fetchPages) { (pageID, page) ->
+                log.d { "Fetching page ${page.name}" }
+                postProvider.loadPagePosts(page.fbId, page.accessToken).map { posts ->
+                    posts.let { pageID to it }
+                }
+            }.associate { it.bind() }
 
         val postsMap = pageIdToPosts.values.flatten().associateBy { it.id }
         val postIdToPageId = pageIdToPosts.entries.map { (page, posts) ->
@@ -124,7 +122,7 @@ class ProcessingRepo(
                     }
                     .getOrElse { false }
             }
-            .parMap(concurrency = postPostsConcurrency) { (channel, pages) ->
+            .parMap(concurrency = config.concurrency.postPosts) { (channel, pages) ->
                 either {
                     log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
                     val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
@@ -135,7 +133,7 @@ class ProcessingRepo(
 
                     val newPosts = (postIds - existingPosts)
                         .also { log.d { "Found ${it.size} new posts" } }
-                        .parMap(concurrency = resolvePostsConcurrency) { postsMap[it]!!().bind() }
+                        .parMap(concurrency = config.concurrency.resolvePosts) { postsMap[it]!!().bind() }
 
                     newPosts
                         .sortedBy { it.createdAt }

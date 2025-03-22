@@ -28,7 +28,7 @@ fun main() =
         val koin = get()
 
         val config = AppConfig.fromEnv()
-        Logger.setMinSeverity(config.logLevel)
+        Logger.setMinSeverity(config.logging.logLevel)
         koin.loadModules(listOf(module { single { config } }))
         koin.loadModules(listOf(module { single { AppDatabase.create(get<AppConfig>()) } }))
 

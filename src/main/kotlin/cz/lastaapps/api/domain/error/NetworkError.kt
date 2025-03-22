@@ -39,6 +39,7 @@ sealed interface NetworkError : DomainError {
         // yes, I'm using a data model in domain layer
         val error: FBError,
     ) : NetworkError {
-        val isRateLimit get() = error.code == 4
+        // Both have to be checked as FB returns 403 if rate limit is exceeded for too long
+        val isRateLimit get() = httpCode == HttpStatusCode.TooManyRequests && error.code == 4
     }
 }

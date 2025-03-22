@@ -69,7 +69,7 @@ private fun createHttpClient(
 ) =
     HttpClient {
         install(Logging) {
-            level = config.logLevelHttp
+            level = config.logging.logLevelHttp
             logger =
                 object : io.ktor.client.plugins.logging.Logger {
                     private val log = Logger.withTag("HttpClient")

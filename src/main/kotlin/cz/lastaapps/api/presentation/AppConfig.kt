@@ -10,8 +10,8 @@ data class AppConfig(
     val facebook: Facebook,
     val discord: Discord,
     val server: Server,
-    val logLevel: Severity,
-    val logLevelHttp: LogLevel,
+    val logging: Logging,
+    val concurrency: Concurrency,
     val databaseFileName: String,
     val adminToken: String,
     val interval: Duration,
@@ -46,6 +46,17 @@ data class AppConfig(
         val hostURL: String,
     )
 
+    data class Logging(
+        val logLevel: Severity,
+        val logLevelHttp: LogLevel,
+    )
+
+    data class Concurrency(
+        val fetchPages: Int,
+        val postPosts: Int,
+        val resolvePosts: Int,
+    )
+
     companion object {
         fun fromEnv() =
             AppConfig(
@@ -71,10 +82,17 @@ data class AppConfig(
                         endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
                         hostURL = str("SERVER_HOST_URL"),
                     ),
-                logLevel = str("LOG_LEVEL").lowercase()
-                    .let { env -> Severity.entries.first { it.name.lowercase() == env } },
-                logLevelHttp = str("LOG_LEVEL_HTTP").lowercase()
-                    .let { env -> LogLevel.entries.first { it.name.lowercase() == env } },
+                logging = Logging(
+                    logLevel = str("LOG_LEVEL").lowercase()
+                        .let { env -> Severity.entries.first { it.name.lowercase() == env } },
+                    logLevelHttp = str("LOG_LEVEL_HTTP").lowercase()
+                        .let { env -> LogLevel.entries.first { it.name.lowercase() == env } },
+                ),
+                concurrency = Concurrency(
+                    fetchPages = int("CONCURRENCY_FETCH_PAGES", 1),
+                    postPosts = int("CONCURRENCY_POST_POSTS", 1),
+                    resolvePosts = int("CONCURRENCY_RESOLVE_POSTS", 3),
+                ),
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
                 interval = int("INTERVAL_SEC").seconds,
@@ -83,11 +101,13 @@ data class AppConfig(
         private fun key(key: String) = "FB_DC_API_$key"
 
         private fun str(key: String) =
-            strNull(key).also { check(it.isNotBlank()) { "The env var $key cannot be blank" } }
+            strNull(key) ?: error("The env var $key cannot be blank")
 
-        private fun strNull(key: String) = System.getenv(key(key))
+        private fun strNull(key: String): String? = System.getenv(key(key))?.takeIf { it.isNotBlank() }
 
         private fun int(key: String) = str(key).toInt()
+
+        private fun int(key: String, default: Int) = strNull(key)?.toInt() ?: default
 
         private fun bool(key: String) = str(key).toBoolean()
 
