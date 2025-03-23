@@ -25,6 +25,8 @@ import cz.lastaapps.api.presentation.DCCommandManager
 import cz.lastaapps.api.presentation.RestAPI
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.compression.ContentEncoding
+import io.ktor.client.plugins.compression.ContentEncodingConfig
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
@@ -102,5 +104,11 @@ private fun createHttpClient(
                     ignoreUnknownKeys = true
                 },
             )
+        }
+        // Attempts to speed up network requests to reduce rate limiting
+        install(ContentEncoding) {
+            deflate(1.0F)
+            gzip(0.9F)
+            mode = ContentEncodingConfig.Mode.DecompressResponse
         }
     }
