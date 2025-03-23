@@ -29,7 +29,8 @@ class PostProvider(
     suspend fun loadPagePosts(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
-    ): Outcome<List<LazyProvider<FBPostID, Outcome<Post>>>> = api.loadPagePosts(pageID, pageAccessToken)
+        limit: UInt? = null,
+    ): Outcome<List<LazyProvider<FBPostID, Outcome<Post>>>> = api.loadPagePosts(pageID, pageAccessToken, limit = limit)
         .map { posts ->
             posts
                 .filter { it.canBePublished() }

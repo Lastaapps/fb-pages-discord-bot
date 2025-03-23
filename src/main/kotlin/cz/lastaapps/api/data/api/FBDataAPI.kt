@@ -25,6 +25,7 @@ class FBDataAPI(
     suspend fun loadPagePosts(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
+        limit: UInt? = null,
     ): Outcome<List<FBPagePost>> = catchingFacebookAPI {
         log.d { "Loading page posts ${pageID.id}" }
         client
@@ -34,6 +35,9 @@ class FBDataAPI(
                     "fields",
                     "id,message,full_picture,place,is_hidden,is_published,is_expired,created_time,attachments{title,description,target,type,media,media_type,subattachments}",
                 )
+                limit?.let {
+                    parameter("limit", it.toString())
+                }
             }.let { response ->
                 log.d { "Status code: ${response.status}" }
                 response.bindBody<FBPagePost.Container>().data

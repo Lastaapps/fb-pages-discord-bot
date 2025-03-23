@@ -101,7 +101,8 @@ class ProcessingRepo(
         val pageIdToPosts = batch.pages.entries
             .parMap(concurrency = config.concurrency.fetchPages) { (pageID, page) ->
                 log.d { "Fetching page ${page.name}" }
-                postProvider.loadPagePosts(page.fbId, page.accessToken).map { posts ->
+                postProvider.loadPagePosts(page.fbId, page.accessToken, limit = config.facebook.fetchPostsLimit)
+                    .map { posts ->
                     posts.let { pageID to it }
                 }
             }.associate { it.bind() }

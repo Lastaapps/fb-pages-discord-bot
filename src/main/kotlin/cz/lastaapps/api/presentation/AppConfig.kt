@@ -26,6 +26,7 @@ data class AppConfig(
         val enabledLogin: Boolean,
         val loginConfigID: String?,
         val loginRedirectURL: String?,
+        val fetchPostsLimit: UInt,
     ) {
         init {
             if (enabledLogin) {
@@ -78,6 +79,7 @@ data class AppConfig(
                         enabledLogin = bool("FACEBOOK_LOGIN_ENABLED"),
                         loginConfigID = str("FACEBOOK_LOGIN_CONFIG_ID"),
                         loginRedirectURL = str("FACEBOOK_LOGIN_REDIRECT_URL"),
+                        fetchPostsLimit = int("FACEBOOK_FETCH_POSTS_LIMIT", 25).toUInt(),
                     ),
                 discord =
                     Discord(
