@@ -1,8 +1,9 @@
+@file:Suppress("SameParameterValue")
+
 package cz.lastaapps.api.presentation
 
 import co.touchlab.kermit.Severity
 import io.ktor.client.plugins.logging.LogLevel
-
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -12,6 +13,7 @@ data class AppConfig(
     val server: Server,
     val logging: Logging,
     val concurrency: Concurrency,
+    val networking: Networking,
     val databaseFileName: String,
     val adminToken: String,
     val interval: Duration,
@@ -57,6 +59,13 @@ data class AppConfig(
         val resolvePosts: Int,
     )
 
+    data class Networking(
+        val compressResponses: Boolean,
+        val clientHttpEngine: HttpEngine,
+    ) {
+        enum class HttpEngine { CIO, OKHTTP, }
+    }
+
     companion object {
         fun fromEnv() =
             AppConfig(
@@ -93,6 +102,12 @@ data class AppConfig(
                     postPosts = int("CONCURRENCY_POST_POSTS", 1),
                     resolvePosts = int("CONCURRENCY_RESOLVE_POSTS", 3),
                 ),
+                networking = Networking(
+                    compressResponses = bool("COMPRESS_RESPONSES", true),
+                    clientHttpEngine = Networking.HttpEngine.entries.first {
+                        str("CLIENT_HTTP_ENGINE", Networking.HttpEngine.CIO.name).lowercase() == it.name.lowercase()
+                    },
+                ),
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
                 interval = int("INTERVAL_SEC").seconds,
@@ -103,6 +118,8 @@ data class AppConfig(
         private fun str(key: String) =
             strNull(key) ?: error("The env var $key cannot be blank")
 
+        private fun str(key: String, default: String) = strNull(key) ?: default
+
         private fun strNull(key: String): String? = System.getenv(key(key))?.takeIf { it.isNotBlank() }
 
         private fun int(key: String) = str(key).toInt()
@@ -110,6 +127,8 @@ data class AppConfig(
         private fun int(key: String, default: Int) = strNull(key)?.toInt() ?: default
 
         private fun bool(key: String) = str(key).toBoolean()
+
+        private fun bool(key: String, default: Boolean) = strNull(key)?.toBoolean() ?: default
 
         private fun String.withSlash() = if (this.startsWith("/")) this else "/$this"
     }

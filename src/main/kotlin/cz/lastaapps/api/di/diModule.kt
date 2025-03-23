@@ -24,6 +24,8 @@ import cz.lastaapps.api.presentation.AppConfig
 import cz.lastaapps.api.presentation.DCCommandManager
 import cz.lastaapps.api.presentation.RestAPI
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.compression.ContentEncodingConfig
@@ -69,7 +71,18 @@ val diModule = module {
 private fun createHttpClient(
     config: AppConfig,
 ) =
-    HttpClient {
+    when (config.networking.clientHttpEngine) {
+        AppConfig.Networking.HttpEngine.CIO -> HttpClient(CIO) {}
+        AppConfig.Networking.HttpEngine.OKHTTP -> HttpClient(OkHttp) {
+            engine {
+                config {
+                    // Already default
+                    // protocols(listOf(Protocol.HTTP_1_1, Protocol.HTTP_2))
+                }
+                pipelining = true
+            }
+        }
+    }.config {
         install(Logging) {
             level = config.logging.logLevelHttp
             logger =
@@ -106,9 +119,11 @@ private fun createHttpClient(
             )
         }
         // Attempts to speed up network requests to reduce rate limiting
-        install(ContentEncoding) {
-            deflate(1.0F)
-            gzip(0.9F)
-            mode = ContentEncodingConfig.Mode.DecompressResponse
+        if (config.networking.compressResponses) {
+            install(ContentEncoding) {
+                deflate(1.0F)
+                gzip(0.9F)
+                mode = ContentEncodingConfig.Mode.DecompressResponse
+            }
         }
     }
