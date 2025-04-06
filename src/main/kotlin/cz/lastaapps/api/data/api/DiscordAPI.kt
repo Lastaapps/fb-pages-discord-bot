@@ -180,7 +180,7 @@ class DiscordAPI(
 
         // Creates previews for links contained in the post's text
         // that were not present in attachments (we cannot access them using API)
-        (post.inaccessibleEventIds.map { eventId -> Url("https://www.facebook.com/events/${eventId.id}") } +
+        if (false) ((post.inaccessibleEventIds.map { eventId -> Url("https://www.facebook.com/events/${eventId.id}") } +
             post.linksInText.map { it.link })
             .forEach { link ->
                 log.i { "Posting event (inaccessible) $link" }
@@ -188,7 +188,7 @@ class DiscordAPI(
                     content = link.toString()
                     messageReference = message.id
                 }
-            }
+            })
 
         // If the channel is an announcement channel and some other servers follow it,
         // this will also send the message to the other servers
