@@ -12,6 +12,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.head
 import io.ktor.http.Url
+import io.ktor.http.decodeURLPart
 
 class LinkResolver(
     client: HttpClient = HttpClient(),
@@ -29,6 +30,8 @@ class LinkResolver(
             // yes, this is a potential security risk - remote url execution or something
             val response = client.head(link)
             val newLink = response.call.request.url
+                .let(::removeLogin)
+
             if (newLink != link) {
                 log.v { "Resolved \"$link\" -> \"${newLink}\"" }
             }
@@ -44,5 +47,19 @@ class LinkResolver(
 
     companion object {
         private val log = Logger.withTag("LinkResolver")
+
+        /**
+         * Resolved links often end up in the format facebook.com/login/?next=...
+         * e.g. https://www.facebook.com/login/?next=https%3A%2F%2Fwww.facebook.com%2F239996942266_1098642475632096
+         * Return the decoded next part in these cases
+         */
+        fun removeLogin(link: Url) = link.takeUnless {
+            it.host.endsWith("facebook.com") && it.segments == listOf("login")
+        }
+            ?: link.parameters["next"]?.decodeURLPart()?.let(::Url)
+            ?: run {
+                log.v { "Failed to remove login from $link" }
+                link
+            }
     }
 }
