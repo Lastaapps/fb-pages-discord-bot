@@ -9,7 +9,7 @@ kord = "0.15.0"
 kotest = "5.9.1"
 kotlin = "2.2.0"
 kotlinxCoroutines = "1.10.2"
-kotlinxDatetime = "0.7.1"
+kotlinxDatetime = "0.7.1-0.6.x-compat" # required becouse of Kord
 kotlinxSerialization = "1.9.0"
 ktlint = "13.0.0"
 ktor = "3.2.3"
@@ -57,10 +57,13 @@ sqldelight-driver-sqlite = { module = "app.cash.sqldelight:sqlite-driver", versi
 xalan = { module = "xalan:xalan", version.ref = "xalan" }
 
 [bundles]
-skrapeit-overrides = [
-    "jsoup",
-    "xalan",
-]
+kord = ["kord-core", "kord-common", "kord-rest"]
+skrapeit-overrides = ["logback-core", "logback-classic", "commons-net", "commons-text", "jsoup", "xalan"]
+ktor-client = ["ktor-client-core", "ktor-client-cio", "ktor-client-okhttp", "ktor-client-logging", "ktor-client-encoding"]
+ktor-server = ["ktor-server-core", "ktor-server-cio", "ktor-server-auth", "ktor-server-statusPages"]
+arrow = ["arrow-core", "arrow-fx-coroutines", "arrow-resilience"]
+koin-test = ["koin-test", "koin-test-junit5"]
+kotest = ["kotest-runner-junit5", "kotest-assertions-core"]
 
 [plugins]
 application = { id = "application" }

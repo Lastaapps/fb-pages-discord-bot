@@ -12,9 +12,12 @@ import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.embed
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
+import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
 import kotlin.math.absoluteValue
 import kotlin.time.Instant
+import kotlinx.datetime.toDeprecatedInstant
+import kotlinx.datetime.toStdlibInstant
 
 class DCManager private constructor(
     private val config: AppConfig,
@@ -29,7 +32,7 @@ class DCManager private constructor(
             }?.embeds
             ?.firstOrNull()
             ?.timestamp
-            ?.value
+            ?.value?.toStdlibInstant()
             ?: Instant.DISTANT_PAST
 
     private suspend fun UserMessageCreateBuilder.addFile(
@@ -61,7 +64,7 @@ class DCManager private constructor(
                     }?.url
 
             embed {
-                timestamp = post.publishedAt
+                timestamp = post.publishedAt.toDeprecatedInstant()
                 title = post.author
                 val reference = post.references?.let { "\n\n**${it.author}**\n${it.description}" } ?: ""
                 description = (post.description + reference).trimToDescription()
@@ -79,7 +82,7 @@ class DCManager private constructor(
                     }?.url
 
             embed {
-                timestamp = post.publishedAt
+                timestamp = post.publishedAt.toDeprecatedInstant()
                 title = event.title
                 description = event.description.trimToDescription()
                 url = event.eventLink()

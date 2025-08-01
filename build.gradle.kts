@@ -76,3 +76,11 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+versionCatalogUpdate {
+    sortByKey.set(true)
+    pin {}
+    keep {
+        keepUnusedVersions.set(true)
+    }
+}

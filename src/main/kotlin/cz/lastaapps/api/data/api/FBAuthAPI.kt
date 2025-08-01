@@ -20,6 +20,7 @@ import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.UserAccessToken
 import cz.lastaapps.api.presentation.AppConfig
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters

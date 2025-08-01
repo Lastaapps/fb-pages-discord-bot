@@ -24,6 +24,7 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.Url
 import io.ktor.http.fullPath
 import kotlin.math.absoluteValue
+import kotlinx.datetime.toDeprecatedInstant
 
 class DiscordAPI(
     private val client: HttpClient,
@@ -80,7 +81,7 @@ class DiscordAPI(
                 if (postDescription.isNotBlank() || postImageUrl != null) {
                     anyEmbedPosted = true
                     embed {
-                        timestamp = post.createdAt
+                        timestamp = post.createdAt.toDeprecatedInstant()
                         title = page.name
                         // post's description cannot be empty.
                         // It may be empty for posts with only a single photo
@@ -129,7 +130,7 @@ class DiscordAPI(
                             }?.url
 
                     embed {
-                        timestamp = post.createdAt
+                        timestamp = post.createdAt.toDeprecatedInstant()
                         title = event.name
                         description = event.description?.trimToDescription()
                         url = event.link.toString()
@@ -168,7 +169,7 @@ class DiscordAPI(
                 // https://facecook.com/1446471142347491_1183196140476661
                 if (!anyEmbedPosted) {
                     embed {
-                        timestamp = post.createdAt
+                        timestamp = post.createdAt.toDeprecatedInstant()
                         title = page.name
                         url = post.link.link.toString()
                         color = postColor
