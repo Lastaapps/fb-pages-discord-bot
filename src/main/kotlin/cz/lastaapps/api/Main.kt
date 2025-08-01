@@ -10,6 +10,7 @@ import cz.lastaapps.api.di.diModule
 import cz.lastaapps.api.presentation.AppConfig
 import cz.lastaapps.api.presentation.DCCommandManager
 import cz.lastaapps.api.presentation.RestAPI
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.koin.core.context.GlobalContext.get
 import org.koin.core.context.startKoin
@@ -26,6 +27,7 @@ fun main() =
 
         startKoin { modules(diModule) }
         val koin = get()
+        koin.loadModules(listOf(module { single { this@runBlocking } bind CoroutineScope::class }))
 
         val config = AppConfig.fromEnv()
         Logger.setMinSeverity(config.logging.logLevel)

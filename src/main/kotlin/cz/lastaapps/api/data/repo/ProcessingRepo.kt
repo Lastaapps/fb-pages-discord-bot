@@ -29,7 +29,6 @@ import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.toPageAccessToken
 import cz.lastaapps.api.presentation.AppConfig
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -49,13 +48,13 @@ class ProcessingRepo(
     private val postProvider: PostProvider,
     private val eventProvider: EventProvider,
     private val discordApi: DiscordAPI,
+    private val scope: CoroutineScope,
 ) {
     private val log = Logger.withTag("ProcessingRepo")
     private inline val curd get() = database.database.postedPostQueries
     private inline val queries get() = database.database.queriesQueries
 
     private val mutex = Mutex()
-    private val scope = CoroutineScope(Dispatchers.Default)
     private var processBatchJob: Job? = null
     private var scheduleJob: Job? = null
 
