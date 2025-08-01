@@ -1,11 +1,9 @@
 package cz.lastaapps.api
 
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.SystemWriter
 import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.data.repo.ProcessingRepo
-import cz.lastaapps.api.data.util.TimeStampFormatter
 import cz.lastaapps.api.di.diModule
 import cz.lastaapps.api.presentation.AppConfig
 import cz.lastaapps.api.presentation.DCCommandManager
@@ -22,16 +20,19 @@ private val log by lazy { Logger.withTag("Main") }
 
 fun main() =
     runBlocking {
-        Logger.setLogWriters(SystemWriter(TimeStampFormatter))
-
         log.i { "Starting the bot" }
-
-        startKoin { modules(diModule) }
-        val koin = get()
-        koin.loadModules(listOf(module { single { this@runBlocking } bind CoroutineScope::class }))
 
         val config = AppConfig.fromEnv()
         Logger.setMinSeverity(config.logging.logLevel)
+
+        log.i { "Starting Sentry" }
+        configureSentry(config.logging.sentryDsn)
+        Logger.addLogWriter(SentryLogWriter())
+
+        log.i { "Starting DI - Koin" }
+        startKoin { modules(diModule) }
+        val koin = get()
+        koin.loadModules(listOf(module { single { this@runBlocking } bind CoroutineScope::class }))
         koin.loadModules(listOf(module { single { config } }))
         koin.loadModules(listOf(module { single { AppDatabase.create(get<AppConfig>()) } }))
 
@@ -60,3 +61,4 @@ fun main() =
         // starts posts fetching
         koin.get<ProcessingRepo>().requestNow()
     }
+

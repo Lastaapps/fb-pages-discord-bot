@@ -1,8 +1,11 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.application)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.sentry)
     alias(libs.plugins.shadow)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.versionCatalogUpdate)
@@ -83,4 +86,30 @@ versionCatalogUpdate {
     keep {
         keepUnusedVersions.set(true)
     }
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
+
+sentry {
+    // Generates a JVM (Java, Kotlin, etc.) source bundle and uploads your source code to Sentry.
+    // This enables source context, allowing you to see your source
+    // code as part of your stack traces in Sentry.
+    includeSourceContext = true
+
+    org = "lasta-apps"
+    projectName = "fb-pages-discord-bot"
+
+    val sentryAuthToken = localProperties.getProperty("sentry.authToken")
+        ?: project.findProperty("sentry.authToken") as? String
+        ?: error("Please, specify sentry.authToken property")
+
+    authToken = sentryAuthToken
+}
+
+tasks.named("generateSentryBundleIdJava") {
+    dependsOn(tasks.named("generateMainDatabaseInterface"))
 }

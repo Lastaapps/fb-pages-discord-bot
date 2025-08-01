@@ -52,6 +52,7 @@ data class AppConfig(
     data class Logging(
         val logLevel: Severity,
         val logLevelHttp: LogLevel,
+        val sentryDsn: String,
     )
 
     data class Concurrency(
@@ -98,6 +99,7 @@ data class AppConfig(
                         .let { env -> Severity.entries.first { it.name.lowercase() == env } },
                     logLevelHttp = str("LOG_LEVEL_HTTP").lowercase()
                         .let { env -> LogLevel.entries.first { it.name.lowercase() == env } },
+                    sentryDsn = str("SENTRY_DSN"),
                 ),
                 concurrency = Concurrency(
                     fetchPages = int("CONCURRENCY_FETCH_PAGES", 1),
