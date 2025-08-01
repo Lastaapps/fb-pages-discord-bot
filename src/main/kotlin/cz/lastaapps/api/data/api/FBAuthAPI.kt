@@ -20,19 +20,18 @@ import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.UserAccessToken
 import cz.lastaapps.api.presentation.AppConfig
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters
 import io.ktor.http.encodeURLParameter
 import io.ktor.util.encodeBase64
 import java.security.SecureRandom
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 class FBAuthAPI(
     httpClient: HttpClient,

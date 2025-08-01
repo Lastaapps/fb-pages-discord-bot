@@ -6,18 +6,18 @@ import cz.lastaapps.scraping.model.AppCookies
 import cz.lastaapps.scraping.parser.FacebookEventParser
 import cz.lastaapps.scraping.parser.FacebookFeedParser
 import cz.lastaapps.scraping.parser.FacebookPostParser
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 fun main(): Unit =
     runBlocking {

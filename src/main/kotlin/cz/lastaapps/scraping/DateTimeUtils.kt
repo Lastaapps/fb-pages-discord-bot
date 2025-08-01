@@ -1,8 +1,11 @@
 package cz.lastaapps.scraping
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.DateTimeComponents
 import kotlinx.datetime.format.MonthNames
@@ -10,9 +13,6 @@ import kotlinx.datetime.format.Padding
 import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 val CET = TimeZone.of("Europe/Prague")
 
@@ -21,7 +21,7 @@ private val postPublishedAtFormatThisYear =
         // May 27 at 6:13 PM
         monthName(MonthNames.ENGLISH_FULL)
         chars(" ")
-        dayOfMonth(padding = Padding.NONE)
+        day(padding = Padding.NONE)
         chars(" at ")
         amPmHour(padding = Padding.NONE)
         chars(":")
@@ -35,7 +35,7 @@ private val postPublishedAtFormatPast =
         // May 27 at 6:13 PM
         monthName(MonthNames.ENGLISH_FULL)
         chars(" ")
-        dayOfMonth(padding = Padding.NONE)
+        day(padding = Padding.NONE)
         chars(", ")
         year()
         chars(" at ")
@@ -110,7 +110,7 @@ fun String.parsePostPublishedAt(
                     val dateTime = now.toLocalDateTime(timeZone).date.minus(1, DateTimeUnit.DAY)
                     components.year = dateTime.year
                     components.month = dateTime.month
-                    components.dayOfMonth = dateTime.dayOfMonth
+                    components.day = dateTime.day
                 }?.toLocalDateTime()
                 ?.toInstant(timeZone)
             // this year

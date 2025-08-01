@@ -1,6 +1,6 @@
 package cz.lastaapps.scraping.model
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 data class Post(
     val id: String,

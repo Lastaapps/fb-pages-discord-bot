@@ -1,12 +1,12 @@
 plugins {
-    val kotlinVersion = "2.1.21"
+    val kotlinVersion = "2.2.0"
 
     application
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
     id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("app.cash.sqldelight") version "2.0.2"
+    id("app.cash.sqldelight") version "2.1.0"
 }
 
 group = "cz.lastaapps"
@@ -20,7 +20,20 @@ application {
 kotlin {
     jvmToolchain(21)
     compilerOptions {
-        freeCompilerArgs.addAll("-Xwhen-guards", "-Xcontext-receivers")
+        freeCompilerArgs.addAll(
+            "-Xwhen-guards",
+            "-Xcontext-parameters",
+            "-Xcontext-sensitive-resolution",
+            "-Xannotation-target-all",
+            "-Xnested-type-aliases",
+            "-Xannotation-default-target=param-property",
+        )
+    }
+    sourceSets {
+        all {
+            languageSettings.optIn("kotlin.ExperimentalStdlibApi")
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+        }
     }
 }
 
@@ -38,9 +51,9 @@ sqldelight {
 
 // I'm to lazy to setup catalogs
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     val kordVersion = "0.15.0"
     implementation("dev.kord:kord-core:$kordVersion")
@@ -55,11 +68,11 @@ dependencies {
     implementation("ch.qos.logback:logback-core:1.5.18")
     implementation("ch.qos.logback:logback-classic:1.5.18")
     implementation("commons-net:commons-net:3.11.1")
-    implementation("org.apache.commons:commons-text:1.13.0")
-    implementation("org.jsoup:jsoup:1.20.1")
+    implementation("org.apache.commons:commons-text:1.14.0")
+    implementation("org.jsoup:jsoup:1.21.1")
     implementation("xalan:xalan:2.7.3")
 
-    val ktorVersion = "3.1.3"
+    val ktorVersion = "3.2.3"
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
@@ -70,7 +83,7 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
 
-    implementation("co.touchlab:kermit:2.0.5")
+    implementation("co.touchlab:kermit:2.0.6")
 
     implementation(platform("io.arrow-kt:arrow-stack:2.1.2"))
     implementation("io.arrow-kt:arrow-core")
@@ -79,7 +92,7 @@ dependencies {
 
     implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
 
-    implementation(platform("io.insert-koin:koin-bom:4.0.4"))
+    implementation(platform("io.insert-koin:koin-bom:4.1.0"))
     implementation("io.insert-koin:koin-core")
     testImplementation("io.insert-koin:koin-test")
     testImplementation("io.insert-koin:koin-test-junit5")

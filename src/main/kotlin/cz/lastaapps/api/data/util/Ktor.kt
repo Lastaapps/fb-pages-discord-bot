@@ -10,13 +10,13 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 
-context(Raise<DomainError>)
+context(r: Raise<DomainError>)
 suspend inline fun <reified T> HttpResponse.bindBody(): T =
     Either.catch {
         if (status.isSuccess()) {
             body<T>()
         } else {
-            raise(
+            r.raise(
                 NetworkError.FBAPIError(
                     status,
                     body<FBError.Wrapper>().error,
@@ -25,4 +25,4 @@ suspend inline fun <reified T> HttpResponse.bindBody(): T =
         }
     }.mapLeft {
         NetworkError.SerializationError(it, responseBody = bodyAsText())
-    }.bind()
+    }.let { with(r) { it.bind() } }

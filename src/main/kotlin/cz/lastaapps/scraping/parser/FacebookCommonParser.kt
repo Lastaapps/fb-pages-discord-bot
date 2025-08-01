@@ -4,7 +4,7 @@ import cz.lastaapps.common.decodeFacebookUrl
 import cz.lastaapps.scraping.model.ReferencedPost
 import cz.lastaapps.scraping.parsePostPublishedAt
 import it.skrape.selects.DocElement
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 
 object FacebookCommonParser {

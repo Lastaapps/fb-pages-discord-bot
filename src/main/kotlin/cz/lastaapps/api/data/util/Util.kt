@@ -6,14 +6,15 @@ import co.touchlab.kermit.MessageStringFormatter
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.Tag
 import io.ktor.http.Url
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
 import kotlinx.datetime.format.DateTimeComponents
 import kotlinx.datetime.format.Padding
 import kotlinx.datetime.format.char
+import kotlinx.datetime.parse
 import kotlinx.datetime.toLocalDateTime
 
 // 2024-09-03T17:00:00+0300
@@ -23,7 +24,7 @@ private val facebookTimestampParser =
         char('-')
         monthNumber(padding = Padding.ZERO)
         char('-')
-        dayOfMonth(padding = Padding.ZERO)
+        day(padding = Padding.ZERO)
         char('T')
         hour(padding = Padding.ZERO)
         char(':')
@@ -85,7 +86,7 @@ fun Instant.formatDateTime(timeZone: TimeZone) =
         .toLocalDateTime(timeZone)
         .format(
             LocalDateTime.Format {
-                dayOfMonth(padding = Padding.NONE)
+                day(padding = Padding.NONE)
                 char('.')
                 char(' ')
                 monthNumber(padding = Padding.NONE)

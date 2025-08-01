@@ -1,6 +1,7 @@
 package cz.lastaapps.api.di
 
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Logger.Companion.config
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.data.api.FBDataAPI
@@ -32,8 +33,10 @@ import io.ktor.client.plugins.compression.ContentEncodingConfig
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.datetime.Clock
+import io.ktor.server.util.url
+import kotlin.time.Clock
 import kotlinx.serialization.json.Json
+import org.apache.commons.lang3.ObjectUtils.mode
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind

@@ -12,10 +12,9 @@ import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.embed
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.ChannelProvider
-import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
 import kotlin.math.absoluteValue
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class DCManager private constructor(
     private val config: AppConfig,

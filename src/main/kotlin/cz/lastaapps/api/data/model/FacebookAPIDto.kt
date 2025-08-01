@@ -10,7 +10,7 @@ import cz.lastaapps.api.domain.model.id.FBUserID
 import cz.lastaapps.api.domain.model.token.AppAccessToken
 import cz.lastaapps.api.domain.model.token.PageAccessToken
 import cz.lastaapps.api.domain.model.token.UserAccessToken
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

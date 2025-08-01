@@ -2,7 +2,7 @@ package cz.lastaapps.api.domain.model
 
 import cz.lastaapps.api.domain.model.id.FBEventID
 import io.ktor.http.Url
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 
 data class Event(

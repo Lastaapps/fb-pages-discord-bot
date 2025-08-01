@@ -47,3 +47,4 @@ bin/
 /.env
 /kls_database.db
 /fb_pages_db_bot.db
+/.kotlin/
