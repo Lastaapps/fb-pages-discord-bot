@@ -132,7 +132,7 @@ class ProcessingRepo(
                         .toSet()
 
                     val newPosts = (postIds - existingPosts)
-                        .also { log.d { "Found ${it.size} new posts" } }
+                        .also { log.d { "Found ${it.size} new posts for channel ${channel.name} (${channel.dbId.id})" } }
                         .parMap(concurrency = config.concurrency.resolvePosts) { postsMap[it]!!().bind() }
 
                     newPosts
@@ -144,9 +144,9 @@ class ProcessingRepo(
                                 eventProvider.loadEventData(id, page.accessToken)().bind()
                             }.filterOption()
                             log.i {
-                                "Posting ${post.id.id} (${
+                                "Posting ${post.id.id} to ${channel.name} (${channel.name}) -> \"${
                                     post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
-                                }) to ${channel.name} (${channel.name})"
+                                }\""
                             }
                             val messageID = discordApi.postPostAndEvents(
                                 channel.dcId, page, post, events,

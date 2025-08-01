@@ -6,6 +6,10 @@ import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.model.Page
 import cz.lastaapps.api.domain.model.id.DCChannelID
 import cz.lastaapps.api.domain.model.id.FBPageID
+import io.sentry.Sentry
+import io.sentry.SentryEvent
+import io.sentry.SentryLevel
+import io.sentry.protocol.Message
 
 class AddPageUC(
     private val repo: ManagementRepo,
@@ -18,6 +22,15 @@ class AddPageUC(
         val channelID = repo.getDiscordChannelID(channelID).bind()
         val pageID = repo.getFBPageID(pageID).bind()
         repo.createChannelPageRelation(channelID, pageID).bind()
-        repo.getPageByID(pageID).bind().getOrNull()!!
+        val res = repo.getPageByID(pageID).bind().getOrNull()!!
+
+        Sentry.captureEvent(
+            SentryEvent().apply {
+                message = Message().apply { message = "New link was added!" }
+                level = SentryLevel.WARNING
+            },
+        )
+
+        res
     }
 }
