@@ -1,12 +1,11 @@
 plugins {
-    val kotlinVersion = "2.2.0"
-
-    application
-    kotlin("jvm") version kotlinVersion
-    kotlin("plugin.serialization") version kotlinVersion
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("app.cash.sqldelight") version "2.1.0"
+    alias(libs.plugins.application)
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.versionCatalogUpdate)
 }
 
 group = "cz.lastaapps"
@@ -14,7 +13,7 @@ version = "1.0"
 
 application {
     mainClass.set("cz.lastaapps.api.MainKt")
-//    mainClass.set("cz.lastaapps.scraping.MainKt")
+    // mainClass.set("cz.lastaapps.scraping.MainKt")
 }
 
 kotlin {
@@ -29,16 +28,12 @@ kotlin {
             "-Xannotation-default-target=param-property",
         )
     }
-    sourceSets {
-        all {
-            languageSettings.optIn("kotlin.ExperimentalStdlibApi")
-            languageSettings.optIn("kotlin.time.ExperimentalTime")
+    sourceSets.all {
+        languageSettings {
+            optIn("kotlin.ExperimentalStdlibApi")
+            optIn("kotlin.time.ExperimentalTime")
         }
     }
-}
-
-repositories {
-    mavenCentral()
 }
 
 sqldelight {
@@ -49,58 +44,33 @@ sqldelight {
     }
 }
 
-// I'm to lazy to setup catalogs
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
 
-    val kordVersion = "0.15.0"
-    implementation("dev.kord:kord-core:$kordVersion")
-    implementation("dev.kord:kord-common:$kordVersion")
-    implementation("dev.kord:kord-rest:$kordVersion")
-    // for some reason, sometimes required to run the app
-    // this was not required before, so it's probably just some cache error
-    // implementation("io.github.oshai:kotlin-logging-jvm:7.0.7")
+    implementation(libs.bundles.kord)
 
-    implementation("it.skrape:skrapeit:1.3.0-alpha.2")
+    implementation(libs.skrapeit)
     // fix security vulnerabilities in skrapeit libs
-    implementation("ch.qos.logback:logback-core:1.5.18")
-    implementation("ch.qos.logback:logback-classic:1.5.18")
-    implementation("commons-net:commons-net:3.11.1")
-    implementation("org.apache.commons:commons-text:1.14.0")
-    implementation("org.jsoup:jsoup:1.21.1")
-    implementation("xalan:xalan:2.7.3")
+    implementation(libs.bundles.skrapeit.overrides)
 
-    val ktorVersion = "3.2.3"
-    implementation("io.ktor:ktor-client-core:$ktorVersion")
-    implementation("io.ktor:ktor-client-cio:$ktorVersion")
-    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-    implementation("io.ktor:ktor-client-logging:$ktorVersion")
-    implementation("io.ktor:ktor-client-encoding:$ktorVersion")
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    implementation("io.ktor:ktor-server-cio:$ktorVersion")
-    implementation("io.ktor:ktor-server-auth:$ktorVersion")
-    implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+    implementation(libs.bundles.ktor.client)
+    implementation(libs.bundles.ktor.server)
 
-    implementation("co.touchlab:kermit:2.0.6")
+    implementation(libs.kermit)
 
-    implementation(platform("io.arrow-kt:arrow-stack:2.1.2"))
-    implementation("io.arrow-kt:arrow-core")
-    implementation("io.arrow-kt:arrow-fx-coroutines")
-    implementation("io.arrow-kt:arrow-resilience")
+    implementation(platform(libs.arrow.bom))
+    implementation(libs.bundles.arrow)
 
-    implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
+    implementation(libs.sqldelight.driver.sqlite)
 
-    implementation(platform("io.insert-koin:koin-bom:4.1.0"))
-    implementation("io.insert-koin:koin-core")
-    testImplementation("io.insert-koin:koin-test")
-    testImplementation("io.insert-koin:koin-test-junit5")
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.core)
+    testImplementation(libs.bundles.koin.test)
 
-    testImplementation(kotlin("test"))
-    val kotestVersion = "5.9.1"
-    testImplementation("io.kotest:kotest-runner-junit5:$kotestVersion")
-    testImplementation("io.kotest:kotest-assertions-core:$kotestVersion")
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.bundles.kotest)
 }
 
 tasks.test {
