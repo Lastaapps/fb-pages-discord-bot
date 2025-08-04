@@ -45,9 +45,9 @@ fun String.toUrl(): Url = trim()
     .let(::Url)
 
 fun String.toUrlOrNull(logger: Logger?) = try {
-    toUrl()
-} catch (_: Exception) {
-    logger?.e { "Cannot parse provider URL: \"$this\"" }
+    trim().toUrl()
+} catch (e: Exception) {
+    logger?.e(e) { "Cannot parse provider URL: \"$this\"" }
     null
 }
 
