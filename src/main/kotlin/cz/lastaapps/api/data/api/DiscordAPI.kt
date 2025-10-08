@@ -202,7 +202,7 @@ class DiscordAPI(
         DCMessageID(message.id.value)
     }
 
-    // description has a limit of 4096 characters
+    // the description has a limit of 4096 characters
     private fun String.trimToDescription() =
         if (length > 4000) {
             val ind = substring(0, 4000).lastIndexOf(' ')
@@ -227,7 +227,7 @@ class DiscordAPI(
         val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
         val guildId = channel.guildId.value
         if (guildId == null) {
-            log.e { "Channel ${channelID.id} guild cannot be accessed" }
+            log.e { "Channel ${channelID.id} guild info cannot be accessed" }
             return@catchingDiscord false
         }
 
@@ -251,6 +251,9 @@ class DiscordAPI(
         }
 
         val permissions = guildPermissions + channelPermissionsAllowed - channelPermissionsDenied
+        log.d { "Channel ${channelID.id} has following permissions: ${permissions.prettyPrint()}" }
         permissions.contains(requiredPermissions)
     }
 }
+
+private fun Permissions.prettyPrint() = values.map { it::class.simpleName }

@@ -17,6 +17,7 @@ import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.e
+import cz.lastaapps.api.domain.error.text
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.DiscordChannel
 import cz.lastaapps.api.domain.model.id.DBChannelID
@@ -114,10 +115,10 @@ class ProcessingRepo(
         batch.requests.entries
             .filter { (channel, _) ->
                 discordApi.checkBotPermissions(channel.dcId, AppDCPermissions.forPosting)
-                    .onLeft { log.e(it) { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions" } }
+                    .onLeft { log.i { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions - ${it.text()}" } }
                     .onRight {
                         if (!it) {
-                            log.e { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions for posting" }
+                            log.i { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions for posting" }
                         }
                     }
                     .getOrElse { false }
