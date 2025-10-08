@@ -1,24 +1,24 @@
 [versions]
 arrow = "2.1.2"
-commonsNet = "3.11.1"
+commonsNet = "3.12.0"
 commonsText = "1.14.0"
-jsoup = "1.21.1"
-kermit = "2.0.6"
-koin = "4.1.0"
-kord = "0.15.0"
-kotest = "5.9.1"
-kotlin = "2.2.0"
+jsoup = "1.21.2"
+kermit = "2.0.8"
+koin = "4.1.1"
+kord = "0.17.0"
+kotest = "6.0.3"
+kotlin = "2.2.20"
 kotlinxCoroutines = "1.10.2"
-kotlinxDatetime = "0.7.1-0.6.x-compat" # required becouse of Kord
+kotlinxDatetime = "0.7.1"
 kotlinxSerialization = "1.9.0"
-ktlint = "13.0.0"
-ktor = "3.2.3"
-logback = "1.5.18"
-shadow = "8.1.1"
+ktlint = "13.1.0"
+ktor = "3.3.1"
+logback = "1.5.19"
+sentry = "5.12.1"
+shadow = "9.2.2"
 skrapeit = "1.3.0-alpha.2"
 sqldelight = "2.1.0"
 xalan = "2.7.3"
-sentry = "5.8.0"
 
 [libraries]
 arrow-bom = { module = "io.arrow-kt:arrow-stack", version.ref = "arrow" }
@@ -58,13 +58,45 @@ sqldelight-driver-sqlite = { module = "app.cash.sqldelight:sqlite-driver", versi
 xalan = { module = "xalan:xalan", version.ref = "xalan" }
 
 [bundles]
-kord = ["kord-core", "kord-common", "kord-rest"]
-skrapeit-overrides = ["logback-core", "logback-classic", "commons-net", "commons-text", "jsoup", "xalan"]
-ktor-client = ["ktor-client-core", "ktor-client-cio", "ktor-client-okhttp", "ktor-client-logging", "ktor-client-encoding"]
-ktor-server = ["ktor-server-core", "ktor-server-cio", "ktor-server-auth", "ktor-server-statusPages"]
-arrow = ["arrow-core", "arrow-fx-coroutines", "arrow-resilience"]
-koin-test = ["koin-test", "koin-test-junit5"]
-kotest = ["kotest-runner-junit5", "kotest-assertions-core"]
+arrow = [
+    "arrow-core",
+    "arrow-fx-coroutines",
+    "arrow-resilience",
+]
+koin-test = [
+    "koin-test",
+    "koin-test-junit5",
+]
+kord = [
+    "kord-common",
+    "kord-core",
+    "kord-rest",
+]
+kotest = [
+    "kotest-assertions-core",
+    "kotest-runner-junit5",
+]
+ktor-client = [
+    "ktor-client-cio",
+    "ktor-client-core",
+    "ktor-client-encoding",
+    "ktor-client-logging",
+    "ktor-client-okhttp",
+]
+ktor-server = [
+    "ktor-server-auth",
+    "ktor-server-cio",
+    "ktor-server-core",
+    "ktor-server-statusPages",
+]
+skrapeit-overrides = [
+    "commons-net",
+    "commons-text",
+    "jsoup",
+    "logback-classic",
+    "logback-core",
+    "xalan",
+]
 
 [plugins]
 application = { id = "application" }
@@ -72,6 +104,6 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 sentry = { id = "io.sentry.jvm.gradle", version.ref = "sentry" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
-versionCatalogUpdate = "nl.littlerobots.version-catalog-update:1.0.0"
+versionCatalogUpdate = "nl.littlerobots.version-catalog-update:1.0.1"
