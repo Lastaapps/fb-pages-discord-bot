@@ -1,4 +1,4 @@
-FROM gradle:8.12-jdk21 AS build
+FROM gradle:9.1-jdk21 AS build
 ARG SENTRY_AUTH_TOKEN
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
