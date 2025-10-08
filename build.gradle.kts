@@ -43,6 +43,8 @@ sqldelight {
     databases {
         create("Database") {
             packageName.set("cz.lastaapps.api")
+            schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
+            verifyMigrations.set(true)
         }
     }
 }

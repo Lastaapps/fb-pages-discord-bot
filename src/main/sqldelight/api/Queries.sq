@@ -14,7 +14,7 @@ INNER JOIN FB_Page_Token ON FB_Page_FB_Page_Token.fb_page_token_id = FB_Page_Tok
 WHERE fb_id = ?;
 
 getPagesAndChannelsWithTokens:
-SELECT DC_Channel.id, DC_Channel.name AS ch_name, DC_Channel.dc_id, FB_Page.id, FB_Page.fb_id, FB_Page.name, FB_Page_Token.token FROM FB_Page
+SELECT DC_Channel.id, DC_Channel.name AS ch_name, DC_Channel.dc_id, DC_Channel.enabled AS channel_enabled, FB_Page.id, FB_Page.fb_id, FB_Page.name, FB_Page_Token.token FROM FB_Page
 LEFT JOIN FB_Page_FB_Page_Token ON FB_Page.id = FB_Page_FB_Page_Token.fb_page_id
 LEFT JOIN FB_Page_Token ON FB_Page_FB_Page_Token.fb_page_token_id = FB_Page_Token.id
 INNER JOIN DC_Channel_FB_Page ON FB_Page.id = DC_Channel_FB_Page.fb_page_id

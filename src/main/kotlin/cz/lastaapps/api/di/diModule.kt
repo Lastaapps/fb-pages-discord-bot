@@ -1,7 +1,6 @@
 package cz.lastaapps.api.di
 
 import co.touchlab.kermit.Logger
-import co.touchlab.kermit.Logger.Companion.config
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.data.api.FBDataAPI
@@ -13,6 +12,7 @@ import cz.lastaapps.api.data.repo.ManagementRepo
 import cz.lastaapps.api.data.repo.ProcessingRepo
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.usecase.AddPageUC
+import cz.lastaapps.api.domain.usecase.ChangeChannelEnabledUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
 import cz.lastaapps.api.domain.usecase.GetOAuthLink
 import cz.lastaapps.api.domain.usecase.GetPagesForChannelUC
@@ -33,10 +33,8 @@ import io.ktor.client.plugins.compression.ContentEncodingConfig
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.util.url
 import kotlin.time.Clock
 import kotlinx.serialization.json.Json
-import org.apache.commons.lang3.ObjectUtils.mode
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
@@ -66,6 +64,7 @@ val diModule = module {
     factoryOf(::GetPagesForChannelUC)
     factoryOf(::ParsePageIDUC)
     factoryOf(::RemovePageUC)
+    factoryOf(::ChangeChannelEnabledUC)
     factoryOf(::SearchPagesUC)
     factoryOf(::VerifyUserPagesUC)
     factoryOf(::RunJobsUC)

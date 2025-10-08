@@ -8,6 +8,7 @@ import cz.lastaapps.api.domain.error.respondError
 import cz.lastaapps.api.domain.model.id.DCChannelID
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.usecase.AddPageUC
+import cz.lastaapps.api.domain.usecase.ChangeChannelEnabledUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.RunJobsUC
@@ -25,6 +26,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import kotlin.time.Duration.Companion.milliseconds
@@ -37,6 +39,7 @@ class RestAPI(
     private val authApi: FBAuthAPI,
     private val addPageUC: AddPageUC,
     private val removePageUC: RemovePageUC,
+    private val updateChannelEnabledUC: ChangeChannelEnabledUC,
     private val getAuthorizedPages: GetAuthorizedPagesUC,
     private val runJobsUC: RunJobsUC,
 ) {
@@ -76,15 +79,31 @@ class RestAPI(
                         addPageUC(
                             call.parameters["channel_id"]!!.toULong().let(::DCChannelID),
                             call.parameters["page_id"]!!.toULong().let(::FBPageID),
-                        )
-                        call.respond(HttpStatusCode.Created)
+                        ).onLeft {
+                            call.respondError(it)
+                        }.onRight {
+                            call.respond(HttpStatusCode.Created)
+                        }
                     }
                     delete("/channel-page/{channel_id}/{page_id}") {
                         removePageUC(
                             call.parameters["channel_id"]!!.toULong().let(::DCChannelID),
                             call.parameters["page_id"]!!.toULong().let(::FBPageID),
-                        )
-                        call.respond(HttpStatusCode.OK)
+                        ).onLeft {
+                            call.respondError(it)
+                        }.onRight {
+                            call.respond(HttpStatusCode.Accepted)
+                        }
+                    }
+                    put("/channel/{channel_id}/enabled/{enable}") {
+                        updateChannelEnabledUC(
+                            call.parameters["channel_id"]!!.toULong().let(::DCChannelID),
+                            call.parameters["enable"]!!.toBoolean(),
+                        ).onLeft {
+                            call.respondError(it)
+                        }.onRight {
+                            call.respond(HttpStatusCode.OK)
+                        }
                     }
                     get("/state") {
                         buildString {
@@ -101,12 +120,25 @@ class RestAPI(
                                 }
                             append('\n')
                             append("Assigned pages:\n")
-                            repository.loadChannelsWithInfo().forEach { (dbId, dcId, name, serverName) ->
+                            repository.loadChannelsWithInfo()
+                                .forEach { (dbId, dcId, name, channelEnabled, serverName) ->
                                 val pages = repository.loadAuthorizedPagesForChannel(dbId)
                                 val canAccess = repository.hasFullPermissionsInChannel(dcId).getOrNull()
 
                                 append("> ")
-                                append("$name (DC: ${dcId.id}) (DB: ${dbId.id}) (server: ${serverName.getOrNull()}) (permissions: $canAccess)\n")
+                                    append(name)
+                                    append(' ')
+                                    append("(DC: ${dcId.id})")
+                                    append(' ')
+                                    append("(DB: ${dbId.id})")
+                                    append(' ')
+                                    append("(server: ${serverName.getOrNull()})")
+                                    append(' ')
+                                    append("(${if (channelEnabled) "enabled" else "disable"})")
+                                    append(' ')
+                                    append("(permissions: $canAccess)")
+                                    append('\n')
+
                                 // yes, this should happen only once in one query and I also do it like that elsewhere,
                                 // but I need to fix my architecture first before I can access it
                                 pages.getOrNull()?.also {

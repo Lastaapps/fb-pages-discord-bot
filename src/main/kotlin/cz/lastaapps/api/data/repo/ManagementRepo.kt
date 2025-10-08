@@ -2,7 +2,7 @@ package cz.lastaapps.api.data.repo
 
 import arrow.core.None
 import arrow.core.Option
-import arrow.core.Tuple4
+import arrow.core.Tuple5
 import arrow.core.filterOption
 import arrow.core.left
 import arrow.core.raise.either
@@ -121,13 +121,13 @@ class ManagementRepo(
             .right()
     }
 
-    suspend fun loadChannelsWithInfo(): List<Tuple4<DBChannelID, DCChannelID, String, Option<String>>> =
+    suspend fun loadChannelsWithInfo(): List<Tuple5<DBChannelID, DCChannelID, String, Boolean, Option<String>>> =
         curd.getAllDCChannels()
             .executeAsList()
-            .map { (dbId, name, dcId) ->
+            .map { (dbId, name, dcId, channelEnabled) ->
                 val serverName = discordAPI.getServerNameForChannel(dcId)
                     .onLeft { log.e(it) { "Failed to obtain server name for channel ${dcId.id} ($name)" } }
-                Tuple4(dbId, dcId, name, serverName.fold({ None }, { it.some() }))
+                Tuple5(dbId, dcId, name, channelEnabled, serverName.fold({ None }, { it.some() }))
             }
 
     fun loadAuthorizedPages(): List<AuthorizedPage> =
@@ -176,6 +176,15 @@ class ManagementRepo(
     ): Outcome<Unit> = run {
         log.d { "Removing relation between channel ${channelID.id} and page ${pageID.id}" }
         curd.unlinkDCChannelToFBPage(channel_id = channelID, fb_page_id = pageID)
+        Unit.right()
+    }
+
+    fun changeChannelEnabled(
+        channelID: DBChannelID,
+        enabled: Boolean,
+    ): Outcome<Unit> = run {
+        log.d { "Making channel ${channelID.id} ${if (enabled) "enabled" else "disabled"}" }
+        curd.changeChannelEnabled(id = channelID, enabled = enabled)
         Unit.right()
     }
 

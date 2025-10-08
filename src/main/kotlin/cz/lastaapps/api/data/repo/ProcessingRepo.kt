@@ -113,6 +113,7 @@ class ProcessingRepo(
         }.flatten().toMap()
 
         batch.requests.entries
+            .filter { (channel, _) -> channel.enabled }
             .filter { (channel, _) ->
                 discordApi.checkBotPermissions(channel.dcId, AppDCPermissions.forPosting)
                     .onLeft { log.i { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions - ${it.text()}" } }
@@ -181,6 +182,7 @@ class ProcessingRepo(
                 id: DBChannelID,
                 chName: String,
                 dcId: DCChannelID,
+                channelEnabled: Boolean,
                 dbId: DBPageID,
                 fbId: FBPageID,
                 name: String,
@@ -192,7 +194,7 @@ class ProcessingRepo(
                 return@getPagesAndChannelsWithTokens None
             }
 
-            (DiscordChannel(id, chName, dcId) to AuthorizedPage(
+            (DiscordChannel(id, chName, dcId, channelEnabled) to AuthorizedPage(
                 dbId = dbId,
                 fbId = fbId,
                 name = name,
