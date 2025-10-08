@@ -22,12 +22,14 @@ fun decodeFacebookUrl(url: String): String =
         }
 
 val imageExtensions =
+    // All the images are stored as PNGs anyway
     listOf(
         ".jpg",
         ".jpeg",
         ".png",
         ".webp",
         ".gif",
+        ".svg",
     )
 
 val colorsSet =
