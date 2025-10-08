@@ -26,7 +26,10 @@ class AddPageUC(
 
         Sentry.captureEvent(
             SentryEvent().apply {
-                message = Message().apply { message = "New link was added!" }
+                message = Message().apply {
+                    message = "New page added!"
+                    params = listOf(res.name, res.fbId.id.toString())
+                }
                 level = SentryLevel.WARNING
             },
         )
