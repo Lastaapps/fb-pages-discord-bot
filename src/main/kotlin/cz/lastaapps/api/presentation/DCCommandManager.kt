@@ -72,7 +72,7 @@ class DCCommandManager(
                     is Either.Right ->
                         "Some permissions are missing, some (planned) action may fail: ${canAccess.value.stringify()}." +
                             " Only posting permissions are required now for the bot to work." +
-                            " See docs at https://github.com/LastaApps/fb-pages-discord-bot."
+                            " See the docs at https://github.com/LastaApps/fb-pages-discord-bot#permissions"
 
                     is Either.Left ->
                         "Failed to check permissions, contact developer, please."

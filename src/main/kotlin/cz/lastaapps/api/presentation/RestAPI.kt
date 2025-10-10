@@ -135,7 +135,7 @@ class RestAPI(
                                     append(' ')
                                     append("(server: ${serverName.getOrNull()})")
                                     append(' ')
-                                    append("(${if (channelEnabled) "enabled" else "disable"})")
+                                    append("(${if (channelEnabled) "enabled" else "disabled"})")
                                     append(' ')
                                     append("(permissions: ${permissions?.stringify()})")
                                     append('\n')

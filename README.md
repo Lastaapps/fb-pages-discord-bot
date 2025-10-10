@@ -3,7 +3,7 @@
 The bot gets posts from the Facebook pages given and reposts them to
 specified Discord channels.
 
-It uses official Facebook API to get the posts.
+It uses the official Facebook API to get the posts.
 You can either host it yourself, or contact me, add the Discord bot and enjoy.
 Translations from Czech are missing in both variants, feel free to create a PR.
 
@@ -19,8 +19,8 @@ You can add the bot hosted by me to your server using this
 [invite link](https://discord.com/oauth2/authorize?client_id=1252917635948216401).
 Make sure bot has access to the channels where you want to relay the posts (see bellow)
 Use the `fb_ping` command to test if the bot works.
-Current refresh period can be seen when a new page is added.
-Also, in case this bot becomes popular the rate limit will be reached
+The current refresh period can be seen when a new page is added.
+Also, in case this bot becomes popular, the rate limit will be reached
 as login is not enabled for my instance - I can handle ~40 pages.
 See also events section for details as events don't work correctly in this mode.
 I have plans to obtain necessary permissions from Facebook to overcome this issue.
@@ -28,8 +28,10 @@ I have plans to obtain necessary permissions from Facebook to overcome this issu
 If the bot does not work for you, please open an issue as it's still in a beta stage.
 The bot is provided with no guaranties, see License.
 
-Bot support multiple commands. Their availability may vary based on which FB authorization
-features are enabled.
+### Commands
+
+Bot supports multiple commands.
+Their availability may vary based on which FB authorization features are enabled.
 
 - `fb_ping` - tests connection and basic permissions
 - `fb_list_available` - pages that are available to the bot. If the bot has proper rights,
@@ -41,18 +43,22 @@ features are enabled.
 - `fb_authorize_login` - shows link that can be used to log into the app and authorize more pages
 - `fb_authorize_user` - authorize pages of the user given by a `user_access_token`. System user token is also supported.
 
-The bot needs following permission in the channel it's supposed to send messages into:
+### Permissions
 
-- view channel
-- send messages
-- embed links
-- attach files
-  The following permissions will be required in the future, so better add them now
-  (basic functionality will work event without them)
-- manage messages
-- read message history
-- create events
-- manage events
+The bot needs the following permission in the channel it's supposed to send messages into:
+
+- `View channel`
+- `Send messages`
+- `Embed links`
+- `Attach files`
+
+The following permissions will be required in the future, so better add them now
+(basic functionality will work event without them):
+
+- `Manage messages`
+- `Read message history`
+- `Create events`
+- `Manage events`
 
 ### Events and embeds
 
@@ -71,12 +77,12 @@ do the according action in Facebook admin panel and just invalidate tokens.
 If the bot runs in public content mode, make your page private,
 otherwise the bot will get your page anyway.
 If you logged in using Business login,
-authenticate again and in list of pages the bot can manage select none.
-If you used system user token, revoke tokens of the system user.
+authenticate again and in the list of pages, the bot can manage select none.
+If you use system user token, revoke tokens of the system user.
 
 ## Own deployment and Authorization
 
-The server is configured using envirinment variables.
+The server is configured using environment variables.
 All the variables have to be set.
 See `env_example` with configuration example.
 
@@ -84,7 +90,7 @@ See `env_example` with configuration example.
 
 Head to [Facebook developer page](https://developers.facebook.com),
 create a **business** Facebook app and fill in basic information.
-There are three options how to set up Facebook app permissions:
+There are three options for how to set up Facebook app permissions:
 
 #### Page Public Content Access
 
@@ -110,12 +116,12 @@ Required permissions are `pages_show_list`, `page_events` and `pages_read_engage
 
 This option is similar to the previous one. In your [Meta Business Suit](https://business.facebook.com/latest),
 head into the system users section. Make sure that your portfolio manages the given pages.
-Create a new system user, give it permissions for bot the bot and pages.
+Create a new system user, give it permissions for the bot and pages.
 Then click the bot, give it the same permissions as in the approach above and pass the token to this server.
 
 ### Discord bot
 
-Create a Discord bot. Send invitation to a Discord admin with the following permissions:
+Create a Discord bot. Send an invitation to a Discord admin with the following permissions:
 
 - **TODO**
 
@@ -140,7 +146,7 @@ I recommend using cURL or Postman for this.
 
 ### Docker Compose
 
-We provide example Docker Compose file bellow:
+We provide an example Docker Compose file below:
 
 ```docker-compose
 services:
@@ -172,7 +178,7 @@ A fake account that will probably get banned quite quickly is needed.
 
 Configuration is done using environment variables,
 see `env_example` in git history.
-First you need to create a bot account and
+First, you need to create a bot account and
 set up the account's translation options
 https://m.facebook.com/settings/language/auto_translate_disabled_dialects/
 
@@ -180,7 +186,7 @@ After that, create a Discord bot, get the token and add the bot to the desired s
 
 Then set up your environment variables according to `.evn_example`.
 Log into your account, take the cookie you got, take the desired fields (url decode them).
-After that specify bot's Discord token, channel ID to post the posts into,
+After that, specify bot's Discord token, channel ID to post the posts into,
 delay how ofter a full scan will happen and weight of your mum.
 *Don't use your main account as it may get banned.*
 
@@ -189,7 +195,7 @@ delay how ofter a full scan will happen and weight of your mum.
 It may happen that if a post is at the time of server startup
 published n hours ago,
 some other posts may be skipped from being posted/posted twice.
-To minimize the chance of this happening, start the bot during weekend.
+To minimize the chance of this happening, start the bot during the weekend.
 
 ## Development
 
