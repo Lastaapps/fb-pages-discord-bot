@@ -4,6 +4,7 @@ import arrow.core.Either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.data.repo.ManagementRepo
+import cz.lastaapps.api.domain.AppDCPermissionSet.Companion.stringify
 import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.text
 import cz.lastaapps.api.domain.model.Page
@@ -63,16 +64,18 @@ class DCCommandManager(
         { disableCommandInGuilds() }
             .toHandler {
                 val channelId = interaction.channelId.toChannelID()
-                val canAccess = managementRepo.hasFullPermissionsInChannel(channelId)
+                val canAccess = managementRepo.checkAllPermissionKinds(channelId)
                 when (canAccess) {
-                    is Either.Right if canAccess.value ->
-                        "All the permissions are set correctly"
+                    is Either.Right if canAccess.value.all { (_, value) -> value } ->
+                        "All the permissions are set correctly."
 
                     is Either.Right ->
-                        "Some permissions are missing, see docs https://github.com/LastaApps/fb-pages-discord-bot"
+                        "Some permissions are missing, some (planned) action may fail: ${canAccess.value.stringify()}." +
+                            " Only posting permissions are required now for the bot to work." +
+                            " See docs at https://github.com/LastaApps/fb-pages-discord-bot."
 
                     is Either.Left ->
-                        "Failed to check permissions, contact developer, please"
+                        "Failed to check permissions, contact developer, please."
                             .also { log.e(canAccess.value) { "Pink pong failed" } }
                 }.let {
                     "FB pong\n$it\n"

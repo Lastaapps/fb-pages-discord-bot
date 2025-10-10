@@ -2,6 +2,7 @@ package cz.lastaapps.api.data.api
 
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.util.formatDateTime
+import cz.lastaapps.api.domain.AppDCPermissionSet
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingDiscord
@@ -220,15 +221,15 @@ class DiscordAPI(
 
     suspend fun checkBotPermissions(
         channelID: DCChannelID,
-        requiredPermissions: Permissions,
-    ): Outcome<Boolean> = catchingDiscord {
+        requiredPermissions: Collection<AppDCPermissionSet>,
+    ): Outcome<Map<AppDCPermissionSet, Boolean>> = catchingDiscord {
         val botId = kord.selfId
 
         val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
         val guildId = channel.guildId.value
         if (guildId == null) {
             log.e { "Channel ${channelID.id} guild info cannot be accessed" }
-            return@catchingDiscord false
+            return@catchingDiscord requiredPermissions.associateWith { false }
         }
 
         val member = kord.rest.guild.getGuildMember(guildId, botId)
@@ -252,7 +253,7 @@ class DiscordAPI(
 
         val permissions = guildPermissions + channelPermissionsAllowed - channelPermissionsDenied
         log.d { "Channel ${channelID.id} has following permissions: ${permissions.prettyPrint()}" }
-        permissions.contains(requiredPermissions)
+        requiredPermissions.associateWith { permissions.contains(it.permissions) }
     }
 }
 

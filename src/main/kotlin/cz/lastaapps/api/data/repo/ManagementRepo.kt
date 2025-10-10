@@ -14,7 +14,7 @@ import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.data.api.FBAuthAPI
-import cz.lastaapps.api.domain.AppDCPermissions
+import cz.lastaapps.api.domain.AppDCPermissionSet
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.LogicError
 import cz.lastaapps.api.domain.error.Outcome
@@ -188,7 +188,7 @@ class ManagementRepo(
         Unit.right()
     }
 
-    suspend fun hasFullPermissionsInChannel(channelID: DCChannelID): Outcome<Boolean> =
-        discordAPI.checkBotPermissions(channelID, AppDCPermissions.all)
+    suspend fun checkAllPermissionKinds(channelID: DCChannelID): Outcome<Map<AppDCPermissionSet, Boolean>> =
+        discordAPI.checkBotPermissions(channelID, AppDCPermissionSet.entries)
             .onLeft { log.e(it) { "Failed to obtain bot's permissions for channel ${channelID.id}" } }
 }

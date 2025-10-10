@@ -3,6 +3,7 @@ package cz.lastaapps.api.presentation
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.data.repo.ManagementRepo
+import cz.lastaapps.api.domain.AppDCPermissionSet.Companion.stringify
 import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.respondError
 import cz.lastaapps.api.domain.model.id.DCChannelID
@@ -122,10 +123,10 @@ class RestAPI(
                             append("Assigned pages:\n")
                             repository.loadChannelsWithInfo()
                                 .forEach { (dbId, dcId, name, channelEnabled, serverName) ->
-                                val pages = repository.loadAuthorizedPagesForChannel(dbId)
-                                val canAccess = repository.hasFullPermissionsInChannel(dcId).getOrNull()
+                                    val pages = repository.loadAuthorizedPagesForChannel(dbId)
+                                    val permissions = repository.checkAllPermissionKinds(dcId).getOrNull()
 
-                                append("> ")
+                                    append("> ")
                                     append(name)
                                     append(' ')
                                     append("(DC: ${dcId.id})")
@@ -136,25 +137,25 @@ class RestAPI(
                                     append(' ')
                                     append("(${if (channelEnabled) "enabled" else "disable"})")
                                     append(' ')
-                                    append("(permissions: $canAccess)")
+                                    append("(permissions: ${permissions?.stringify()})")
                                     append('\n')
 
-                                // yes, this should happen only once in one query and I also do it like that elsewhere,
-                                // but I need to fix my architecture first before I can access it
-                                pages.getOrNull()?.also {
-                                    if (it.isEmpty()) {
-                                        append("\tNo pages\n")
-                                    }
-                                }?.forEach { page ->
-                                    append("\t")
-                                    append(page.accessToken.token)
-                                    append("\t | \t")
-                                    append(page.name)
-                                    append("\t | \t")
-                                    append("https://facebook.com/${page.fbId.id}")
-                                    append("\n")
-                                } ?: append("\tNull pages\n")
-                            }
+                                    // yes, this should happen only once in one query and I also do it like that elsewhere,
+                                    // but I need to fix my architecture first before I can access it
+                                    pages.getOrNull()?.also {
+                                        if (it.isEmpty()) {
+                                            append("\tNo pages\n")
+                                        }
+                                    }?.forEach { page ->
+                                        append("\t")
+                                        append(page.accessToken.token)
+                                        append("\t | \t")
+                                        append(page.name)
+                                        append("\t | \t")
+                                        append("https://facebook.com/${page.fbId.id}")
+                                        append("\n")
+                                    } ?: append("\tNull pages\n")
+                                }
                         }.let { call.respond(HttpStatusCode.OK, it) }
                     }
                     post("/run-jobs") {

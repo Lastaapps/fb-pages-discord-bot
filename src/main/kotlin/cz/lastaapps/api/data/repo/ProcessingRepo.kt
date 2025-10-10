@@ -12,7 +12,7 @@ import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.provider.EventProvider
 import cz.lastaapps.api.data.provider.PostProvider
-import cz.lastaapps.api.domain.AppDCPermissions
+import cz.lastaapps.api.domain.AppDCPermissionSet
 import cz.lastaapps.api.domain.AppTokenProvider
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.Outcome
@@ -103,8 +103,8 @@ class ProcessingRepo(
                 log.d { "Fetching page ${page.name}" }
                 postProvider.loadPagePosts(page.fbId, page.accessToken, limit = config.facebook.fetchPostsLimit)
                     .map { posts ->
-                    posts.let { pageID to it }
-                }
+                        posts.let { pageID to it }
+                    }
             }.associate { it.bind() }
 
         val postsMap = pageIdToPosts.values.flatten().associateBy { it.id }
@@ -115,7 +115,9 @@ class ProcessingRepo(
         batch.requests.entries
             .filter { (channel, _) -> channel.enabled }
             .filter { (channel, _) ->
-                discordApi.checkBotPermissions(channel.dcId, AppDCPermissions.forPosting)
+                val permissionsSet = AppDCPermissionSet.Posting
+                discordApi.checkBotPermissions(channel.dcId, listOf(permissionsSet))
+                    .map { it[permissionsSet]!! }
                     .onLeft { log.i { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions - ${it.text()}" } }
                     .onRight {
                         if (!it) {
