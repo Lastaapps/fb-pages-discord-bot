@@ -4,7 +4,10 @@ import arrow.core.Either
 import arrow.core.None
 import arrow.core.filterOption
 import arrow.core.getOrElse
+import arrow.core.handleErrorWith
+import arrow.core.left
 import arrow.core.raise.either
+import arrow.core.right
 import arrow.core.some
 import arrow.fx.coroutines.parMap
 import co.touchlab.kermit.Logger
@@ -14,12 +17,15 @@ import cz.lastaapps.api.data.provider.EventProvider
 import cz.lastaapps.api.data.provider.PostProvider
 import cz.lastaapps.api.domain.AppDCPermissionSet
 import cz.lastaapps.api.domain.AppTokenProvider
+import cz.lastaapps.api.domain.LazyProvider
 import cz.lastaapps.api.domain.error.DomainError
+import cz.lastaapps.api.domain.error.NetworkError
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.text
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.DiscordChannel
+import cz.lastaapps.api.domain.model.Post
 import cz.lastaapps.api.domain.model.id.DBChannelID
 import cz.lastaapps.api.domain.model.id.DBPageID
 import cz.lastaapps.api.domain.model.id.DCChannelID
@@ -102,6 +108,15 @@ class ProcessingRepo(
             .parMap(concurrency = config.concurrency.fetchPages) { (pageID, page) ->
                 log.d { "Fetching page ${page.name}" }
                 postProvider.loadPagePosts(page.fbId, page.accessToken, limit = config.facebook.fetchPostsLimit)
+                    .handleErrorWith {
+                        if (it !is NetworkError.FBAPIError || !it.isUnsupportedRequest) {
+                            return@handleErrorWith it.left()
+                        }
+
+                        // Handles deleted or unauthorized pages
+                        log.w { "Cannot access page '${page.name}' (https://facebook.com/${page.fbId.id})." }
+                        return@handleErrorWith emptyList<LazyProvider<FBPostID, Outcome<Post>>>().right()
+                    }
                     .map { posts ->
                         posts.let { pageID to it }
                     }

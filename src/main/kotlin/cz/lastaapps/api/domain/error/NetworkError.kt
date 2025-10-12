@@ -36,10 +36,14 @@ sealed interface NetworkError : DomainError {
 
     data class FBAPIError(
         val httpCode: HttpStatusCode,
-        // yes, I'm using a data model in domain layer
+        // yes, I'm using a data model in the domain layer
         val error: FBError,
     ) : NetworkError {
-        // Both have to be checked as FB returns 403 if rate limit is exceeded for too long
+        // https://developers.facebook.com/docs/marketing-api/error-reference/
+        // Both have to be checked as FB returns 403 if the rate limit is exceeded for too long
         val isRateLimit get() = httpCode == HttpStatusCode.TooManyRequests && error.code == 4
+
+        // This happens when the page is not authorized or when it is for example deleted.
+        val isUnsupportedRequest get() = error.code == 100 && error.errorSubcode == 33
     }
 }
