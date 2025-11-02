@@ -30,6 +30,11 @@ val imageExtensions =
         ".webp",
         ".gif",
         ".svg",
+        ".avif",
+        ".tiff",
+        ".tif",
+        ".heic",
+        ".heif",
     )
 
 val colorsSet =
