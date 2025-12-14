@@ -17,7 +17,7 @@ data class AppConfig(
     val databaseFileName: String,
     val adminToken: String,
     val interval: Duration,
-    val adminContact: String = "https://github.com/Lastaapps/fb-pages-discord-bot/issues/",
+    val adminContact: String,
 ) {
     data class Facebook(
         val appID: String,
@@ -116,6 +116,7 @@ data class AppConfig(
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
                 interval = int("INTERVAL_SEC").seconds,
+                adminContact = str("ADMIN_CONTACT", "https://github.com/Lastaapps/fb-pages-discord-bot/issues/"),
             )
 
         private fun key(key: String) = "FB_DC_API_$key"

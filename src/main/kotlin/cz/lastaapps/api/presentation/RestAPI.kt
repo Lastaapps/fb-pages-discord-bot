@@ -13,6 +13,7 @@ import cz.lastaapps.api.domain.usecase.ChangeChannelEnabledUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.RunJobsUC
+import cz.lastaapps.api.domain.usecase.SendAdminMessageUC
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.application.install
@@ -20,6 +21,7 @@ import io.ktor.server.auth.AuthenticationChecked
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
@@ -41,6 +43,7 @@ class RestAPI(
     private val addPageUC: AddPageUC,
     private val removePageUC: RemovePageUC,
     private val updateChannelEnabledUC: ChangeChannelEnabledUC,
+    private val sendAdminMessageUC: SendAdminMessageUC,
     private val getAuthorizedPages: GetAuthorizedPagesUC,
     private val runJobsUC: RunJobsUC,
 ) {
@@ -161,6 +164,25 @@ class RestAPI(
                     post("/run-jobs") {
                         runJobsUC()
                         call.respond(HttpStatusCode.Created, "New job scheduled")
+                    }
+                    post("/channel/{channel_id}/send_admin_message") {
+                        val channelID = call.parameters["channel_id"]!!.toULong().let(::DCChannelID)
+                        val message = call.receiveText()
+                        sendAdminMessageUC(
+                            channelID, message,
+                        ).onLeft {
+                            call.respondError(it)
+                        }.onRight {
+                            call.respond(
+                                HttpStatusCode.OK,
+                                "Message '${
+                                    message.replace(
+                                        "\n",
+                                        "\\n",
+                                    )
+                                }' successfully sent to channel ${channelID.id}!",
+                            )
+                        }
                     }
                 }
             },

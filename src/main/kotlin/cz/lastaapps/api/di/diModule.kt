@@ -20,6 +20,7 @@ import cz.lastaapps.api.domain.usecase.ParsePageIDUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.RunJobsUC
 import cz.lastaapps.api.domain.usecase.SearchPagesUC
+import cz.lastaapps.api.domain.usecase.SendAdminMessageUC
 import cz.lastaapps.api.domain.usecase.VerifyUserPagesUC
 import cz.lastaapps.api.presentation.AppConfig
 import cz.lastaapps.api.presentation.DCCommandManager
@@ -65,6 +66,7 @@ val diModule = module {
     factoryOf(::ParsePageIDUC)
     factoryOf(::RemovePageUC)
     factoryOf(::ChangeChannelEnabledUC)
+    factoryOf(::SendAdminMessageUC)
     factoryOf(::SearchPagesUC)
     factoryOf(::VerifyUserPagesUC)
     factoryOf(::RunJobsUC)

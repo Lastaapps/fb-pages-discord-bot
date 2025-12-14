@@ -203,6 +203,17 @@ class DiscordAPI(
         DCMessageID(message.id.value)
     }
 
+    suspend fun sendSimpleMessage(
+        channelID: DCChannelID,
+        message: String,
+        allowEmbeds: Boolean = true,
+    ) = catchingDiscord {
+        kord.rest.channel.createMessage(channelID.toSnowflake()) {
+            content = message
+            suppressEmbeds = !allowEmbeds
+        }
+    }.map {}
+
     // the description has a limit of 4096 characters
     private fun String.trimToDescription() =
         if (length > 4000) {
