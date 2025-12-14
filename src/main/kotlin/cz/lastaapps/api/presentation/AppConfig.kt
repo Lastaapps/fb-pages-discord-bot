@@ -17,6 +17,7 @@ data class AppConfig(
     val databaseFileName: String,
     val adminToken: String,
     val interval: Duration,
+    val adminContact: String = "https://github.com/Lastaapps/fb-pages-discord-bot/issues/",
 ) {
     data class Facebook(
         val appID: String,

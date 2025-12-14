@@ -5,6 +5,7 @@ import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.api.DiscordKord
 import cz.lastaapps.api.data.repo.ManagementRepo
 import cz.lastaapps.api.domain.AppDCPermissionSet.Companion.stringify
+import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.text
 import cz.lastaapps.api.domain.model.Page
@@ -59,6 +60,12 @@ class DCCommandManager(
         }
     }
 
+    private fun DomainError.responseErrorText(): String {
+        // log level is info as the error should have been already logged
+        log.i { "Operation failed with error: ${this.text()}" }
+        return "${this::class.simpleName} (contact admin at ${config.adminContact} if you think your setup is correct)"
+    }
+
     private suspend fun registerPing() =
         kord.createGlobalChatInputCommand("fb_ping", "Ping pong (use for basic permissions testing)")
         { disableCommandInGuilds() }
@@ -87,7 +94,7 @@ class DCCommandManager(
         { disableCommandInGuilds() }
             .toHandler {
                 when (val res = getAuthorizedPages()) {
-                    is Either.Left -> "Internal error: ${res.value.text()}"
+                    is Either.Left -> "Internal error: ${res.value.responseErrorText()}"
                     is Either.Right -> res.value
                         .toTable { "No pages are authorized yet.\n" }
 
@@ -107,7 +114,7 @@ class DCCommandManager(
         { disableCommandInGuilds() }
             .toHandler {
                 when (val res = getPagesForChannelUC(interaction.channelId.toChannelID())) {
-                    is Either.Left -> "Internal error: ${res.value.text()}"
+                    is Either.Left -> "Internal error: ${res.value.responseErrorText()}"
                     is Either.Right -> res.value
                         .toTable { "No pages are handled in this channel." }
                 }
@@ -123,7 +130,7 @@ class DCCommandManager(
             .toHandler {
                 val name = interaction.command.strings["name"]!!
                 when (val res = searchPagesUC(name)) {
-                    is Either.Left -> "Internal error: ${res.value.text()}"
+                    is Either.Left -> "Internal error: ${res.value.responseErrorText()}"
                     is Either.Right -> res.value
                         .toTable { "No pages found." }
                         .let { "Only pages (not groups) can be searched and used\n".plus(it) }
@@ -145,7 +152,7 @@ class DCCommandManager(
                 .map {
                     val pageID = when (val res = parsePageIDUC(it)) {
                         is Either.Left -> {
-                            return@toHandler "Failed to parse page ID: ${res.value.text()}."
+                            return@toHandler "Failed to parse page ID; ${res.value.responseErrorText()}."
                         }
 
                         is Either.Right -> res.value
@@ -153,7 +160,7 @@ class DCCommandManager(
 
                     when (val page = addPageUC(interaction.channelId.toChannelID(), pageID)) {
                         is Either.Left ->
-                            "Failed to add page: ${page.value.text()}."
+                            "Failed to add page: ${page.value.responseErrorText()}."
 
                         is Either.Right ->
                             "Page *${page.value.name}* added. Posts will be synced in at most ${config.interval}."
@@ -173,7 +180,7 @@ class DCCommandManager(
                 .map {
                     val pageID = when (val res = parsePageIDUC(it)) {
                         is Either.Left -> {
-                            return@toHandler "Failed to parse page ID: ${res.value.text()}."
+                            return@toHandler "Failed to parse page ID: ${res.value.responseErrorText()}."
                         }
 
                         is Either.Right -> res.value
@@ -181,7 +188,7 @@ class DCCommandManager(
 
                     when (val page = removePageUC(interaction.channelId.toChannelID(), pageID)) {
                         is Either.Left ->
-                            "Failed to remove page: ${page.value.text()}."
+                            "Failed to remove page: ${page.value.responseErrorText()}."
 
                         is Either.Right ->
                             "Page *${page.value.name}* removed."
@@ -207,7 +214,7 @@ class DCCommandManager(
             disableCommandInGuilds()
         }.toHandler {
             when (val pages = verifyUserPages(UserAccessToken(interaction.command.strings["user_token"]!!))) {
-                is Either.Left -> "Failed to authorize system user: ${pages.value.text()}"
+                is Either.Left -> "Failed to authorize system user: ${pages.value.responseErrorText()}"
                 is Either.Right ->
                     "Pages successfully authorized pages, you can add them now\n" + pages.value.toTable { "No pages authorized by this user" }
             }
