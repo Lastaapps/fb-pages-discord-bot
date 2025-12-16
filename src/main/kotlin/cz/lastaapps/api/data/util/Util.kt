@@ -40,9 +40,12 @@ fun String.createdTimeToInstant() = Instant.parse(this, facebookTimestampParser)
 
 fun String.idToFacebookURL() = Url("https://www.facebook.com/$this")
 
-fun String.toUrl(): Url = trim()
-    .filterNot { it.isSurrogate() } // filters out links starting with emojis like: 🔗https://...
-    .let(::Url)
+fun String.toUrl(): Url =
+    this
+        .trimStart(':') // some URLs started with :
+        .trim()
+        .filterNot { it.isSurrogate() } // filters out links starting with emojis like: 🔗https://...
+        .let(::Url)
 
 fun String.toUrlOrNull(logger: Logger?) = try {
     trim().toUrl()
