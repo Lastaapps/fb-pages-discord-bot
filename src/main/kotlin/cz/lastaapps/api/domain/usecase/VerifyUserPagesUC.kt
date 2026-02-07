@@ -4,7 +4,7 @@ import arrow.core.raise.either
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.data.repo.ManagementRepo
 import cz.lastaapps.api.domain.error.Outcome
-import cz.lastaapps.api.domain.model.Page
+import cz.lastaapps.api.domain.model.PageUI
 import cz.lastaapps.api.domain.model.token.UserAccessToken
 
 class VerifyUserPagesUC(
@@ -13,13 +13,13 @@ class VerifyUserPagesUC(
 ) {
     suspend operator fun invoke(
         token: UserAccessToken,
-    ): Outcome<List<Page>> = either {
+    ): Outcome<List<PageUI>> = either {
         val authorizedPages = api.grantAccessToUserPages(token).bind()
         authorizedPages.forEach {
             repo.storeAuthorizedPage(it)
         }
         authorizedPages.map {
-            Page(fbId = it.pageID, name = it.pageName)
+            PageUI(fbId = it.pageID, name = it.pageName)
         }
     }
 }

@@ -11,6 +11,7 @@ import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.usecase.AddPageUC
 import cz.lastaapps.api.domain.usecase.ChangeChannelEnabledUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
+import cz.lastaapps.api.domain.usecase.NukeChannelUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.RunJobsUC
 import cz.lastaapps.api.domain.usecase.SendAdminMessageUC
@@ -43,6 +44,7 @@ class RestAPI(
     private val addPageUC: AddPageUC,
     private val removePageUC: RemovePageUC,
     private val updateChannelEnabledUC: ChangeChannelEnabledUC,
+    private val nukeChannelUC: NukeChannelUC,
     private val sendAdminMessageUC: SendAdminMessageUC,
     private val getAuthorizedPages: GetAuthorizedPagesUC,
     private val runJobsUC: RunJobsUC,
@@ -103,6 +105,15 @@ class RestAPI(
                         updateChannelEnabledUC(
                             call.parameters["channel_id"]!!.toULong().let(::DCChannelID),
                             call.parameters["enable"]!!.toBoolean(),
+                        ).onLeft {
+                            call.respondError(it)
+                        }.onRight {
+                            call.respond(HttpStatusCode.OK)
+                        }
+                    }
+                    delete("/channel/{channel_id}") {
+                        nukeChannelUC(
+                            call.parameters["channel_id"]!!.toULong().let(::DCChannelID),
                         ).onLeft {
                             call.respondError(it)
                         }.onRight {

@@ -8,7 +8,7 @@ import cz.lastaapps.api.data.model.FBPagePost
 import cz.lastaapps.api.data.util.bindBody
 import cz.lastaapps.api.domain.error.Outcome
 import cz.lastaapps.api.domain.error.catchingFacebookAPI
-import cz.lastaapps.api.domain.model.Page
+import cz.lastaapps.api.domain.model.PageUI
 import cz.lastaapps.api.domain.model.id.FBEventID
 import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.model.token.AppAccessToken
@@ -65,7 +65,7 @@ class FBDataAPI(
     suspend fun searchPages(
         appAccessToken: AppAccessToken,
         name: String,
-    ): Outcome<List<Page>> = catchingFacebookAPI {
+    ): Outcome<List<PageUI>> = catchingFacebookAPI {
         log.d { "Searching for $name" }
         client
             .get("/${API_VERSION}/pages/search") {
@@ -79,6 +79,6 @@ class FBDataAPI(
                 log.d { "Status code: ${response.status}" }
                 response.bindBody<FBPageInfoList>().data
             }
-            .map { Page(it.fbId, it.name) }
+            .map { PageUI(it.fbId, it.name) }
     }
 }

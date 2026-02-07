@@ -25,8 +25,8 @@ import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters
 import io.ktor.http.encodeURLParameter
-import io.ktor.util.encodeBase64
 import java.security.SecureRandom
+import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -169,7 +169,7 @@ class FBAuthAPI(
         suspend fun nextState(): String =
             ByteArray(32)
                 .also { random.nextBytes(it) }
-                .encodeBase64()
+                .let(Base64::encode)
                 .also {
                     mutex.withLock {
                         statesMap[it] = clock.now()

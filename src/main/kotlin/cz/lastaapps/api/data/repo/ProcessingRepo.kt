@@ -68,7 +68,7 @@ class ProcessingRepo(
     suspend fun requestNow() = mutex.withLock {
         if (processBatchJob?.isActive == true) {
             log.i { "Batch job is already running, skipping" }
-            return
+            return@withLock
         }
 
         log.i { "Starting a new post posts job" }

@@ -18,6 +18,9 @@ CREATE TABLE DC_Channel(
 createDCChannel:
 INSERT OR IGNORE INTO DC_Channel(id, name, dc_id) VALUES (?, ?, ?);
 
+deleteDCChannel:
+DELETE FROM DC_Channel WHERE id = :id;
+
 getAllDCChannels:
 SELECT * FROM DC_Channel;
 

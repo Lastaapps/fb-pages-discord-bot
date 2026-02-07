@@ -11,4 +11,4 @@ data class AuthorizedPage(
     val accessToken: PageAccessToken,
 )
 
-fun Collection<AuthorizedPage>.toPages() = map { Page(fbId = it.fbId, name = it.name) }
+fun Collection<AuthorizedPage>.toPages() = map { PageUI(fbId = it.fbId, name = it.name) }

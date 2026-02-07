@@ -22,6 +22,7 @@ import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.model.AuthorizedPage
 import cz.lastaapps.api.domain.model.AuthorizedPageFromUser
 import cz.lastaapps.api.domain.model.Page
+import cz.lastaapps.api.domain.model.PageUI
 import cz.lastaapps.api.domain.model.id.DBChannelID
 import cz.lastaapps.api.domain.model.id.DBPageID
 import cz.lastaapps.api.domain.model.id.DCChannelID
@@ -108,9 +109,9 @@ class ManagementRepo(
         }
     }
 
-    fun getPageByID(id: DBPageID): Outcome<Option<Page>> = run {
+    fun getPageByID(id: DBPageID): Outcome<Option<PageUI>> = run {
         curd.getPageByID(id).executeAsOneOrNull()
-            ?.let { Page(fbId = it.fb_id, name = it.name) }
+            ?.let { PageUI(fbId = it.fb_id, name = it.name) }
             .toOption()
             .right()
     }
@@ -138,6 +139,14 @@ class ManagementRepo(
                 AuthorizedPage(dbId = dbPageID, fbId = fbPageID, name = pageName, accessToken = pageAccessToken)
             }
 
+    suspend fun loadPagesForChannel(channelID: DBChannelID): Outcome<List<Page>> = either {
+        queries.getPagesForChannel(channelID) { dbPageID, pageName, fbPageID ->
+            Page(dbId = dbPageID, fbId = fbPageID, name = pageName).some()
+        }
+            .executeAsList()
+            .filterOption()
+    }
+
     suspend fun loadAuthorizedPagesForChannel(channelID: DBChannelID): Outcome<List<AuthorizedPage>> = either {
         val hasPublic = config.facebook.enabledPublicContent
         val appToken = if (hasPublic) {
@@ -155,6 +164,11 @@ class ManagementRepo(
         }
             .executeAsList()
             .filterOption()
+    }
+
+    fun deleteChannel(channelID: DBChannelID): Outcome<Unit> = curd.transactionWithResult {
+        curd.deleteDCChannel(channelID)
+        Unit.right()
     }
 
     fun createChannelPageRelation(

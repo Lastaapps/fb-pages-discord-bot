@@ -8,7 +8,7 @@ import cz.lastaapps.api.domain.AppDCPermissionSet.Companion.stringify
 import cz.lastaapps.api.domain.error.DomainError
 import cz.lastaapps.api.domain.error.e
 import cz.lastaapps.api.domain.error.text
-import cz.lastaapps.api.domain.model.Page
+import cz.lastaapps.api.domain.model.PageUI
 import cz.lastaapps.api.domain.model.id.toChannelID
 import cz.lastaapps.api.domain.model.token.UserAccessToken
 import cz.lastaapps.api.domain.usecase.AddPageUC
@@ -220,7 +220,7 @@ class DCCommandManager(
             }
         }
 
-    private fun Collection<Page>.toTable(onEmpty: () -> String) =
+    private fun Collection<PageUI>.toTable(onEmpty: () -> String) =
         if (isNotEmpty()) {
             joinToString(
                 prefix = "\nID\tNAME\tLINK\n",
