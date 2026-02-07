@@ -29,6 +29,7 @@ import kotlin.math.absoluteValue
 class DiscordAPI(
     private val client: HttpClient,
     private val discordKord: DiscordKord,
+    private val appStrings: AppStrings,
 ) {
     private val log = Logger.withTag("DiscordAPI")
 
@@ -92,7 +93,7 @@ class DiscordAPI(
 
                         post.place?.let {
                             field {
-                                name = it.name ?: it.location?.city ?: "Neznámo kde"
+                                name = it.name ?: it.location?.city ?: appStrings.unknownLocation
                                 value =
                                     listOfNotNull(
                                         listOfNotNull(
@@ -107,13 +108,13 @@ class DiscordAPI(
 
                         if (post.images.size > 1) {
                             field {
-                                name = "Album"
-                                value = "Tento příspěvek skrývá více fotek/videí"
+                                name = appStrings.albumTitle
+                                value = appStrings.albumSubtitle
                             }
                         }
                         post.linksInAttachments.takeIf { it.isNotEmpty() }?.let {
                             field {
-                                name = "Odkazy"
+                                name = appStrings.linksTitle
                                 value = it.joinToString("\n")
                             }
                         }
@@ -143,21 +144,21 @@ class DiscordAPI(
                             ?.joinToString(" — ") { it.formatDateTime(event.timezone) }
                             ?.let {
                                 field {
-                                    name = "Kdy?"
+                                    name = appStrings.eventTimeTitle
                                     value = it
                                 }
                             }
 
                         event.place?.name?.let {
                             field {
-                                name = "Kde?"
+                                name = appStrings.eventPlaceTitle
                                 value = it
                             }
                         }
                         if (event.isOnline) {
                             field {
-                                name = "Onlive událost"
-                                value = "Více info v příspěvku"
+                                name = appStrings.eventOnlineTitle
+                                value = appStrings.eventOnlineSubtitle
                             }
                         }
                     }
@@ -173,7 +174,7 @@ class DiscordAPI(
                         title = page.name
                         url = post.link.link.toString()
                         color = postColor
-                        description = "This post cannot be sadly process by the bot.\n" + post.link.link.toString()
+                        description = appStrings.eventNoEmbedDescription + "\n" + post.link.link.toString()
                     }
                 }
             }

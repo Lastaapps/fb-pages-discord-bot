@@ -1,6 +1,8 @@
 package cz.lastaapps.api.di
 
 import co.touchlab.kermit.Logger
+import cz.lastaapps.api.data.api.AppStrings
+import cz.lastaapps.api.data.api.AppStringsEN
 import cz.lastaapps.api.data.api.DiscordAPI
 import cz.lastaapps.api.data.api.FBAuthAPI
 import cz.lastaapps.api.data.api.FBDataAPI
@@ -52,6 +54,7 @@ val diModule = module {
     singleOf(::AppTokenProvider)
     singleOf(::ProcessingRepo)
 
+    single { AppStringsEN } bind AppStrings::class
     factoryOf(::FBAuthAPI)
     factoryOf(::FBDataAPI)
     factoryOf(::DiscordAPI)
