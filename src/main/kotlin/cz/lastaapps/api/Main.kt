@@ -1,5 +1,6 @@
 package cz.lastaapps.api
 
+import arrow.core.Either
 import co.touchlab.kermit.Logger
 import cz.lastaapps.api.data.AppDatabase
 import cz.lastaapps.api.data.api.DiscordKord
@@ -19,7 +20,15 @@ const val API_VERSION = "v22.0"
 private val log by lazy { Logger.withTag("Main") }
 
 fun main() =
-    runBlocking {
+    Either.catch {
+        runBlocking {
+            mainImpl(this)
+        }
+    }.onLeft {
+        log.e(it) { "Startup failed" }
+    }.let {}
+
+private suspend fun mainImpl(rootScope: CoroutineScope) {
         log.i { "Starting the bot" }
 
         val config = AppConfig.fromEnv()
@@ -32,13 +41,13 @@ fun main() =
         log.i { "Starting DI - Koin" }
         startKoin { modules(diModule) }
         val koin = get()
-        koin.loadModules(listOf(module { single { this@runBlocking } bind CoroutineScope::class }))
+    koin.loadModules(listOf(module { single { rootScope } bind CoroutineScope::class }))
         koin.loadModules(listOf(module { single { config } }))
         koin.loadModules(listOf(module { single { AppDatabase.create(get<AppConfig>()) } }))
 
         log.i { "Starting Discord" }
         val discordKord = DiscordKord.create(config, koin.get())
-        discordKord.start(this)
+    discordKord.start(rootScope)
         koin.loadModules(listOf(module { single { discordKord } }))
 
         log.d { "Setting up presentation" }
