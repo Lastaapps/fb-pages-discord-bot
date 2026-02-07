@@ -16,15 +16,20 @@ class AppTokenProvider(
     private var token: Option<AppAccessToken> = None
 
     // This should be under mutex, but I don't care if few requests are accidentally made at the beginning.
-    suspend fun provide(): Outcome<AppAccessToken> = run {
-        check(config.facebook.enabledPublicContent) { "Login using AppAccessToken is not enabled" }
+    suspend fun provide(): Outcome<AppAccessToken> =
+        run {
+            check(config.facebook.enabledPublicContent) { "Login using AppAccessToken is not enabled" }
 
-        when (val token = token) {
-            None -> {}
-            is Some -> return token.value.right()
+            when (val token = token) {
+                None -> {}
+
+                is Some -> {
+                    return token.value.right()
+                }
+            }
+
+            authApi
+                .getAppAccessToken()
+                .onRight { token = Some(it) }
         }
-
-        authApi.getAppAccessToken()
-            .onRight { token = Some(it) }
-    }
 }

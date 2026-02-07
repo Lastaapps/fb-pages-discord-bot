@@ -42,10 +42,11 @@ class FBAuthAPI(
     private val stateManager: OAuthStateManager = OAuthStateManager(clock = clock)
     private val log = Logger.withTag("AuthAPI")
 
-    private val client = httpClient.config {
-        expectSuccess = true
-        followRedirects = true
-    }
+    private val client =
+        httpClient.config {
+            expectSuccess = true
+            followRedirects = true
+        }
 
     /**
      * https://developers.facebook.com/docs/facebook-login/guides/advanced/manual-flow
@@ -67,62 +68,62 @@ class FBAuthAPI(
      *
      * https://developers.facebook.com/tools/explorer
      */
-    suspend fun exchangeOAuth(parameters: Parameters): Outcome<UserAccessToken> = catchingFacebookAPI {
-        val code = parameters["code"]!!
-        val state = parameters["state"]!!
-        log.d { "Exchange OAuth ${state.substring(1..5)}" }
+    suspend fun exchangeOAuth(parameters: Parameters): Outcome<UserAccessToken> =
+        catchingFacebookAPI {
+            val code = parameters["code"]!!
+            val state = parameters["state"]!!
+            log.d { "Exchange OAuth ${state.substring(1..5)}" }
 
-        stateManager.validateState(state).bind()
+            stateManager.validateState(state).bind()
 
-        val response =
-            client.get(
-                "/$API_VERSION/oauth/access_token?" +
-                    "client_id=${config.facebook.appID}" +
-                    "&redirect_uri=${config.facebook.loginRedirectURL!!.encodeURLParameter()}" +
-                    "&client_secret=${config.facebook.appSecret.encodeURLParameter()}" +
-                    "&code=${code.encodeURLParameter()}",
-            )
-        log.d { "Exchange result: ${response.status}" }
-        val data = response.bindBody<FBOAuthExchangeResponse>()
-        data.userAccessToken
-    }
+            val response =
+                client.get(
+                    "/$API_VERSION/oauth/access_token?" +
+                        "client_id=${config.facebook.appID}" +
+                        "&redirect_uri=${config.facebook.loginRedirectURL!!.encodeURLParameter()}" +
+                        "&client_secret=${config.facebook.appSecret.encodeURLParameter()}" +
+                        "&code=${code.encodeURLParameter()}",
+                )
+            log.d { "Exchange result: ${response.status}" }
+            val data = response.bindBody<FBOAuthExchangeResponse>()
+            data.userAccessToken
+        }
 
-    suspend fun grantAccessToUserPages(
-        userAccessToken: UserAccessToken,
-    ): Outcome<List<AuthorizedPageFromUser>> = catchingFacebookAPI {
-        log.d { "Granting user access" }
-        val user =
+    suspend fun grantAccessToUserPages(userAccessToken: UserAccessToken): Outcome<List<AuthorizedPageFromUser>> =
+        catchingFacebookAPI {
+            log.d { "Granting user access" }
+            val user =
+                client
+                    .get("/$API_VERSION/me") {
+                        parameter("fields", "id,name")
+                        parameter("access_token", userAccessToken.token)
+                    }.let { response ->
+                        log.d { "Status code: ${response.status}" }
+                        println(response.bodyAsText())
+                        response.bindBody<FBMeResponse>()
+                    }
+
+            log.d { "User - id: ${user.fbId.id}, name: ${user.name}" }
             client
-                .get("/$API_VERSION/me") {
-                    parameter("fields", "id,name")
+                .get(
+                    "/$API_VERSION/${user.fbId.id}/accounts",
+                ) {
                     parameter("access_token", userAccessToken.token)
                 }.let { response ->
                     log.d { "Status code: ${response.status}" }
-                    println(response.bodyAsText())
-                    response.bindBody<FBMeResponse>()
+                    response.bindBody<FBManagedPages>().data
+                }.parMap {
+                    val info = getPageMetadata(it.fbId, it.pageAccessToken).bind()
+                    AuthorizedPageFromUser(
+                        user.fbId,
+                        user.name,
+                        userAccessToken,
+                        info.fbId,
+                        info.name,
+                        it.pageAccessToken,
+                    )
                 }
-
-        log.d { "User - id: ${user.fbId.id}, name: ${user.name}" }
-        client
-            .get(
-                "/$API_VERSION/${user.fbId.id}/accounts",
-            ) {
-                parameter("access_token", userAccessToken.token)
-            }.let { response ->
-                log.d { "Status code: ${response.status}" }
-                response.bindBody<FBManagedPages>().data
-            }.parMap {
-                val info = getPageMetadata(it.fbId, it.pageAccessToken).bind()
-                AuthorizedPageFromUser(
-                    user.fbId,
-                    user.name,
-                    userAccessToken,
-                    info.fbId,
-                    info.name,
-                    it.pageAccessToken,
-                )
-            }
-    }
+        }
 
     suspend fun getPageMetadata(
         pageID: FBPageID,
@@ -132,31 +133,33 @@ class FBAuthAPI(
     suspend fun getPageMetadata(
         pageIDOrUrlPart: String,
         pageAccessToken: PageAccessToken,
-    ): Outcome<FBPageInfo> = catchingFacebookAPI {
-        log.d { "Loading page info $pageIDOrUrlPart" }
-        client
-            .get("/$API_VERSION/${pageIDOrUrlPart}") {
-                parameter("access_token", pageAccessToken.token)
-            }.let { response ->
-                log.d { "Status code: ${response.status}" }
-                response.bindBody<FBPageInfo>()
-            }
-    }
+    ): Outcome<FBPageInfo> =
+        catchingFacebookAPI {
+            log.d { "Loading page info $pageIDOrUrlPart" }
+            client
+                .get("/$API_VERSION/$pageIDOrUrlPart") {
+                    parameter("access_token", pageAccessToken.token)
+                }.let { response ->
+                    log.d { "Status code: ${response.status}" }
+                    response.bindBody<FBPageInfo>()
+                }
+        }
 
-    suspend fun getAppAccessToken(): Outcome<AppAccessToken> = catchingFacebookAPI {
-        log.d { "Obtaining app access token" }
+    suspend fun getAppAccessToken(): Outcome<AppAccessToken> =
+        catchingFacebookAPI {
+            log.d { "Obtaining app access token" }
 
-        val response =
-            client.get(
-                "/$API_VERSION/oauth/access_token?" +
-                    "client_id=${config.facebook.appID}" +
-                    "&client_secret=${config.facebook.appSecret.encodeURLParameter()}" +
-                    "&grant_type=client_credentials",
-            )
-        log.d { "Exchange result: ${response.status}" }
-        val data = response.bindBody<FBOAuthExchangeResponse>()
-        data.appAccessToken
-    }
+            val response =
+                client.get(
+                    "/$API_VERSION/oauth/access_token?" +
+                        "client_id=${config.facebook.appID}" +
+                        "&client_secret=${config.facebook.appSecret.encodeURLParameter()}" +
+                        "&grant_type=client_credentials",
+                )
+            log.d { "Exchange result: ${response.status}" }
+            val data = response.bindBody<FBOAuthExchangeResponse>()
+            data.appAccessToken
+        }
 
     private class OAuthStateManager(
         private val clock: Clock,
@@ -176,15 +179,16 @@ class FBAuthAPI(
                     }
                 }
 
-        suspend fun validateState(state: String): Outcome<Unit> = mutex.withLock {
-            val threshold = clock.now() - stateTimeout
-            statesMap.keys.removeAll { statesMap[it]!! < threshold }
-            if (statesMap[state] == null) {
-                LogicError.InvalidOAuthState.left()
-            } else {
-                statesMap.remove(state)
-                Unit.right()
+        suspend fun validateState(state: String): Outcome<Unit> =
+            mutex.withLock {
+                val threshold = clock.now() - stateTimeout
+                statesMap.keys.removeAll { statesMap[it]!! < threshold }
+                if (statesMap[state] == null) {
+                    LogicError.InvalidOAuthState.left()
+                } else {
+                    statesMap.remove(state)
+                    Unit.right()
+                }
             }
-        }
     }
 }

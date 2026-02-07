@@ -18,22 +18,24 @@ class AddPageUC(
     suspend operator fun invoke(
         channelID: DCChannelID,
         pageID: FBPageID,
-    ): Outcome<PageUI> = either {
-        val channelID = repo.getDiscordChannelID(channelID).bind()
-        val pageID = repo.getFBPageID(pageID).bind()
-        repo.createChannelPageRelation(channelID, pageID).bind()
-        val res = repo.getPageByID(pageID).bind().getOrNull()!!
+    ): Outcome<PageUI> =
+        either {
+            val channelID = repo.getDiscordChannelID(channelID).bind()
+            val pageID = repo.getFBPageID(pageID).bind()
+            repo.createChannelPageRelation(channelID, pageID).bind()
+            val res = repo.getPageByID(pageID).bind().getOrNull()!!
 
-        Sentry.captureEvent(
-            SentryEvent().apply {
-                message = Message().apply {
-                    message = "New page added!"
-                    params = listOf(res.name, res.fbId.id.toString())
-                }
-                level = SentryLevel.WARNING
-            },
-        )
+            Sentry.captureEvent(
+                SentryEvent().apply {
+                    message =
+                        Message().apply {
+                            message = "New page added!"
+                            params = listOf(res.name, res.fbId.id.toString())
+                        }
+                    level = SentryLevel.WARNING
+                },
+            )
 
-        res
-    }
+            res
+        }
 }

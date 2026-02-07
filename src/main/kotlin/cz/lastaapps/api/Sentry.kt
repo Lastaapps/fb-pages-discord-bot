@@ -8,7 +8,10 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.protocol.Message
 
-fun configureSentry(sentryDsn: String, debug: Boolean = false) {
+fun configureSentry(
+    sentryDsn: String,
+    debug: Boolean = false,
+) {
     Sentry.init { options ->
         options.dsn = sentryDsn
         options.isDebug = debug
@@ -16,14 +19,15 @@ fun configureSentry(sentryDsn: String, debug: Boolean = false) {
     }
 }
 
-class SentryLogWriter() : LogWriter() {
-    private fun Severity.toSentryLevel(): SentryLevel = when (this) {
-        Severity.Verbose, Severity.Debug -> SentryLevel.DEBUG
-        Severity.Info -> SentryLevel.INFO
-        Severity.Warn -> SentryLevel.WARNING
-        Severity.Error -> SentryLevel.ERROR
-        Severity.Assert -> SentryLevel.FATAL
-    }
+class SentryLogWriter : LogWriter() {
+    private fun Severity.toSentryLevel(): SentryLevel =
+        when (this) {
+            Severity.Verbose, Severity.Debug -> SentryLevel.DEBUG
+            Severity.Info -> SentryLevel.INFO
+            Severity.Warn -> SentryLevel.WARNING
+            Severity.Error -> SentryLevel.ERROR
+            Severity.Assert -> SentryLevel.FATAL
+        }
 
     override fun log(
         severity: Severity,
@@ -36,25 +40,28 @@ class SentryLogWriter() : LogWriter() {
             Severity.Error,
             Severity.Warn,
                 -> {
-                val sentryEvent = SentryEvent(throwable).apply {
-                    this.level = severity.toSentryLevel()
-                    this.message = Message().also { it.message = message }
-                    this.setTag("kermit-tag", tag)
-                }
+                val sentryEvent =
+                    SentryEvent(throwable).apply {
+                        this.level = severity.toSentryLevel()
+                        this.message = Message().also { it.message = message }
+                        this.setTag("kermit-tag", tag)
+                    }
                 Sentry.captureEvent(sentryEvent)
             }
 
             Severity.Info -> {
-                val breadcrumb = Breadcrumb.info(message).also {
-                    it.level = severity.toSentryLevel()
-                }
+                val breadcrumb =
+                    Breadcrumb.info(message).also {
+                        it.level = severity.toSentryLevel()
+                    }
                 Sentry.addBreadcrumb(breadcrumb)
             }
 
             Severity.Debug -> {
-                val breadcrumb = Breadcrumb.debug(message).also {
-                    it.level = severity.toSentryLevel()
-                }
+                val breadcrumb =
+                    Breadcrumb.debug(message).also {
+                        it.level = severity.toSentryLevel()
+                    }
                 Sentry.addBreadcrumb(breadcrumb)
             }
 

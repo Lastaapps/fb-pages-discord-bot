@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 @JvmInline
-value class DiscordKord private constructor(val kord: Kord) {
+value class DiscordKord private constructor(
+    val kord: Kord,
+) {
     fun start(scope: CoroutineScope) {
         scope.launch {
             log.d { "Starting the DC client..." }
@@ -31,36 +33,38 @@ value class DiscordKord private constructor(val kord: Kord) {
             config: AppConfig,
             baseClient: HttpClient,
         ): DiscordKord {
-            val kord = Kord(config.discord.token) {
-                // Sets up Logging for free
-                httpClient = baseClient.config {
-                    // Copied from KordBuilderUtil
-                    expectSuccess = false
-                    val json = Json {
-                        encodeDefaults = false
-                        allowStructuredMapKeys = true
-                        ignoreUnknownKeys = true
-                        isLenient = true
-                    }
-                    install(ContentNegotiation) { json(json) }
-                    install(WebSockets)
-                }
-                this.defaultStrategy = EntitySupplyStrategy.cacheWithRestFallback
-                this.gateways { resources, shards ->
+            val kord =
+                Kord(config.discord.token) {
+                    // Sets up Logging for free
+                    httpClient =
+                        baseClient.config {
+                            // Copied from KordBuilderUtil
+                            expectSuccess = false
+                            val json =
+                                Json {
+                                    encodeDefaults = false
+                                    allowStructuredMapKeys = true
+                                    ignoreUnknownKeys = true
+                                    isLenient = true
+                                }
+                            install(ContentNegotiation) { json(json) }
+                            install(WebSockets)
+                        }
+                    this.defaultStrategy = EntitySupplyStrategy.cacheWithRestFallback
+                    this.gateways { resources, shards ->
 //                    val rateLimiter =
 //                        IdentifyRateLimiter(resources.maxConcurrency, defaultDispatcher)
-                    shards.map {
-                        DefaultGateway {
-                            client = resources.httpClient
+                        shards.map {
+                            DefaultGateway {
+                                client = resources.httpClient
 //                            identifyRateLimiter = rateLimiter
 //                            this.sendRateLimiter = RequestResponse.BucketRateLimit
-                            this.reconnectRetry = LinearRetry(10.seconds, 120.seconds, 60)
+                                this.reconnectRetry = LinearRetry(10.seconds, 120.seconds, 60)
+                            }
                         }
                     }
                 }
-            }
             return DiscordKord(kord)
         }
     }
-
 }

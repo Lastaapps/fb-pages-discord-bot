@@ -44,51 +44,55 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-val diModule = module {
-    singleOf(::ManagementRepo)
-    single { createHttpClient(get()) }
-    single { Clock.System } bind Clock::class
+val diModule =
+    module {
+        singleOf(::ManagementRepo)
+        single { createHttpClient(get()) }
+        single { Clock.System } bind Clock::class
 
-    singleOf(::DCCommandManager)
-    singleOf(::RestAPI)
-    singleOf(::AppTokenProvider)
-    singleOf(::ProcessingRepo)
+        singleOf(::DCCommandManager)
+        singleOf(::RestAPI)
+        singleOf(::AppTokenProvider)
+        singleOf(::ProcessingRepo)
 
-    single { AppStringsEN } bind AppStrings::class
-    factoryOf(::FBAuthAPI)
-    factoryOf(::FBDataAPI)
-    factoryOf(::DiscordAPI)
-    factoryOf(::LinkResolver)
-    factoryOf(::PostProvider)
-    factoryOf(::EventProvider)
-    factoryOf(::LocationConverter)
+        single { AppStringsEN } bind AppStrings::class
+        factoryOf(::FBAuthAPI)
+        factoryOf(::FBDataAPI)
+        factoryOf(::DiscordAPI)
+        factoryOf(::LinkResolver)
+        factoryOf(::PostProvider)
+        factoryOf(::EventProvider)
+        factoryOf(::LocationConverter)
 
-    factoryOf(::AddPageUC)
-    factoryOf(::GetOAuthLink)
-    factoryOf(::GetAuthorizedPagesUC)
-    factoryOf(::GetPagesForChannelUC)
-    factoryOf(::ParsePageIDUC)
-    factoryOf(::RemovePageUC)
-    factoryOf(::ChangeChannelEnabledUC)
-    factoryOf(::NukeChannelUC)
-    factoryOf(::SendAdminMessageUC)
-    factoryOf(::SearchPagesUC)
-    factoryOf(::VerifyUserPagesUC)
-    factoryOf(::RunJobsUC)
-}
+        factoryOf(::AddPageUC)
+        factoryOf(::GetOAuthLink)
+        factoryOf(::GetAuthorizedPagesUC)
+        factoryOf(::GetPagesForChannelUC)
+        factoryOf(::ParsePageIDUC)
+        factoryOf(::RemovePageUC)
+        factoryOf(::ChangeChannelEnabledUC)
+        factoryOf(::NukeChannelUC)
+        factoryOf(::SendAdminMessageUC)
+        factoryOf(::SearchPagesUC)
+        factoryOf(::VerifyUserPagesUC)
+        factoryOf(::RunJobsUC)
+    }
 
-private fun createHttpClient(
-    config: AppConfig,
-) =
+private fun createHttpClient(config: AppConfig) =
     when (config.networking.clientHttpEngine) {
-        AppConfig.Networking.HttpEngine.CIO -> HttpClient(CIO) {}
-        AppConfig.Networking.HttpEngine.OKHTTP -> HttpClient(OkHttp) {
-            engine {
-                config {
-                    // Already default
-                    // protocols(listOf(Protocol.HTTP_1_1, Protocol.HTTP_2))
+        AppConfig.Networking.HttpEngine.CIO -> {
+            HttpClient(CIO) {}
+        }
+
+        AppConfig.Networking.HttpEngine.OKHTTP -> {
+            HttpClient(OkHttp) {
+                engine {
+                    config {
+                        // Already default
+                        // protocols(listOf(Protocol.HTTP_1_1, Protocol.HTTP_2))
+                    }
+                    pipelining = true
                 }
-                pipelining = true
             }
         }
     }.config {
@@ -97,19 +101,21 @@ private fun createHttpClient(
             logger =
                 object : io.ktor.client.plugins.logging.Logger {
                     private val log = Logger.withTag("HttpClient")
-                    private val tokenRegexes = listOf(
-                        """access_token=[^?&#]*""".toRegex(),
-                        """client_id=[^?&#]*""".toRegex(),
-                        """client_secret=[^?&#]*""".toRegex(),
-                    )
+                    private val tokenRegexes =
+                        listOf(
+                            """access_token=[^?&#]*""".toRegex(),
+                            """client_id=[^?&#]*""".toRegex(),
+                            """client_secret=[^?&#]*""".toRegex(),
+                        )
 
                     override fun log(message: String) {
                         log.d {
-                            message.let {
-                                tokenRegexes.fold(it) { acc, regex ->
-                                    regex.replace(acc, "redacted=XXX")
-                                }
-                            }.replace("\n", "\\n\t")
+                            message
+                                .let {
+                                    tokenRegexes.fold(it) { acc, regex ->
+                                        regex.replace(acc, "redacted=XXX")
+                                    }
+                                }.replace("\n", "\\n\t")
                         }
                     }
                 }

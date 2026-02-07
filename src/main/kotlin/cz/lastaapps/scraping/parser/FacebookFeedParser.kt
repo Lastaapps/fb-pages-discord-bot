@@ -36,9 +36,10 @@ object FacebookFeedParser {
 
             findFirst("div#tlFeed") {
                 findFirst("section").children.forEachApply {
-                    Either.catch {
-                        posts += parseFeedPost(pageId, timeZone)
-                    }.onLeft { it.printStackTrace() }
+                    Either
+                        .catch {
+                            posts += parseFeedPost(pageId, timeZone)
+                        }.onLeft { it.printStackTrace() }
                 }
             }
         }

@@ -30,42 +30,45 @@ class PostProvider(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
         limit: UInt? = null,
-    ): Outcome<List<LazyProvider<FBPostID, Outcome<Post>>>> = api.loadPagePosts(pageID, pageAccessToken, limit = limit)
-        .map { posts ->
-            posts
-                .filter { it.canBePublished() }
-                .map { post -> LazyProvider(post.fbId) { post.toDomain() } }
+    ): Outcome<List<LazyProvider<FBPostID, Outcome<Post>>>> =
+        api
+            .loadPagePosts(pageID, pageAccessToken, limit = limit)
+            .map { posts ->
+                posts
+                    .filter { it.canBePublished() }
+                    .map { post -> LazyProvider(post.fbId) { post.toDomain() } }
+            }
+
+    private suspend fun FBPagePost.toDomain() =
+        either {
+            suspend fun resolve(url: Url) = linkResolver.resolve(url).bind()
+
+            val resolvedLink = resolve(toURL())
+            val sections = sections()
+            val images = images().map { Url(it) }
+
+            val rawLinks = rawLinksInText().map { resolve(it) }
+            val linksInAttachments = attachmentLinks().map { resolve(it) }
+            val linksInText = linksInText(rawLinks, linksInAttachments)
+            val accessibleEventIds = accessibleEventIDs()
+            val inaccessibleEventIds = inaccessibleEventIDs(rawLinks, accessibleEventIds)
+
+            val place = place?.let { locationConverter.convertPlace(it) }
+
+            Post(
+                id = fbId,
+                createdAt = createdAt,
+                link = resolvedLink,
+                message = message,
+                sections = sections,
+                images = images,
+                linksInText = linksInText,
+                linksInAttachments = linksInAttachments,
+                accessibleEventIds = accessibleEventIds,
+                inaccessibleEventIds = inaccessibleEventIds,
+                place = place,
+            )
         }
-
-    private suspend fun FBPagePost.toDomain() = either {
-        suspend fun resolve(url: Url) = linkResolver.resolve(url).bind()
-
-        val resolvedLink = resolve(toURL())
-        val sections = sections()
-        val images = images().map { Url(it) }
-
-        val rawLinks = rawLinksInText().map { resolve(it) }
-        val linksInAttachments = attachmentLinks().map { resolve(it) }
-        val linksInText = linksInText(rawLinks, linksInAttachments)
-        val accessibleEventIds = accessibleEventIDs()
-        val inaccessibleEventIds = inaccessibleEventIDs(rawLinks, accessibleEventIds)
-
-        val place = place?.let { locationConverter.convertPlace(it) }
-
-        Post(
-            id = fbId,
-            createdAt = createdAt,
-            link = resolvedLink,
-            message = message,
-            sections = sections,
-            images = images,
-            linksInText = linksInText,
-            linksInAttachments = linksInAttachments,
-            accessibleEventIds = accessibleEventIds,
-            inaccessibleEventIds = inaccessibleEventIds,
-            place = place,
-        )
-    }
 
     /** Returns a list of image URLs associated with the post */
     private fun FBPagePost.images(limit: Int = 5): List<String> {
@@ -94,15 +97,18 @@ class PostProvider(
             }
 
             when (attachment.mediaType) {
-                "photo", "link" ->
+                "photo", "link" -> {
                     if (attachment.type in listOf("photo", "link", "status", "share")) {
                         attachment.media
                             ?.image
                             ?.src
                             ?.let(::addImage)
                     }
+                }
 
-                "album" -> attachment.subAttachments?.data?.forEach(::processAttachment)
+                "album" -> {
+                    attachment.subAttachments?.data?.forEach(::processAttachment)
+                }
             }
         }
         attachments().forEach(::processAttachment)
@@ -110,7 +116,9 @@ class PostProvider(
     }
 
     private fun FBPagePost.rawLinksInText(): List<Url> =
-        message?.extractLinks().orEmpty()
+        message
+            ?.extractLinks()
+            .orEmpty()
             // the regex also matches links that are in parentheses
             // "(https://www.example.com)"
             .map { it.dropWhile { it == '(' } }
@@ -119,13 +127,13 @@ class PostProvider(
 
     /** Returns a list of links associated with the post */
     private fun FBPagePost.attachmentLinks(): List<Url> =
-        attachments().mapNotNull { it ->
-            it.target
-                ?.url
-                ?.takeIf(::isFBRedirectLink)
-                ?.let(::decodeFacebookUrl)
-        }
-            .mapNotNull { it.toUrlOrNull(log) }
+        attachments()
+            .mapNotNull { it ->
+                it.target
+                    ?.url
+                    ?.takeIf(::isFBRedirectLink)
+                    ?.let(::decodeFacebookUrl)
+            }.mapNotNull { it.toUrlOrNull(log) }
 
     /**
      * Returns links in the text of the post
@@ -169,9 +177,11 @@ class PostProvider(
         rawLinks
             .filter { isFBEventLink(it.link.toString()) }
             .mapNotNull {
-                it.link.segments.lastOrNull()?.trim()?.let(::FBEventID)
-            }
-            .filterNot { it in eventIdsInAttachments }
+                it.link.segments
+                    .lastOrNull()
+                    ?.trim()
+                    ?.let(::FBEventID)
+            }.filterNot { it in eventIdsInAttachments }
 
     private fun FBPagePost.sections(): List<Post.PostSection> {
         val list = mutableListOf(Post.PostSection(null, message))

@@ -9,13 +9,12 @@ class NukeChannelUC(
     private val repo: ManagementRepo,
 ) {
     @Suppress("NAME_SHADOWING")
-    suspend operator fun invoke(
-        channelID: DCChannelID,
-    ): Outcome<Unit> = either {
-        val channelID = repo.getDiscordChannelID(channelID).bind()
-        repo.loadPagesForChannel(channelID).bind().forEach { page ->
-            repo.removeChannelPageRelation(channelID, page.dbId).bind()
+    suspend operator fun invoke(channelID: DCChannelID): Outcome<Unit> =
+        either {
+            val channelID = repo.getDiscordChannelID(channelID).bind()
+            repo.loadPagesForChannel(channelID).bind().forEach { page ->
+                repo.removeChannelPageRelation(channelID, page.dbId).bind()
+            }
+            repo.deleteChannel(channelID).bind()
         }
-        repo.deleteChannel(channelID).bind()
-    }
 }

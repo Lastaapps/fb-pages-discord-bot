@@ -47,12 +47,13 @@ fun String.toUrl(): Url =
         .filterNot { it.isSurrogate() } // filters out links starting with emojis like: 🔗https://...
         .let(::Url)
 
-fun String.toUrlOrNull(logger: Logger?) = try {
-    trim().toUrl()
-} catch (e: Exception) {
-    logger?.e(e) { "Cannot parse provider URL: \"$this\"" }
-    null
-}
+fun String.toUrlOrNull(logger: Logger?) =
+    try {
+        trim().toUrl()
+    } catch (e: Exception) {
+        logger?.e(e) { "Cannot parse provider URL: \"$this\"" }
+        null
+    }
 
 fun isFBLink(link: String) =
     Url(link).host.run {
@@ -65,22 +66,26 @@ fun isFBRedirectLink(link: String) =
         link.startsWith("https://lm.facebook.com")
 
 fun isFBEventLink(link: String) =
-    link.startsWith("https://www.facebook.com/events")
-        || link.startsWith("https://fb.me/e")
+    link.startsWith("https://www.facebook.com/events") ||
+        link.startsWith("https://fb.me/e")
 
 // private val linksRegex = """(http|https)\\:\\/\\/[a-zA-Z0-9\\.]+\\.[a-zA-Z]{2,3}(\\/\\S*)?""".toRegex()
-private val linksRegex = ("(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)"
-    + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
-    + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)").toRegex(
-    setOf(
-        RegexOption.IGNORE_CASE,
-        RegexOption.MULTILINE,
-        RegexOption.DOT_MATCHES_ALL,
-    ),
-)
+private val linksRegex =
+    (
+        "(?:^|[\\W])((ht|f)tp(s?):\\/\\/|www\\.)" +
+            "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*" +
+            "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)"
+        ).toRegex(
+            setOf(
+                RegexOption.IGNORE_CASE,
+                RegexOption.MULTILINE,
+                RegexOption.DOT_MATCHES_ALL,
+            ),
+        )
 
 fun String.extractLinks(): List<String> =
-    linksRegex.findAll(this)
+    linksRegex
+        .findAll(this)
         .map { it.value.trim() }
         .toList()
 

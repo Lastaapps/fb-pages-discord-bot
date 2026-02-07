@@ -11,15 +11,14 @@ class VerifyUserPagesUC(
     private val api: FBAuthAPI,
     private val repo: ManagementRepo,
 ) {
-    suspend operator fun invoke(
-        token: UserAccessToken,
-    ): Outcome<List<PageUI>> = either {
-        val authorizedPages = api.grantAccessToUserPages(token).bind()
-        authorizedPages.forEach {
-            repo.storeAuthorizedPage(it)
+    suspend operator fun invoke(token: UserAccessToken): Outcome<List<PageUI>> =
+        either {
+            val authorizedPages = api.grantAccessToUserPages(token).bind()
+            authorizedPages.forEach {
+                repo.storeAuthorizedPage(it)
+            }
+            authorizedPages.map {
+                PageUI(fbId = it.pageID, name = it.pageName)
+            }
         }
-        authorizedPages.map {
-            PageUI(fbId = it.pageID, name = it.pageName)
-        }
-    }
 }

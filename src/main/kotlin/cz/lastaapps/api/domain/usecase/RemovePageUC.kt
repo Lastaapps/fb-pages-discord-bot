@@ -14,10 +14,11 @@ class RemovePageUC(
     suspend operator fun invoke(
         channelID: DCChannelID,
         pageID: FBPageID,
-    ): Outcome<PageUI> = either {
-        val channelID = repo.getDiscordChannelID(channelID).bind()
-        val pageID = repo.getFBPageID(pageID, allowUnauthorized = true).bind()
-        repo.removeChannelPageRelation(channelID, pageID).bind()
-        repo.getPageByID(pageID).bind().getOrNull()!!
-    }
+    ): Outcome<PageUI> =
+        either {
+            val channelID = repo.getDiscordChannelID(channelID).bind()
+            val pageID = repo.getFBPageID(pageID, allowUnauthorized = true).bind()
+            repo.removeChannelPageRelation(channelID, pageID).bind()
+            repo.getPageByID(pageID).bind().getOrNull()!!
+        }
 }

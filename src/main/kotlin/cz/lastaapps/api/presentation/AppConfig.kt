@@ -95,24 +95,35 @@ data class AppConfig(
                         endpointOAuth = str("SERVER_ENDPOINT_OAUTH").withSlash(),
                         hostURL = str("SERVER_HOST_URL"),
                     ),
-                logging = Logging(
-                    logLevel = str("LOG_LEVEL").lowercase()
-                        .let { env -> Severity.entries.first { it.name.lowercase() == env } },
-                    logLevelHttp = str("LOG_LEVEL_HTTP").lowercase()
-                        .let { env -> LogLevel.entries.first { it.name.lowercase() == env } },
-                    sentryDsn = str("SENTRY_DSN"),
-                ),
-                concurrency = Concurrency(
-                    fetchPages = int("CONCURRENCY_FETCH_PAGES", 1),
-                    postPosts = int("CONCURRENCY_POST_POSTS", 1),
-                    resolvePosts = int("CONCURRENCY_RESOLVE_POSTS", 3),
-                ),
-                networking = Networking(
-                    compressResponses = bool("COMPRESS_RESPONSES", true),
-                    clientHttpEngine = Networking.HttpEngine.entries.first {
-                        str("CLIENT_HTTP_ENGINE", Networking.HttpEngine.CIO.name).lowercase() == it.name.lowercase()
-                    },
-                ),
+                logging =
+                    Logging(
+                        logLevel =
+                            str("LOG_LEVEL")
+                                .lowercase()
+                                .let { env -> Severity.entries.first { it.name.lowercase() == env } },
+                        logLevelHttp =
+                            str("LOG_LEVEL_HTTP")
+                                .lowercase()
+                                .let { env -> LogLevel.entries.first { it.name.lowercase() == env } },
+                        sentryDsn = str("SENTRY_DSN"),
+                    ),
+                concurrency =
+                    Concurrency(
+                        fetchPages = int("CONCURRENCY_FETCH_PAGES", 1),
+                        postPosts = int("CONCURRENCY_POST_POSTS", 1),
+                        resolvePosts = int("CONCURRENCY_RESOLVE_POSTS", 3),
+                    ),
+                networking =
+                    Networking(
+                        compressResponses = bool("COMPRESS_RESPONSES", true),
+                        clientHttpEngine =
+                            Networking.HttpEngine.entries.first {
+                                str(
+                                    "CLIENT_HTTP_ENGINE",
+                                    Networking.HttpEngine.CIO.name,
+                                ).lowercase() == it.name.lowercase()
+                            },
+                    ),
                 databaseFileName = str("DATABASE_FILENAME"),
                 adminToken = str("ADMIN_TOKEN"),
                 interval = int("INTERVAL_SEC").seconds,
@@ -121,20 +132,28 @@ data class AppConfig(
 
         private fun key(key: String) = "FB_DC_API_$key"
 
-        private fun str(key: String) =
-            strNull(key) ?: error("The env var $key cannot be blank")
+        private fun str(key: String) = strNull(key) ?: error("The env var $key cannot be blank")
 
-        private fun str(key: String, default: String) = strNull(key) ?: default
+        private fun str(
+            key: String,
+            default: String,
+        ) = strNull(key) ?: default
 
         private fun strNull(key: String): String? = System.getenv(key(key))?.takeIf { it.isNotBlank() }
 
         private fun int(key: String) = str(key).toInt()
 
-        private fun int(key: String, default: Int) = strNull(key)?.toInt() ?: default
+        private fun int(
+            key: String,
+            default: Int,
+        ) = strNull(key)?.toInt() ?: default
 
         private fun bool(key: String) = str(key).toBoolean()
 
-        private fun bool(key: String, default: Boolean) = strNull(key)?.toBoolean() ?: default
+        private fun bool(
+            key: String,
+            default: Boolean,
+        ) = strNull(key)?.toBoolean() ?: default
 
         private fun String.withSlash() = if (this.startsWith("/")) this else "/$this"
     }

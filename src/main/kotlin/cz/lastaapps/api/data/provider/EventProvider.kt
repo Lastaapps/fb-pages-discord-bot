@@ -24,7 +24,8 @@ class EventProvider(
         pageAccessToken: PageAccessToken,
     ): LazyProvider<Unit, Outcome<Option<Event>>> =
         LazyProvider(Unit) {
-            api.loadEventData(eventID, pageAccessToken)
+            api
+                .loadEventData(eventID, pageAccessToken)
                 .flatMap { event ->
                     either {
                         if (!event.canBePublished()) {

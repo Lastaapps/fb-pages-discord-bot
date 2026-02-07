@@ -35,4 +35,3 @@ object AppStringsEN : AppStrings {
     override val linksTitle: String = "Links"
     override val unknownLocation: String = "Unknown location"
 }
-

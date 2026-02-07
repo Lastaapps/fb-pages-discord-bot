@@ -12,8 +12,9 @@ class ChangeChannelEnabledUC(
     suspend operator fun invoke(
         channelID: DCChannelID,
         enabled: Boolean,
-    ): Outcome<Unit> = either {
-        val channelID = repo.getDiscordChannelID(channelID).bind()
-        repo.changeChannelEnabled(channelID, enabled)
-    }
+    ): Outcome<Unit> =
+        either {
+            val channelID = repo.getDiscordChannelID(channelID).bind()
+            repo.changeChannelEnabled(channelID, enabled)
+        }
 }

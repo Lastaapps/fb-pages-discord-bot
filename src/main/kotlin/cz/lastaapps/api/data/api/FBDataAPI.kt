@@ -26,59 +26,61 @@ class FBDataAPI(
         pageID: FBPageID,
         pageAccessToken: PageAccessToken,
         limit: UInt? = null,
-    ): Outcome<List<FBPagePost>> = catchingFacebookAPI {
-        log.d { "Loading page posts ${pageID.id}" }
-        client
-            .get("/${API_VERSION}/${pageID.id}/feed") {
-                parameter("access_token", pageAccessToken.token)
-                parameter(
-                    "fields",
-                    "id,message,full_picture,place,is_hidden,is_published,is_expired,created_time,attachments{title,description,target,type,media,media_type,subattachments}",
-                )
-                limit?.let {
-                    parameter("limit", it.toString())
+    ): Outcome<List<FBPagePost>> =
+        catchingFacebookAPI {
+            log.d { "Loading page posts ${pageID.id}" }
+            client
+                .get("/${API_VERSION}/${pageID.id}/feed") {
+                    parameter("access_token", pageAccessToken.token)
+                    parameter(
+                        "fields",
+                        "id,message,full_picture,place,is_hidden,is_published,is_expired,created_time,attachments{title,description,target,type,media,media_type,subattachments}",
+                    )
+                    limit?.let {
+                        parameter("limit", it.toString())
+                    }
+                }.let { response ->
+                    log.d { "Status code: ${response.status}" }
+                    response.bindBody<FBPagePost.Container>().data
                 }
-            }.let { response ->
-                log.d { "Status code: ${response.status}" }
-                response.bindBody<FBPagePost.Container>().data
-            }
-    }
+        }
 
     suspend fun loadEventData(
         eventID: FBEventID,
         pageAccessToken: PageAccessToken,
-    ): Outcome<FBEvent> = catchingFacebookAPI {
-        log.d { "Loading event ${eventID.id}" }
-        client
-            .get("/${API_VERSION}/${eventID.id}") {
-                parameter("access_token", pageAccessToken.token)
-                parameter(
-                    "fields",
-                    "id,cover,name,description,type,place,start_time,end_time,timezone,is_canceled,is_draft,is_online,photos,created_time",
-                )
-            }.let { response ->
-                log.d { "Status code: ${response.status}" }
-                response.bindBody<FBEvent>()
-            }
-    }
+    ): Outcome<FBEvent> =
+        catchingFacebookAPI {
+            log.d { "Loading event ${eventID.id}" }
+            client
+                .get("/${API_VERSION}/${eventID.id}") {
+                    parameter("access_token", pageAccessToken.token)
+                    parameter(
+                        "fields",
+                        "id,cover,name,description,type,place,start_time,end_time,timezone,is_canceled,is_draft,is_online,photos,created_time",
+                    )
+                }.let { response ->
+                    log.d { "Status code: ${response.status}" }
+                    response.bindBody<FBEvent>()
+                }
+        }
 
     suspend fun searchPages(
         appAccessToken: AppAccessToken,
         name: String,
-    ): Outcome<List<PageUI>> = catchingFacebookAPI {
-        log.d { "Searching for $name" }
-        client
-            .get("/${API_VERSION}/pages/search") {
-                parameter("q", name)
-                parameter("access_token", appAccessToken.token)
-                parameter(
-                    "fields",
-                    "id,name",
-                )
-            }.let { response ->
-                log.d { "Status code: ${response.status}" }
-                response.bindBody<FBPageInfoList>().data
-            }
-            .map { PageUI(it.fbId, it.name) }
-    }
+    ): Outcome<List<PageUI>> =
+        catchingFacebookAPI {
+            log.d { "Searching for $name" }
+            client
+                .get("/${API_VERSION}/pages/search") {
+                    parameter("q", name)
+                    parameter("access_token", appAccessToken.token)
+                    parameter(
+                        "fields",
+                        "id,name",
+                    )
+                }.let { response ->
+                    log.d { "Status code: ${response.status}" }
+                    response.bindBody<FBPageInfoList>().data
+                }.map { PageUI(it.fbId, it.name) }
+        }
 }

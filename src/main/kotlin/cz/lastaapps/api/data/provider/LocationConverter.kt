@@ -9,7 +9,8 @@ class LocationConverter(
     private val linkResolver: LinkResolver,
 ) {
     suspend fun convertPlace(place: FBPlace): Place? =
-        place.toURL()
+        place
+            .toURL()
             // The error is suppressed here
             ?.let { link ->
                 linkResolver.resolve(link).fold(
@@ -19,8 +20,7 @@ class LocationConverter(
                     },
                     { it.link },
                 )
-            }
-            ?.let { link ->
+            }?.let { link ->
                 Place(
                     link = link,
                     name = place.name,

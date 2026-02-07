@@ -10,7 +10,8 @@ class LazyProvider<S : Any, T : Any>(
     private val mutex = Mutex()
     private var value: T? = null
 
-    suspend operator fun invoke(): T = mutex.withLock {
-        value ?: construct().also { value = it }
-    }
+    suspend operator fun invoke(): T =
+        mutex.withLock {
+            value ?: construct().also { value = it }
+        }
 }

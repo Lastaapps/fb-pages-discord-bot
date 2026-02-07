@@ -2,7 +2,11 @@ package cz.lastaapps.api.domain.error
 
 import co.touchlab.kermit.Logger
 
-fun Logger.e(error: DomainError, tag: String = this.tag, message: () -> String) = e(tag = tag) {
+fun Logger.e(
+    error: DomainError,
+    tag: String = this.tag,
+    message: () -> String,
+) = e(tag = tag) {
     buildString {
         message().trim().let(::append)
         append('\n')
@@ -15,6 +19,10 @@ fun Logger.e(error: DomainError, tag: String = this.tag, message: () -> String) 
         error.text().trim().let(::append)
         append('\n')
 
-        error.throwable?.stackTraceToString()?.trim()?.let(::append)?.let { append('\n') }
+        error.throwable
+            ?.stackTraceToString()
+            ?.trim()
+            ?.let(::append)
+            ?.let { append('\n') }
     }.trim()
 }

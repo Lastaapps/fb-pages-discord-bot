@@ -25,7 +25,8 @@ object FacebookPostParser {
                 val postedBy = header.findFirst("h3").text
                 val description =
                     header.parent.children[1]
-                        .wholeText.trimLines()
+                        .wholeText
+                        .trimLines()
 
                 var references: ReferencedPost? = null
                 tryFindFirst("article") {

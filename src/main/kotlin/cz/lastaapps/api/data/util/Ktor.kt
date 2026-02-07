@@ -12,17 +12,18 @@ import io.ktor.http.isSuccess
 
 context(r: Raise<DomainError>)
 suspend inline fun <reified T> HttpResponse.bindBody(): T =
-    Either.catch {
-        if (status.isSuccess()) {
-            body<T>()
-        } else {
-            r.raise(
-                NetworkError.FBAPIError(
-                    status,
-                    body<FBError.Wrapper>().error,
-                ),
-            )
-        }
-    }.mapLeft {
-        NetworkError.SerializationError(it, responseBody = bodyAsText())
-    }.let { with(r) { it.bind() } }
+    Either
+        .catch {
+            if (status.isSuccess()) {
+                body<T>()
+            } else {
+                r.raise(
+                    NetworkError.FBAPIError(
+                        status,
+                        body<FBError.Wrapper>().error,
+                    ),
+                )
+            }
+        }.mapLeft {
+            NetworkError.SerializationError(it, responseBody = bodyAsText())
+        }.let { with(r) { it.bind() } }

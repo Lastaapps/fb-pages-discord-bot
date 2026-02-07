@@ -78,6 +78,7 @@ internal fun <E> Collection<E>.forEachApply(action: E.() -> Unit) {
 
 internal fun String.replaceSpaces(with: String = ""): String =
     replace("\\p{Zs}+".toRegex(), with)
-        .replace("&nbsp; ", with).trim()
+        .replace("&nbsp; ", with)
+        .trim()
 
 fun String.trimLines() = lines().joinToString("\n") { it.trim() }

@@ -20,54 +20,54 @@ const val API_VERSION = "v22.0"
 private val log by lazy { Logger.withTag("Main") }
 
 fun main() =
-    Either.catch {
-        runBlocking {
-            mainImpl(this)
-        }
-    }.onLeft {
-        log.e(it) { "Startup failed" }
-    }.let {}
+    Either
+        .catch {
+            runBlocking {
+                mainImpl(this)
+            }
+        }.onLeft {
+            log.e(it) { "Startup failed" }
+        }.let {}
 
 private suspend fun mainImpl(rootScope: CoroutineScope) {
-        log.i { "Starting the bot" }
+    log.i { "Starting the bot" }
 
-        val config = AppConfig.fromEnv()
-        Logger.setMinSeverity(config.logging.logLevel)
+    val config = AppConfig.fromEnv()
+    Logger.setMinSeverity(config.logging.logLevel)
 
-        log.i { "Starting Sentry" }
-        configureSentry(config.logging.sentryDsn)
-        Logger.addLogWriter(SentryLogWriter())
+    log.i { "Starting Sentry" }
+    configureSentry(config.logging.sentryDsn)
+    Logger.addLogWriter(SentryLogWriter())
 
-        log.i { "Starting DI - Koin" }
-        startKoin { modules(diModule) }
-        val koin = get()
+    log.i { "Starting DI - Koin" }
+    startKoin { modules(diModule) }
+    val koin = get()
     koin.loadModules(listOf(module { single { rootScope } bind CoroutineScope::class }))
-        koin.loadModules(listOf(module { single { config } }))
-        koin.loadModules(listOf(module { single { AppDatabase.create(get<AppConfig>()) } }))
+    koin.loadModules(listOf(module { single { config } }))
+    koin.loadModules(listOf(module { single { AppDatabase.create(get<AppConfig>()) } }))
 
-        log.i { "Starting Discord" }
-        val discordKord = DiscordKord.create(config, koin.get())
+    log.i { "Starting Discord" }
+    val discordKord = DiscordKord.create(config, koin.get())
     discordKord.start(rootScope)
-        koin.loadModules(listOf(module { single { discordKord } }))
+    koin.loadModules(listOf(module { single { discordKord } }))
 
-        log.d { "Setting up presentation" }
-        koin.get<DCCommandManager>().register()
-        koin.get<RestAPI>().setup()
+    log.d { "Setting up presentation" }
+    koin.get<DCCommandManager>().register()
+    koin.get<RestAPI>().setup()
 
-        log.i { "Initialization done, enabled modules:" }
-        log.i { "-".repeat(80) }
-        if (config.facebook.enabledPublicContent) {
-            log.i { "FB page public content feature" }
-        }
-        if (config.facebook.enabledLogin) {
-            log.i { "FB login: ${koin.get<RestAPI>().oauthUserEndpoint()}" }
-        }
-        if (config.facebook.enabledUserTokens) {
-            log.i { "FB user tokens" }
-        }
-        log.i { "-".repeat(80) }
-
-        // starts posts fetching
-        koin.get<ProcessingRepo>().requestNow()
+    log.i { "Initialization done, enabled modules:" }
+    log.i { "-".repeat(80) }
+    if (config.facebook.enabledPublicContent) {
+        log.i { "FB page public content feature" }
     }
+    if (config.facebook.enabledLogin) {
+        log.i { "FB login: ${koin.get<RestAPI>().oauthUserEndpoint()}" }
+    }
+    if (config.facebook.enabledUserTokens) {
+        log.i { "FB user tokens" }
+    }
+    log.i { "-".repeat(80) }
 
+    // starts posts fetching
+    koin.get<ProcessingRepo>().requestNow()
+}

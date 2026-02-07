@@ -67,158 +67,197 @@ class DCCommandManager(
     }
 
     private suspend fun registerPing() =
-        kord.createGlobalChatInputCommand("fb_ping", "Ping pong (use for basic permissions testing)")
-        { disableCommandInGuilds() }
+        kord
+            .createGlobalChatInputCommand("fb_ping", "Ping pong (use for basic permissions testing)")
+            { disableCommandInGuilds() }
             .toHandler {
                 val channelId = interaction.channelId.toChannelID()
                 val canAccess = managementRepo.checkAllPermissionKinds(channelId)
                 when (canAccess) {
-                    is Either.Right if canAccess.value.all { (_, value) -> value } ->
+                    is Either.Right if canAccess.value.all { (_, value) -> value } -> {
                         "All the permissions are set correctly."
+                    }
 
-                    is Either.Right ->
+                    is Either.Right -> {
                         "Some permissions are missing, some (planned) action may fail: ${canAccess.value.stringify()}." +
                             " Only posting permissions are required now for the bot to work." +
                             " See the docs at https://github.com/LastaApps/fb-pages-discord-bot#permissions"
+                    }
 
-                    is Either.Left ->
+                    is Either.Left -> {
                         "Failed to check permissions, contact developer, please."
                             .also { log.e(canAccess.value) { "Pink pong failed" } }
+                    }
                 }.let {
                     "FB pong\n$it\n"
                 }
             }
 
     private suspend fun registerListVerified() =
-        kord.createGlobalChatInputCommand("fb_list_available", "Lists pages that were verified and can be used")
-        { disableCommandInGuilds() }
+        kord
+            .createGlobalChatInputCommand("fb_list_available", "Lists pages that were verified and can be used")
+            { disableCommandInGuilds() }
             .toHandler {
                 when (val res = getAuthorizedPages()) {
-                    is Either.Left -> "Internal error: ${res.value.responseErrorText()}"
-                    is Either.Right -> res.value
-                        .toTable { "No pages are authorized yet.\n" }
+                    is Either.Left -> {
+                        "Internal error: ${res.value.responseErrorText()}"
+                    }
 
-                        // Public Content notice
-                        .let {
-                            if (config.facebook.enabledPublicContent) {
-                                it + "Bot has also rights to monitor **any public page**.\n"
-                            } else {
-                                it
+                    is Either.Right -> {
+                        res.value
+                            .toTable { "No pages are authorized yet.\n" }
+                            // Public Content notice
+                            .let {
+                                if (config.facebook.enabledPublicContent) {
+                                    it + "Bot has also rights to monitor **any public page**.\n"
+                                } else {
+                                    it
+                                }
                             }
-                        }
+                    }
                 }
             }
 
     private suspend fun registerListLocal() =
-        kord.createGlobalChatInputCommand("fb_list_local", "Lists pages relayed into the current channel")
-        { disableCommandInGuilds() }
+        kord
+            .createGlobalChatInputCommand("fb_list_local", "Lists pages relayed into the current channel")
+            { disableCommandInGuilds() }
             .toHandler {
                 when (val res = getPagesForChannelUC(interaction.channelId.toChannelID())) {
-                    is Either.Left -> "Internal error: ${res.value.responseErrorText()}"
-                    is Either.Right -> res.value
-                        .toTable { "No pages are handled in this channel." }
+                    is Either.Left -> {
+                        "Internal error: ${res.value.responseErrorText()}"
+                    }
+
+                    is Either.Right -> {
+                        res.value
+                            .toTable { "No pages are handled in this channel." }
+                    }
                 }
             }
 
     private suspend fun registerSearchPages() =
-        kord.createGlobalChatInputCommand("fb_search_pages", "Search for pages on Facebook and show their ID") {
-            string("name", "Name of the page to search for") {
-                required = true
-            }
-            disableCommandInGuilds()
-        }
-            .toHandler {
+        kord
+            .createGlobalChatInputCommand("fb_search_pages", "Search for pages on Facebook and show their ID") {
+                string("name", "Name of the page to search for") {
+                    required = true
+                }
+                disableCommandInGuilds()
+            }.toHandler {
                 val name = interaction.command.strings["name"]!!
                 when (val res = searchPagesUC(name)) {
-                    is Either.Left -> "Internal error: ${res.value.responseErrorText()}"
-                    is Either.Right -> res.value
-                        .toTable { "No pages found." }
-                        .let { "Only pages (not groups) can be searched and used\n".plus(it) }
+                    is Either.Left -> {
+                        "Internal error: ${res.value.responseErrorText()}"
+                    }
+
+                    is Either.Right -> {
+                        res.value
+                            .toTable { "No pages found." }
+                            .let { "Only pages (not groups) can be searched and used\n".plus(it) }
+                    }
                 }
             }
 
     private suspend fun registerAddPage() =
-        kord.createGlobalChatInputCommand(
-            "fb_add_page",
-            "Adds a page to the current channel (ID, url, not name, comma separated list)",
-        ) {
-            string("page_id", "Page ID or link") {
-                required = true
-            }
-            disableCommandInGuilds()
-        }.toHandler {
-            interaction.command.strings["page_id"]!!
-                .split(",")
-                .map {
-                    val pageID = when (val res = parsePageIDUC(it)) {
-                        is Either.Left -> {
-                            return@toHandler "Failed to parse page ID; ${res.value.responseErrorText()}."
+        kord
+            .createGlobalChatInputCommand(
+                "fb_add_page",
+                "Adds a page to the current channel (ID, url, not name, comma separated list)",
+            ) {
+                string("page_id", "Page ID or link") {
+                    required = true
+                }
+                disableCommandInGuilds()
+            }.toHandler {
+                interaction.command.strings["page_id"]!!
+                    .split(",")
+                    .map {
+                        val pageID =
+                            when (val res = parsePageIDUC(it)) {
+                                is Either.Left -> {
+                                    return@toHandler "Failed to parse page ID; ${res.value.responseErrorText()}."
+                                }
+
+                                is Either.Right -> {
+                                    res.value
+                                }
+                            }
+
+                        when (val page = addPageUC(interaction.channelId.toChannelID(), pageID)) {
+                            is Either.Left -> {
+                                "Failed to add page: ${page.value.responseErrorText()}."
+                            }
+
+                            is Either.Right -> {
+                                "Page *${page.value.name}* added. Posts will be synced in at most ${config.interval}."
+                            }
                         }
-
-                        is Either.Right -> res.value
-                    }
-
-                    when (val page = addPageUC(interaction.channelId.toChannelID(), pageID)) {
-                        is Either.Left ->
-                            "Failed to add page: ${page.value.responseErrorText()}."
-
-                        is Either.Right ->
-                            "Page *${page.value.name}* added. Posts will be synced in at most ${config.interval}."
-                    }
-                }.joinToString("\n")
-        }
+                    }.joinToString("\n")
+            }
 
     private suspend fun registerRemovePage() =
-        kord.createGlobalChatInputCommand("fb_remove_page", "Removes a page from the current channel") {
-            string("page_id", "Page ID or link") {
-                required = true
-            }
-            disableCommandInGuilds()
-        }.toHandler {
-            interaction.command.strings["page_id"]!!
-                .split(",")
-                .map {
-                    val pageID = when (val res = parsePageIDUC(it)) {
-                        is Either.Left -> {
-                            return@toHandler "Failed to parse page ID: ${res.value.responseErrorText()}."
+        kord
+            .createGlobalChatInputCommand("fb_remove_page", "Removes a page from the current channel") {
+                string("page_id", "Page ID or link") {
+                    required = true
+                }
+                disableCommandInGuilds()
+            }.toHandler {
+                interaction.command.strings["page_id"]!!
+                    .split(",")
+                    .map {
+                        val pageID =
+                            when (val res = parsePageIDUC(it)) {
+                                is Either.Left -> {
+                                    return@toHandler "Failed to parse page ID: ${res.value.responseErrorText()}."
+                                }
+
+                                is Either.Right -> {
+                                    res.value
+                                }
+                            }
+
+                        when (val page = removePageUC(interaction.channelId.toChannelID(), pageID)) {
+                            is Either.Left -> {
+                                "Failed to remove page: ${page.value.responseErrorText()}."
+                            }
+
+                            is Either.Right -> {
+                                "Page *${page.value.name}* removed."
+                            }
                         }
-
-                        is Either.Right -> res.value
-                    }
-
-                    when (val page = removePageUC(interaction.channelId.toChannelID(), pageID)) {
-                        is Either.Left ->
-                            "Failed to remove page: ${page.value.responseErrorText()}."
-
-                        is Either.Right ->
-                            "Page *${page.value.name}* removed."
-                    }
-                }.joinToString("\n")
-        }
+                    }.joinToString("\n")
+            }
 
     private suspend fun registerAuthorizeLogin() =
-        kord.createGlobalChatInputCommand("fb_authorize_login", "Open login dialog where you can authorize some apps")
-        { disableCommandInGuilds() }
+        kord
+            .createGlobalChatInputCommand("fb_authorize_login", "Open login dialog where you can authorize some apps")
+            { disableCommandInGuilds() }
             .toHandler {
                 "Use this [link](${getOAuthLink()}) to authorize your pages."
             }
 
     private suspend fun registerAuthorizeUserToken() =
-        kord.createGlobalChatInputCommand(
-            "fb_authorize_user",
-            "Accepts (system) user token, authorizes all its pages",
-        ) {
-            string("user_token", "Generated (system) user token") {
-                required = true
+        kord
+            .createGlobalChatInputCommand(
+                "fb_authorize_user",
+                "Accepts (system) user token, authorizes all its pages",
+            ) {
+                string("user_token", "Generated (system) user token") {
+                    required = true
+                }
+                disableCommandInGuilds()
+            }.toHandler {
+                when (val pages = verifyUserPages(UserAccessToken(interaction.command.strings["user_token"]!!))) {
+                    is Either.Left -> {
+                        "Failed to authorize system user: ${pages.value.responseErrorText()}"
+                    }
+
+                    is Either.Right -> {
+                        "Pages successfully authorized pages, you can add them now\n" +
+                            pages.value.toTable { "No pages authorized by this user" }
+                    }
+                }
             }
-            disableCommandInGuilds()
-        }.toHandler {
-            when (val pages = verifyUserPages(UserAccessToken(interaction.command.strings["user_token"]!!))) {
-                is Either.Left -> "Failed to authorize system user: ${pages.value.responseErrorText()}"
-                is Either.Right ->
-                    "Pages successfully authorized pages, you can add them now\n" + pages.value.toTable { "No pages authorized by this user" }
-            }
-        }
 
     private fun Collection<PageUI>.toTable(onEmpty: () -> String) =
         if (isNotEmpty()) {
@@ -238,7 +277,6 @@ class DCCommandManager(
     ) {
         kord.on<GuildChatInputCommandInteractionCreateEvent> {
             if (this@toHandler.id == interaction.invokedCommandId) {
-
                 // Everyone sees the response
                 // val response = interaction.deferPublicResponse()
                 // Only the user sees the response

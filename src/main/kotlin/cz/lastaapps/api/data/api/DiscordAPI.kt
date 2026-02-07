@@ -34,175 +34,182 @@ class DiscordAPI(
     private val log = Logger.withTag("DiscordAPI")
 
     private val kord get() = discordKord.kord
+
     private suspend fun UserMessageCreateBuilder.addFile(
         nameWithoutExtension: String,
         url: Url,
         client: HttpClient,
-    ): Outcome<NamedFile?> = catchingDiscord {
-        val extension =
-            imageExtensions.firstOrNull { url.fullPath.lowercase().contains(it) } ?: run {
-                log.e { "Url ($url) does not contain any of the known extensions!" }
-                return@catchingDiscord null
-            }
-        val response = client.get(url).bodyAsChannel()
-        addFile(nameWithoutExtension + extension, ChannelProvider(null) { response })
-    }
+    ): Outcome<NamedFile?> =
+        catchingDiscord {
+            val extension =
+                imageExtensions.firstOrNull { url.fullPath.lowercase().contains(it) } ?: run {
+                    log.e { "Url ($url) does not contain any of the known extensions!" }
+                    return@catchingDiscord null
+                }
+            val response = client.get(url).bodyAsChannel()
+            addFile(nameWithoutExtension + extension, ChannelProvider(null) { response })
+        }
 
     suspend fun postPostAndEvents(
         channelID: DCChannelID,
         page: AuthorizedPage,
         post: Post,
         events: List<Event>,
-    ): Outcome<DCMessageID> = catchingDiscord {
-        log.d { "Posting post ${post.id.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
+    ): Outcome<DCMessageID> =
+        catchingDiscord {
+            log.d { "Posting post ${post.id.id} and events ${events.map { it.id }} from page ${page.fbId.id} to channel ${channelID.id}" }
 
-        val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
+            val postColor = colorsSet[(page.name.hashCode() % colorsSet.size).absoluteValue]
 
-        val message =
-            kord.rest.channel.createMessage(channelID.toSnowflake()) {
-                var anyEmbedPosted = false
-                val postImageUrl =
-                    post
-                        .images
-                        .firstOrNull()
-                        ?.let { url ->
-                            addFile("post_img", url, client).bind()
-                        }?.url
-
-                val postDescription =
-                    buildString {
-                        post.sections.forEach { section ->
-                            section.title?.let { append("**$it**\n") }
-                            section.message?.let { append("$it\n") }
-                            append('\n')
-                            append('\n')
-                        }
-                    }.trimToDescription()
-
-                if (postDescription.isNotBlank() || postImageUrl != null) {
-                    anyEmbedPosted = true
-                    embed {
-                        timestamp = post.createdAt
-                        title = page.name
-                        // post's description cannot be empty.
-                        // It may be empty for posts with only a single photo
-                        description = postDescription.takeUnless { it.isBlank() } ?: "\uD83D\uDCF7"
-                        url = post.link.link.toString()
-                        image = postImageUrl
-                        color = postColor
-
-                        post.place?.let {
-                            field {
-                                name = it.name ?: it.location?.city ?: appStrings.unknownLocation
-                                value =
-                                    listOfNotNull(
-                                        listOfNotNull(
-                                            it.location?.city,
-                                            it.location?.formattedLatitude,
-                                            it.location?.formattedLongitude,
-                                        ).joinToString(", ").takeIf { it.isNotBlank() },
-                                        it.link,
-                                    ).joinToString("\n")
-                            }
-                        }
-
-                        if (post.images.size > 1) {
-                            field {
-                                name = appStrings.albumTitle
-                                value = appStrings.albumSubtitle
-                            }
-                        }
-                        post.linksInAttachments.takeIf { it.isNotEmpty() }?.let {
-                            field {
-                                name = appStrings.linksTitle
-                                value = it.joinToString("\n")
-                            }
-                        }
-                    }
-                }
-
-                events.forEach { event ->
-                    log.i { "Posting event (accessible) ${event.link}" }
-                    anyEmbedPosted = true
-                    val eventImageUrl =
-                        event.coverPhotoLink
+            val message =
+                kord.rest.channel.createMessage(channelID.toSnowflake()) {
+                    var anyEmbedPosted = false
+                    val postImageUrl =
+                        post
+                            .images
+                            .firstOrNull()
                             ?.let { url ->
-                                addFile("event_img", url, client).bind()
+                                addFile("post_img", url, client).bind()
                             }?.url
 
-                    embed {
-                        timestamp = post.createdAt
-                        title = event.name
-                        description = event.description?.trimToDescription()
-                        url = event.link.toString()
-                        image = eventImageUrl
-                        color = postColor
+                    val postDescription =
+                        buildString {
+                            post.sections.forEach { section ->
+                                section.title?.let { append("**$it**\n") }
+                                section.message?.let { append("$it\n") }
+                                append('\n')
+                                append('\n')
+                            }
+                        }.trimToDescription()
 
-                        // event time
-                        listOfNotNull(event.startAt, event.endAt)
-                            .takeUnless { it.isEmpty() }
-                            ?.joinToString(" — ") { it.formatDateTime(event.timezone) }
-                            ?.let {
+                    if (postDescription.isNotBlank() || postImageUrl != null) {
+                        anyEmbedPosted = true
+                        embed {
+                            timestamp = post.createdAt
+                            title = page.name
+                            // post's description cannot be empty.
+                            // It may be empty for posts with only a single photo
+                            description = postDescription.takeUnless { it.isBlank() } ?: "\uD83D\uDCF7"
+                            url = post.link.link.toString()
+                            image = postImageUrl
+                            color = postColor
+
+                            post.place?.let {
                                 field {
-                                    name = appStrings.eventTimeTitle
-                                    value = it
+                                    name = it.name ?: it.location?.city ?: appStrings.unknownLocation
+                                    value =
+                                        listOfNotNull(
+                                            listOfNotNull(
+                                                it.location?.city,
+                                                it.location?.formattedLatitude,
+                                                it.location?.formattedLongitude,
+                                            ).joinToString(", ").takeIf { it.isNotBlank() },
+                                            it.link,
+                                        ).joinToString("\n")
                                 }
                             }
 
-                        event.place?.name?.let {
-                            field {
-                                name = appStrings.eventPlaceTitle
-                                value = it
+                            if (post.images.size > 1) {
+                                field {
+                                    name = appStrings.albumTitle
+                                    value = appStrings.albumSubtitle
+                                }
+                            }
+                            post.linksInAttachments.takeIf { it.isNotEmpty() }?.let {
+                                field {
+                                    name = appStrings.linksTitle
+                                    value = it.joinToString("\n")
+                                }
                             }
                         }
-                        if (event.isOnline) {
-                            field {
-                                name = appStrings.eventOnlineTitle
-                                value = appStrings.eventOnlineSubtitle
+                    }
+
+                    events.forEach { event ->
+                        log.i { "Posting event (accessible) ${event.link}" }
+                        anyEmbedPosted = true
+                        val eventImageUrl =
+                            event.coverPhotoLink
+                                ?.let { url ->
+                                    addFile("event_img", url, client).bind()
+                                }?.url
+
+                        embed {
+                            timestamp = post.createdAt
+                            title = event.name
+                            description = event.description?.trimToDescription()
+                            url = event.link.toString()
+                            image = eventImageUrl
+                            color = postColor
+
+                            // event time
+                            listOfNotNull(event.startAt, event.endAt)
+                                .takeUnless { it.isEmpty() }
+                                ?.joinToString(" — ") { it.formatDateTime(event.timezone) }
+                                ?.let {
+                                    field {
+                                        name = appStrings.eventTimeTitle
+                                        value = it
+                                    }
+                                }
+
+                            event.place?.name?.let {
+                                field {
+                                    name = appStrings.eventPlaceTitle
+                                    value = it
+                                }
                             }
+                            if (event.isOnline) {
+                                field {
+                                    name = appStrings.eventOnlineTitle
+                                    value = appStrings.eventOnlineSubtitle
+                                }
+                            }
+                        }
+                    }
+
+                    // If the post references another post or event that we don't have access to
+                    // both the message and images can be empty. In that case the code would send
+                    // an empty message, which is prohibited by DC API.
+                    // https://facecook.com/1446471142347491_1183196140476661
+                    if (!anyEmbedPosted) {
+                        embed {
+                            timestamp = post.createdAt
+                            title = page.name
+                            url = post.link.link.toString()
+                            color = postColor
+                            description = appStrings.eventNoEmbedDescription + "\n" + post.link.link.toString()
                         }
                     }
                 }
 
-                // If the post references another post or event that we don't have access to
-                // both the message and images can be empty. In that case the code would send
-                // an empty message, which is prohibited by DC API.
-                // https://facecook.com/1446471142347491_1183196140476661
-                if (!anyEmbedPosted) {
-                    embed {
-                        timestamp = post.createdAt
-                        title = page.name
-                        url = post.link.link.toString()
-                        color = postColor
-                        description = appStrings.eventNoEmbedDescription + "\n" + post.link.link.toString()
-                    }
-                }
+            // Creates previews for links contained in the post's text
+            // that were not present in attachments (we cannot access them using API)
+            if (false) {
+                (
+                    (
+                        post.inaccessibleEventIds.map { eventId -> Url("https://www.facebook.com/events/${eventId.id}") } +
+                            post.linksInText.map { it.link }
+                        ).forEach { link ->
+                            log.i { "Posting event (inaccessible) $link" }
+                            kord.rest.channel.createMessage(channelID.toSnowflake()) {
+                                content = link.toString()
+                                messageReference = message.id
+                            }
+                        }
+                    )
             }
 
-
-        // Creates previews for links contained in the post's text
-        // that were not present in attachments (we cannot access them using API)
-        if (false) ((post.inaccessibleEventIds.map { eventId -> Url("https://www.facebook.com/events/${eventId.id}") } +
-            post.linksInText.map { it.link })
-            .forEach { link ->
-                log.i { "Posting event (inaccessible) $link" }
-                kord.rest.channel.createMessage(channelID.toSnowflake()) {
-                    content = link.toString()
-                    messageReference = message.id
-                }
-            })
-
-        // If the channel is an announcement channel and some other servers follow it,
-        // this will also send the message to the other servers
-        // TODO This has to be made opt in per channel as it causes rate limiting in case many posts are posted at once
+            // If the channel is an announcement channel and some other servers follow it,
+            // this will also send the message to the other servers
+            // TODO This has to be made opt in per channel as it causes rate limiting in case many posts are posted at once
 //        Either.catch {
 //            kord.rest.channel.crossPost(channelID.toSnowflake(), message.id)
 //        }.onLeft {
 //            log.e { "Failed to cross post the message (is it an announcement channel)" }
 //        }
 
-        DCMessageID(message.id.value)
-    }
+            DCMessageID(message.id.value)
+        }
 
     suspend fun sendSimpleMessage(
         channelID: DCChannelID,
@@ -224,49 +231,51 @@ class DiscordAPI(
             this
         }
 
-    suspend fun getServerNameForChannel(channelID: DCChannelID): Outcome<String> = catchingDiscord {
-        val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
-        val serverId = channel.guildId.value ?: raise(LogicError.CannotAccessServerName)
-        val server = kord.rest.guild.getGuild(serverId)
-        server.name
-    }
+    suspend fun getServerNameForChannel(channelID: DCChannelID): Outcome<String> =
+        catchingDiscord {
+            val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
+            val serverId = channel.guildId.value ?: raise(LogicError.CannotAccessServerName)
+            val server = kord.rest.guild.getGuild(serverId)
+            server.name
+        }
 
     suspend fun checkBotPermissions(
         channelID: DCChannelID,
         requiredPermissions: Collection<AppDCPermissionSet>,
-    ): Outcome<Map<AppDCPermissionSet, Boolean>> = catchingDiscord {
-        val botId = kord.selfId
+    ): Outcome<Map<AppDCPermissionSet, Boolean>> =
+        catchingDiscord {
+            val botId = kord.selfId
 
-        val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
-        val guildId = channel.guildId.value
-        if (guildId == null) {
-            log.e { "Channel ${channelID.id} guild info cannot be accessed" }
-            return@catchingDiscord requiredPermissions.associateWith { false }
-        }
-
-        val member = kord.rest.guild.getGuildMember(guildId, botId)
-        val roles = kord.rest.guild.getGuildRoles(guildId)
-
-        var guildPermissions = Permissions()
-        member.roles.forEach { roleId ->
-            roles.find { it.id == roleId }?.let { role ->
-                guildPermissions += role.permissions
+            val channel = kord.rest.channel.getChannel(channelID.toSnowflake())
+            val guildId = channel.guildId.value
+            if (guildId == null) {
+                log.e { "Channel ${channelID.id} guild info cannot be accessed" }
+                return@catchingDiscord requiredPermissions.associateWith { false }
             }
-        }
 
-        var channelPermissionsAllowed = Permissions()
-        var channelPermissionsDenied = Permissions()
-        channel.permissionOverwrites.value?.forEach { overwrite ->
-            if (overwrite.id == botId || member.roles.contains(overwrite.id)) {
-                channelPermissionsAllowed += overwrite.allow
-                channelPermissionsDenied += overwrite.deny
+            val member = kord.rest.guild.getGuildMember(guildId, botId)
+            val roles = kord.rest.guild.getGuildRoles(guildId)
+
+            var guildPermissions = Permissions()
+            member.roles.forEach { roleId ->
+                roles.find { it.id == roleId }?.let { role ->
+                    guildPermissions += role.permissions
+                }
             }
-        }
 
-        val permissions = guildPermissions + channelPermissionsAllowed - channelPermissionsDenied
-        log.d { "Channel ${channelID.id} has following permissions: ${permissions.prettyPrint()}" }
-        requiredPermissions.associateWith { permissions.contains(it.permissions) }
-    }
+            var channelPermissionsAllowed = Permissions()
+            var channelPermissionsDenied = Permissions()
+            channel.permissionOverwrites.value?.forEach { overwrite ->
+                if (overwrite.id == botId || member.roles.contains(overwrite.id)) {
+                    channelPermissionsAllowed += overwrite.allow
+                    channelPermissionsDenied += overwrite.deny
+                }
+            }
+
+            val permissions = guildPermissions + channelPermissionsAllowed - channelPermissionsDenied
+            log.d { "Channel ${channelID.id} has following permissions: ${permissions.prettyPrint()}" }
+            requiredPermissions.associateWith { permissions.contains(it.permissions) }
+        }
 }
 
 private fun Permissions.prettyPrint() = values.map { it::class.simpleName }

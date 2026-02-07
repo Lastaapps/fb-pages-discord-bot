@@ -19,14 +19,15 @@ class SendAdminMessageUC(
     ): Outcome<Unit> {
         log.i { "Sending admin message to channel ${channelID.id}: '${message.replace("\n", "\\n")}'" }
 
-        val fullMessage = """
+        val fullMessage =
+            """
             ### Bot Administrator Notice
             *This message is from the bot administrator. It indicates that your setup may not be correct.*
             *Please note: The administrator cannot read responses sent to this channel. **Do not reply here.***
             *If you require assistance resolving the issue, please contact the administrator at ${config.adminContact}.*
             *Failure to comply with the administrator's request may result in the bot being disabled in this channel.*
             *You may delete this message once the issue is understood and addressed.*
-        """.trimIndent() + "\n\n" + message
+            """.trimIndent() + "\n\n" + message
         return dcApi.sendSimpleMessage(channelID, fullMessage, allowEmbeds = false)
     }
 }

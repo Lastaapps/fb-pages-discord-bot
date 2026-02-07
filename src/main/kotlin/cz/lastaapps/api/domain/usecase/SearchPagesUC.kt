@@ -9,7 +9,8 @@ class SearchPagesUC(
     private val tokenProvider: AppTokenProvider,
 ) {
     suspend operator fun invoke(name: String) =
-        tokenProvider.provide()
+        tokenProvider
+            .provide()
             .map { api.searchPages(it, name) }
             .flatten()
 }

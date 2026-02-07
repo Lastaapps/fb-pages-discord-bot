@@ -10,9 +10,10 @@ import cz.lastaapps.api.domain.model.toPages
 class GetPagesForChannelUC(
     private val repo: ManagementRepo,
 ) {
-    suspend operator fun invoke(channelID: DCChannelID): Outcome<List<PageUI>> = either {
-        @Suppress("NAME_SHADOWING")
-        val channelID = repo.getDiscordChannelID(channelID).bind()
-        repo.loadAuthorizedPagesForChannel(channelID).bind().toPages()
-    }
+    suspend operator fun invoke(channelID: DCChannelID): Outcome<List<PageUI>> =
+        either {
+            @Suppress("NAME_SHADOWING")
+            val channelID = repo.getDiscordChannelID(channelID).bind()
+            repo.loadAuthorizedPagesForChannel(channelID).bind().toPages()
+        }
 }

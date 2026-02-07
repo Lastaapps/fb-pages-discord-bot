@@ -25,23 +25,33 @@ class ParsePageIDUC(
     private val log = Logger.withTag("ParsePageID")
 
     @Suppress("RemoveExplicitTypeArguments")
-    suspend operator fun invoke(pageReference: String, allowUrl: Boolean = true): Outcome<FBPageID> =
+    suspend operator fun invoke(
+        pageReference: String,
+        allowUrl: Boolean = true,
+    ): Outcome<FBPageID> =
         either<DomainError, FBPageID> {
             // Page ID
             pageReference.toULongOrNull()?.let { return@either FBPageID(it) }
 
             // Page Name
             pageReference.trim().takeIf { it.isNotBlank() }?.let { pageName ->
-                val res = repo.getPageIDByName(pageName).bind()
-                    .flatMap { repo.getPageByID(it).bind() }
+                val res =
+                    repo
+                        .getPageIDByName(pageName)
+                        .bind()
+                        .flatMap { repo.getPageByID(it).bind() }
                 when (res) {
                     None -> {}
-                    is Some -> return@either res.value.fbId
+
+                    is Some -> {
+                        return@either res.value.fbId
+                    }
                 }
             }
 
             if (config.facebook.enabledPublicContent && !pageReference.contains('/')) {
-                authApi.getPageMetadata(pageReference, appTokenProvider.provide().bind().toPageAccessToken())
+                authApi
+                    .getPageMetadata(pageReference, appTokenProvider.provide().bind().toPageAccessToken())
                     .onRight {
                         return@either it.fbId
                     }
@@ -56,19 +66,21 @@ class ParsePageIDUC(
 //                        return invoke(pageID, allowUrl = false)
 //                    }
 
-                    val pageIDPath = url
-                        .segments
-                        .first()
+                    val pageIDPath =
+                        url
+                            .segments
+                            .first()
                     return invoke(pageIDPath, allowUrl = false)
                 }
             }
 
             raise(LogicError.GivenPageNotFound)
         }.also {
-            it.onRight {
-                log.d { "Parsed '$pageReference' -> '${it.id}'" }
-            }.onLeft {
-                log.d { "Failed to parse '$pageReference'" }
-            }
+            it
+                .onRight {
+                    log.d { "Parsed '$pageReference' -> '${it.id}'" }
+                }.onLeft {
+                    log.d { "Failed to parse '$pageReference'" }
+                }
         }
 }

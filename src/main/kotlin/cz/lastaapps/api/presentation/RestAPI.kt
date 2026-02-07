@@ -63,14 +63,15 @@ class RestAPI(
                 }
                 get(config.server.endpointOAuth) {
                     val params = call.request.queryParameters
-                    val userAccessToken = authApi.exchangeOAuth(params).fold(
-                        {
-                            log.e(it) { "Failed to exchange OAuth" }
-                            call.respondError(it)
-                            return@get
-                        },
-                        { it },
-                    )
+                    val userAccessToken =
+                        authApi.exchangeOAuth(params).fold(
+                            {
+                                log.e(it) { "Failed to exchange OAuth" }
+                                call.respondError(it)
+                                return@get
+                            },
+                            { it },
+                        )
                     val pages = authApi.grantAccessToUserPages(userAccessToken).getOrNull()!!
                     pages.forEach(repository::storeAuthorizedPage)
                     call.respond(
@@ -135,7 +136,8 @@ class RestAPI(
                                 }
                             append('\n')
                             append("Assigned pages:\n")
-                            repository.loadChannelsWithInfo()
+                            repository
+                                .loadChannelsWithInfo()
                                 .forEach { (dbId, dcId, name, channelEnabled, serverName) ->
                                     val pages = repository.loadAuthorizedPagesForChannel(dbId)
                                     val permissions = repository.checkAllPermissionKinds(dcId).getOrNull()
@@ -156,19 +158,21 @@ class RestAPI(
 
                                     // yes, this should happen only once in one query and I also do it like that elsewhere,
                                     // but I need to fix my architecture first before I can access it
-                                    pages.getOrNull()?.also {
-                                        if (it.isEmpty()) {
-                                            append("\tNo pages\n")
-                                        }
-                                    }?.forEach { page ->
-                                        append("\t")
-                                        append(page.accessToken.token)
-                                        append("\t | \t")
-                                        append(page.name)
-                                        append("\t | \t")
-                                        append("https://facebook.com/${page.fbId.id}")
-                                        append("\n")
-                                    } ?: append("\tNull pages\n")
+                                    pages
+                                        .getOrNull()
+                                        ?.also {
+                                            if (it.isEmpty()) {
+                                                append("\tNo pages\n")
+                                            }
+                                        }?.forEach { page ->
+                                            append("\t")
+                                            append(page.accessToken.token)
+                                            append("\t | \t")
+                                            append(page.name)
+                                            append("\t | \t")
+                                            append("https://facebook.com/${page.fbId.id}")
+                                            append("\n")
+                                        } ?: append("\tNull pages\n")
                                 }
                         }.let { call.respond(HttpStatusCode.OK, it) }
                     }
@@ -180,7 +184,8 @@ class RestAPI(
                         val channelID = call.parameters["channel_id"]!!.toULong().let(::DCChannelID)
                         val message = call.receiveText()
                         sendAdminMessageUC(
-                            channelID, message,
+                            channelID,
+                            message,
                         ).onLeft {
                             call.respondError(it)
                         }.onRight {
@@ -222,7 +227,6 @@ class RestAPI(
             routing(routing)
         }.start(wait = false)
     }
-
 
     @Suppress("ktlint:standard:function-naming", "FunctionName")
     private fun AuthorizationPlugin(config: AppConfig) =

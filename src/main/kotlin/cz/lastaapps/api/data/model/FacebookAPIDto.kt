@@ -140,7 +140,8 @@ data class FBPagePost(
     )
 
     fun attachments() =
-        attachments?.data
+        attachments
+            ?.data
             // there are two variants: "at the moment" and "right now"
             ?.filterNot { it.title?.startsWith("This content isn't available") == true }
             .orEmpty()
@@ -164,12 +165,13 @@ data class FBPlace(
         val latitude: Double? = null,
         val longitude: Double? = null,
     ) {
-        fun toDomain() = Place.Location(
-            city = city,
-            country = country,
-            latitude = latitude,
-            longitude = longitude,
-        )
+        fun toDomain() =
+            Place.Location(
+                city = city,
+                country = country,
+                latitude = latitude,
+                longitude = longitude,
+            )
     }
 }
 

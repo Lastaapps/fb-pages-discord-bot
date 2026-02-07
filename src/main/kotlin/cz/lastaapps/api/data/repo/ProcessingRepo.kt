@@ -65,118 +65,141 @@ class ProcessingRepo(
     private var processBatchJob: Job? = null
     private var scheduleJob: Job? = null
 
-    suspend fun requestNow() = mutex.withLock {
-        if (processBatchJob?.isActive == true) {
-            log.i { "Batch job is already running, skipping" }
-            return@withLock
-        }
-
-        log.i { "Starting a new post posts job" }
-
-        scheduleJob?.cancel()
-        scheduleJob = scope.launch {
-            while (true) {
-                log.i {
-                    val nextRun = Clock.System.now()
-                        .epochSeconds.let(Instant::fromEpochSeconds)
-                        .plus(config.interval).toLocalDateTime(TimeZone.UTC)
-
-                    "Next run is scheduled for $nextRun (in ${config.interval})"
-                }
-
-                mutex.withLock {
-                    processBatchJob = scope.launch {
-                        Either.runCatching {
-                            processBatch()
-                                .onLeft { log.e(it) { "Failed to fetch and post new posts" } }
-                                .onRight { log.i { "Batch processed, see you soon" } }
-                        }.onFailure { log.e(it) { "Failed to fetch and post new posts (CRITICAL)" } }
-                    }
-                }
-                delay(config.interval)
+    suspend fun requestNow() =
+        mutex.withLock {
+            if (processBatchJob?.isActive == true) {
+                log.i { "Batch job is already running, skipping" }
+                return@withLock
             }
-        }
-    }
 
-    private suspend fun processBatch() = either<DomainError, Unit> {
-        log.i { "Starting badge processing..." }
+            log.i { "Starting a new post posts job" }
 
-        val batch = loadPageDiscordPairs().bind()
+            scheduleJob?.cancel()
+            scheduleJob =
+                scope.launch {
+                    while (true) {
+                        log.i {
+                            val nextRun =
+                                Clock.System
+                                    .now()
+                                    .epochSeconds
+                                    .let(Instant::fromEpochSeconds)
+                                    .plus(config.interval)
+                                    .toLocalDateTime(TimeZone.UTC)
 
-        val pageIdToPage = batch.pages.values.associateBy { it.fbId }
-        val pageIdToPosts = batch.pages.entries
-            .parMap(concurrency = config.concurrency.fetchPages) { (pageID, page) ->
-                log.d { "Fetching page ${page.name}" }
-                postProvider.loadPagePosts(page.fbId, page.accessToken, limit = config.facebook.fetchPostsLimit)
-                    .handleErrorWith {
-                        if (it !is NetworkError.FBAPIError || !it.isUnsupportedRequest) {
-                            return@handleErrorWith it.left()
+                            "Next run is scheduled for $nextRun (in ${config.interval})"
                         }
 
-                        // Handles deleted or unauthorized pages
-                        log.w { "Cannot access page '${page.name}' (https://facebook.com/${page.fbId.id})." }
-                        return@handleErrorWith emptyList<LazyProvider<FBPostID, Outcome<Post>>>().right()
-                    }
-                    .map { posts ->
-                        posts.let { pageID to it }
-                    }
-            }.associate { it.bind() }
-
-        val postsMap = pageIdToPosts.values.flatten().associateBy { it.id }
-        val postIdToPageId = pageIdToPosts.entries.map { (page, posts) ->
-            posts.map { it.id to page }
-        }.flatten().toMap()
-
-        batch.requests.entries
-            .filter { (channel, _) -> channel.enabled }
-            .filter { (channel, _) ->
-                val permissionsSet = AppDCPermissionSet.Posting
-                discordApi.checkBotPermissions(channel.dcId, listOf(permissionsSet))
-                    .map { it[permissionsSet]!! }
-                    .onLeft { log.i { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions - ${it.text()}" } }
-                    .onRight {
-                        if (!it) {
-                            log.i { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions for posting" }
+                        mutex.withLock {
+                            processBatchJob =
+                                scope.launch {
+                                    Either
+                                        .runCatching {
+                                            processBatch()
+                                                .onLeft { log.e(it) { "Failed to fetch and post new posts" } }
+                                                .onRight { log.i { "Batch processed, see you soon" } }
+                                        }.onFailure { log.e(it) { "Failed to fetch and post new posts (CRITICAL)" } }
+                                }
                         }
+                        delay(config.interval)
                     }
-                    .getOrElse { false }
-            }
-            .parMap(concurrency = config.concurrency.postPosts) { (channel, pages) ->
-                either {
-                    log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
-                    val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
-                    val postIds = posts.map { it.id }.toSet()
-                    val existingPosts = curd.getPostedPostsByIds(channel.dbId, postIds)
-                        .executeAsList()
-                        .toSet()
+                }
+        }
 
-                    val newPosts = (postIds - existingPosts)
-                        .also { log.d { "Found ${it.size} new posts for channel ${channel.name} (${channel.dbId.id})" } }
-                        .parMap(concurrency = config.concurrency.resolvePosts) { postsMap[it]!!().bind() }
+    private suspend fun processBatch() =
+        either<DomainError, Unit> {
+            log.i { "Starting badge processing..." }
 
-                    newPosts
-                        .sortedBy { it.createdAt }
-                        .forEach { post ->
-                            val page = pageIdToPage[postIdToPageId[post.id]!!]!!
+            val batch = loadPageDiscordPairs().bind()
 
-                            val events = post.accessibleEventIds.parMap(concurrency = 1) { id ->
-                                eventProvider.loadEventData(id, page.accessToken)().bind()
-                            }.filterOption()
-                            log.i {
-                                "Posting ${post.id.id} to ${channel.name} (${channel.name}) -> \"${
-                                    post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
-                                }\""
+            val pageIdToPage = batch.pages.values.associateBy { it.fbId }
+            val pageIdToPosts =
+                batch.pages.entries
+                    .parMap(concurrency = config.concurrency.fetchPages) { (pageID, page) ->
+                        log.d { "Fetching page ${page.name}" }
+                        postProvider
+                            .loadPagePosts(page.fbId, page.accessToken, limit = config.facebook.fetchPostsLimit)
+                            .handleErrorWith {
+                                if (it !is NetworkError.FBAPIError || !it.isUnsupportedRequest) {
+                                    return@handleErrorWith it.left()
+                                }
+
+                                // Handles deleted or unauthorized pages
+                                log.w { "Cannot access page '${page.name}' (https://facebook.com/${page.fbId.id})." }
+                                return@handleErrorWith emptyList<LazyProvider<FBPostID, Outcome<Post>>>().right()
+                            }.map { posts ->
+                                posts.let { pageID to it }
                             }
-                            val messageID = discordApi.postPostAndEvents(
-                                channel.dcId, page, post, events,
-                            ).bind()
-                            createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
-                        }
-                } to channel
-            }.onEach { (it, channel) ->
-                it.onLeft { log.e(it) { "Failed to process channel ${channel.name} (${channel.dcId.id})" } }
-            }.forEach { it.first.bind() }
-    }
+                    }.associate { it.bind() }
+
+            val postsMap = pageIdToPosts.values.flatten().associateBy { it.id }
+            val postIdToPageId =
+                pageIdToPosts.entries
+                    .map { (page, posts) ->
+                        posts.map { it.id to page }
+                    }.flatten()
+                    .toMap()
+
+            batch.requests.entries
+                .filter { (channel, _) -> channel.enabled }
+                .filter { (channel, _) ->
+                    val permissionsSet = AppDCPermissionSet.Posting
+                    discordApi
+                        .checkBotPermissions(channel.dcId, listOf(permissionsSet))
+                        .map { it[permissionsSet]!! }
+                        .onLeft {
+                            log.i { "Channel (${channel.name} - ${channel.dcId.id}) cannot be processed for permissions - ${it.text()}" }
+                        }.onRight {
+                            if (!it) {
+                                log.i { "Channel (${channel.name} - ${channel.dcId.id}) does not have sufficient permissions for posting" }
+                            }
+                        }.getOrElse { false }
+                }.parMap(concurrency = config.concurrency.postPosts) { (channel, pages) ->
+                    either {
+                        log.d { "Processing channel ${channel.name} (${channel.dbId.id})" }
+                        val posts = pages.mapNotNull { pageIdToPosts[it.fbId] }.flatten()
+                        val postIds = posts.map { it.id }.toSet()
+                        val existingPosts =
+                            curd
+                                .getPostedPostsByIds(channel.dbId, postIds)
+                                .executeAsList()
+                                .toSet()
+
+                        val newPosts =
+                            (postIds - existingPosts)
+                                .also { log.d { "Found ${it.size} new posts for channel ${channel.name} (${channel.dbId.id})" } }
+                                .parMap(concurrency = config.concurrency.resolvePosts) { postsMap[it]!!().bind() }
+
+                        newPosts
+                            .sortedBy { it.createdAt }
+                            .forEach { post ->
+                                val page = pageIdToPage[postIdToPageId[post.id]!!]!!
+
+                                val events =
+                                    post.accessibleEventIds
+                                        .parMap(concurrency = 1) { id ->
+                                            eventProvider.loadEventData(id, page.accessToken)().bind()
+                                        }.filterOption()
+                                log.i {
+                                    "Posting ${post.id.id} to ${channel.name} (${channel.name}) -> \"${
+                                        post.message?.take(24)?.replace("\n", "\\n")?.plus("...")
+                                    }\""
+                                }
+                                val messageID =
+                                    discordApi
+                                        .postPostAndEvents(
+                                            channel.dcId,
+                                            page,
+                                            post,
+                                            events,
+                                        ).bind()
+                                createMessagePostRelation(channel.dbId, page.dbId, post.id, messageID)
+                            }
+                    } to channel
+                }.onEach { (it, channel) ->
+                    it.onLeft { log.e(it) { "Failed to process channel ${channel.name} (${channel.dcId.id})" } }
+                }.forEach { it.first.bind() }
+        }
 
     private data class BatchParam(
         val requests: Map<DiscordChannel, List<AuthorizedPage>>,
@@ -187,53 +210,60 @@ class ProcessingRepo(
     /**
      * Return discord channel ID and page access token of the pages related to the channel
      */
-    private suspend fun loadPageDiscordPairs(): Outcome<BatchParam> = either {
-        val hasPublic = config.facebook.enabledPublicContent
-        val appToken = if (hasPublic) {
-            appTokenProvider.provide().bind().toPageAccessToken()
-        } else {
-            null
+    private suspend fun loadPageDiscordPairs(): Outcome<BatchParam> =
+        either {
+            val hasPublic = config.facebook.enabledPublicContent
+            val appToken =
+                if (hasPublic) {
+                    appTokenProvider.provide().bind().toPageAccessToken()
+                } else {
+                    null
+                }
+
+            queries
+                .getPagesAndChannelsWithTokens {
+                        id: DBChannelID,
+                        chName: String,
+                        dcId: DCChannelID,
+                        channelEnabled: Boolean,
+                        dbId: DBPageID,
+                        fbId: FBPageID,
+                        name: String,
+                        token: PageAccessToken?,
+                    ->
+                    val pageToken =
+                        token ?: appToken ?: run {
+                            // TODO notify user somehow, probably IOR
+                            log.e { "Page $name is requested by $chName (${id.id}), but it's not authorized" }
+                            return@getPagesAndChannelsWithTokens None
+                        }
+
+                    (
+                        DiscordChannel(id, chName, dcId, channelEnabled) to
+                            AuthorizedPage(
+                                dbId = dbId,
+                                fbId = fbId,
+                                name = name,
+                                accessToken = pageToken,
+                            )
+                        ).some()
+                }.executeAsList()
+                .filterOption()
+                .groupBy { it.first }
+                .mapValues { (_, value) -> value.map { it.second } }
+                .let { channelsToPages ->
+                    val pages =
+                        channelsToPages.values
+                            .flatten()
+                            .associateBy { it.fbId }
+
+                    BatchParam(
+                        requests = channelsToPages,
+                        channels = channelsToPages.keys,
+                        pages = pages,
+                    )
+                }
         }
-
-        queries.getPagesAndChannelsWithTokens {
-                id: DBChannelID,
-                chName: String,
-                dcId: DCChannelID,
-                channelEnabled: Boolean,
-                dbId: DBPageID,
-                fbId: FBPageID,
-                name: String,
-                token: PageAccessToken?,
-            ->
-            val pageToken = token ?: appToken ?: run {
-                // TODO notify user somehow, probably IOR
-                log.e { "Page $name is requested by $chName (${id.id}), but it's not authorized" }
-                return@getPagesAndChannelsWithTokens None
-            }
-
-            (DiscordChannel(id, chName, dcId, channelEnabled) to AuthorizedPage(
-                dbId = dbId,
-                fbId = fbId,
-                name = name,
-                accessToken = pageToken,
-            )).some()
-        }
-            .executeAsList()
-            .filterOption()
-            .groupBy { it.first }
-            .mapValues { (_, value) -> value.map { it.second } }
-            .let { channelsToPages ->
-                val pages = channelsToPages.values
-                    .flatten()
-                    .associateBy { it.fbId }
-
-                BatchParam(
-                    requests = channelsToPages,
-                    channels = channelsToPages.keys,
-                    pages = pages,
-                )
-            }
-    }
 
     private fun createMessagePostRelation(
         channelID: DBChannelID,

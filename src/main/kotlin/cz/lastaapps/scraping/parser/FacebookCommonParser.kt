@@ -10,7 +10,8 @@ import kotlinx.datetime.TimeZone
 object FacebookCommonParser {
     fun DocElement.parsePublishedAt(timeZone: TimeZone): Instant =
         findLast("footer") {
-            findFirst("abbr").text
+            findFirst("abbr")
+                .text
                 .replaceSpaces(" ")
                 .parsePostPublishedAt(timeZone)
         }
