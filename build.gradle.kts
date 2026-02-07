@@ -49,6 +49,18 @@ sqldelight {
     }
 }
 
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    version.set(
+        libs.versions.ktlint.jar
+            .get(),
+    )
+    enableExperimentalRules.set(true)
+    filter {
+        exclude("**/generated/**")
+        include("**/kotlin/**")
+    }
+}
+
 dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.core)
@@ -105,9 +117,10 @@ sentry {
     org = "lasta-apps"
     projectName = "fb-pages-discord-bot"
 
-    val sentryAuthToken = localProperties.getProperty("sentry.authToken")
-        ?: project.findProperty("sentry.authToken") as? String
-        ?: error("Please, specify sentry.authToken property")
+    val sentryAuthToken =
+        localProperties.getProperty("sentry.authToken")
+            ?: project.findProperty("sentry.authToken") as? String
+            ?: error("Please, specify sentry.authToken property")
 
     authToken = sentryAuthToken
 }
