@@ -23,12 +23,7 @@ kotlin {
     jvmToolchain(21)
     compilerOptions {
         freeCompilerArgs.addAll(
-            "-Xwhen-guards",
-            "-Xcontext-parameters",
             "-Xcontext-sensitive-resolution",
-            "-Xannotation-target-all",
-            "-Xnested-type-aliases",
-            "-Xannotation-default-target=param-property",
         )
     }
     sourceSets.all {

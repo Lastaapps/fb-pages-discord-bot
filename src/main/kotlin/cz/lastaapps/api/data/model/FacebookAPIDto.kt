@@ -1,5 +1,6 @@
 package cz.lastaapps.api.data.model
 
+import cz.lastaapps.api.data.util.TimeZoneSerializer
 import cz.lastaapps.api.data.util.createdTimeToInstant
 import cz.lastaapps.api.data.util.idToFacebookURL
 import cz.lastaapps.api.domain.model.Place
@@ -242,6 +243,7 @@ data class FBEvent(
     @SerialName("end_time")
     private val endTime: String? = null,
     @SerialName("timezone")
+    @Serializable(TimeZoneSerializer::class)
     val timezone: TimeZone,
     @SerialName("type")
     val type: Type,
