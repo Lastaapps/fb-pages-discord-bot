@@ -22,6 +22,7 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.AuthenticationChecked
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.plugins.autohead.AutoHeadResponse
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
@@ -250,6 +251,7 @@ class RestAPI(
                     )
                 }
             }
+            install(AutoHeadResponse)
             routing(routing)
         }.start(wait = false)
     }
