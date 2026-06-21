@@ -62,8 +62,10 @@ class ProcessingRepo(
     private inline val queries get() = database.database.queriesQueries
 
     private val mutex = Mutex()
+    private val clock = Clock.System
     private var processBatchJob: Job? = null
     private var scheduleJob: Job? = null
+    private var lastRunFinished: Instant = clock.now()
 
     suspend fun requestNow() =
         mutex.withLock {
@@ -80,7 +82,7 @@ class ProcessingRepo(
                     while (true) {
                         log.i {
                             val nextRun =
-                                Clock.System
+                                clock
                                     .now()
                                     .epochSeconds
                                     .let(Instant::fromEpochSeconds)
@@ -100,6 +102,7 @@ class ProcessingRepo(
                                                 .onRight { log.i { "Batch processed, see you soon" } }
                                         }.onFailure { log.e(it) { "Failed to fetch and post new posts (CRITICAL)" } }
                                 }
+                            lastRunFinished = clock.now()
                         }
                         delay(config.interval)
                     }
@@ -274,4 +277,6 @@ class ProcessingRepo(
         log.d { "Creating relation between message ${messageID.id} and post ${postID.id}" }
         curd.createPostedPost(null, channelID, pageID, postID, messageID)
     }
+
+    fun didLastJobFinishOnTime(): Boolean = clock.now() - lastRunFinished < config.interval * 2
 }

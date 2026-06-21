@@ -11,6 +11,7 @@ import cz.lastaapps.api.domain.model.id.FBPageID
 import cz.lastaapps.api.domain.usecase.AddPageUC
 import cz.lastaapps.api.domain.usecase.ChangeChannelEnabledUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
+import cz.lastaapps.api.domain.usecase.HealthCheckUC
 import cz.lastaapps.api.domain.usecase.NukeChannelUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
 import cz.lastaapps.api.domain.usecase.RunJobsUC
@@ -48,6 +49,7 @@ class RestAPI(
     private val sendAdminMessageUC: SendAdminMessageUC,
     private val getAuthorizedPages: GetAuthorizedPagesUC,
     private val runJobsUC: RunJobsUC,
+    private val healthCheckUC: HealthCheckUC,
 ) {
     private val log = Logger.withTag("RestAPI")
 
@@ -200,6 +202,30 @@ class RestAPI(
                             )
                         }
                     }
+                }
+                get("health") {
+                    val healthy = healthCheckUC()
+                    if (!healthy) {
+                        call.respondText(
+                            "Jobs are not finishing on time, see the logs!",
+                            status = HttpStatusCode.ServiceUnavailable,
+                        )
+                        return@get
+                    }
+
+                    call.respondText(
+                        """
+                        Whether you're a brother or whether you're a mother
+                        You're stayin' alive, stayin' alive
+                        Feel the city breakin' and everybody shakin'
+                        And we're stayin' alive, stayin' alive
+                        Ah, ah, ah, ah
+                        Stayin' alive, stayin' alive
+                        Ah, ah, ah, ah
+                        Stayin' alive
+                        Oh, when you walk
+                        """.trimIndent(),
+                    )
                 }
             },
         )
