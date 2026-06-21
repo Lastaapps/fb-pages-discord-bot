@@ -18,6 +18,7 @@ import cz.lastaapps.api.domain.usecase.ChangeChannelEnabledUC
 import cz.lastaapps.api.domain.usecase.GetAuthorizedPagesUC
 import cz.lastaapps.api.domain.usecase.GetOAuthLink
 import cz.lastaapps.api.domain.usecase.GetPagesForChannelUC
+import cz.lastaapps.api.domain.usecase.HealthCheckUC
 import cz.lastaapps.api.domain.usecase.NukeChannelUC
 import cz.lastaapps.api.domain.usecase.ParsePageIDUC
 import cz.lastaapps.api.domain.usecase.RemovePageUC
@@ -76,6 +77,7 @@ val diModule =
         factoryOf(::SearchPagesUC)
         factoryOf(::VerifyUserPagesUC)
         factoryOf(::RunJobsUC)
+        factoryOf(::HealthCheckUC)
     }
 
 private fun createHttpClient(config: AppConfig) =
