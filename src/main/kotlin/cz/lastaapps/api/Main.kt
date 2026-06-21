@@ -16,7 +16,7 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
-const val API_VERSION = "v22.0"
+const val API_VERSION = "v25.0"
 private val log by lazy { Logger.withTag("Main") }
 
 fun main() =
